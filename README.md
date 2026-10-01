@@ -154,7 +154,10 @@ Bez blízké zastávky UI nabídne ruční výběr. GPS ani odvozený výběr se
 Po úspěšném hledání backend vrací `area.city`; veřejný frontendový provider
 jej mapuje na `SearchResult.city`. Společnou obec určuje ze strukturovaných
 údajů výchozí a cílové zastávky a kontroluje konce zobrazených úseků v itineráři.
-Při meziměstské cestě nebo chybějících údajích vrací `null` (Všechny jízdní řády).
+Při chybějících údajích může vrátit `null`; tato hodnota sama o sobě už nemaže
+vybrané město. Na Všechny jízdní řády se přepíná pouze při `area.intercity=true`,
+které vychází z doložených rozdílných obcí. Automatické doplnění města se provede
+jen při dosud prázdném výběru. Nové pole vyžaduje nasazení frontendové i backendové změny.
 Není to ověření geometrie trasy ani všech průjezdních zastávek. Výběr i `city`
 v URL se upraví přes `replaceState`, bez druhého hledání, bez dalšího GPS fixu
 a bez ztráty otevřeného detailu či mapy. Odkazy na dřívější/pozdější spoje
@@ -191,7 +194,13 @@ Samotná GPS ani čas měření se neukládají do URL či browser storage.
 
 Dialog spoje zobrazuje celou trasu s číslem linky a ikonou v titulku.
 Nahoře jsou konkrétní datum jízdy a veřejné číslo linky/spoje; dopravce
-a lokalizované poznámky patří pod seznam zastávek. Rozlišuje poznámky linky a spoje. Text dodavatele se escapuje,
+a lokalizované poznámky patří pod seznam zastávek. Zde jsou také poskytovatelem
+uvedené vlastnosti konkrétního spoje: bezbariérovost, kola, zavazadla, Wi-Fi,
+zásuvky, toalety a občerstvení, případně rezervační podmínky. Chybějící příznak
+neznamená zákaz ani potvrzení dostupnosti. Jde o plánované vybavení, nikoli
+ověření právě vypraveného vozidla. Technické poznámky typu Grafikony jsou
+zachované v rozbalitelných podrobnostech; jejich interní kódy nedekódujeme
+na nepodložené dny provozu. Rozlišuje poznámky linky a spoje. Text dodavatele se escapuje,
 webové odkazy povolují pouze HTTP(S), kontaktní telefon pouze platné `tel:`.
 Dostupnost jednotlivých údajů závisí na zdroji: aktuální detail Spojenky
 neposkytuje strukturované kontakty dopravce ani opakující se provozní kalendář.

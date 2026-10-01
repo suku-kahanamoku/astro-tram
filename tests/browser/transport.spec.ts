@@ -896,16 +896,12 @@ test("trip equipment is visible below stops and technical timetable codes need e
     await route.fulfill({ json: body });
   });
   await page.goto("/spojeni/?" + query());
-  await page.locator("[data-journey-key]").first().click();
+  await page.locator(".journey-summary").first().click();
   await page.locator('[data-trip-open="0"]').first().click();
   const notes = page.locator("[data-trip-notes]");
+  await expect(notes.getByText(/Přeprava jízdních kol/)).toBeVisible();
   await expect(
-    notes.getByText("Přeprava jízdních kol", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    notes.getByText("Bezbariérové vozidlo podle jízdního řádu", {
-      exact: true,
-    }),
+    notes.getByText(/Bezbariérové vozidlo podle jízdního řádu/),
   ).toBeVisible();
   await expect(notes.locator(".trip-legend li")).not.toHaveCount(3);
   await expect(notes.getByText(/^Grafikony:/)).toBeHidden();

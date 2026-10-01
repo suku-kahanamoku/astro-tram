@@ -195,3 +195,56 @@ test("legacy GPS scope links do not request device location or survive URL seria
   assert.equal(writeState(restored).has("scopeLocation"), false);
   assert.equal(searchBody(restored).location, undefined);
 });
+
+test("trip BFF maps allowed equipment and technical notes without exposing unknown provider fields", async () => {
+  const provider = createTransportProvider(
+    createCoreClient(
+      {
+        baseUrl: "https://core.test/api",
+        apiKey: "secret",
+        tenantHost: "tram.test",
+      },
+      async () =>
+        Response.json({
+          success: true,
+          data: {
+            result: {
+              stops: [],
+              metadata: {
+                features: ["WIFI", "WIFI", "BICYCLE_TRANSPORT", "UNRECOGNIZED"],
+                accessibility: "partial",
+                reservations: {
+                  bicycle: "mandatory",
+                  passenger: "available",
+                  luggage: "NONE",
+                  private: "available",
+                },
+                notes: [
+                  {
+                    scope: "line",
+                    category: "technical",
+                    texts: { cs: "Grafikony: PD: T2610" },
+                  },
+                ],
+                vehicle_position: { latitude: 50 },
+                secret: "DO_NOT_EXPOSE",
+              },
+            },
+            source: { mode: "live" },
+          },
+        }),
+    ),
+  );
+  const trip = await provider.trip("TEST");
+  assert.deepEqual(trip.metadata?.features, ["WIFI", "BICYCLE_TRANSPORT"]);
+  assert.equal(trip.metadata?.accessibility, "partial");
+  assert.deepEqual(trip.metadata?.reservations, {
+    bicycle: "mandatory",
+    passenger: "available",
+  });
+  assert.equal(trip.metadata?.notes[0].category, "technical");
+  assert.doesNotMatch(
+    JSON.stringify(trip),
+    /DO_NOT_EXPOSE|vehicle_position|UNRECOGNIZED/,
+  );
+});
