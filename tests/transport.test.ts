@@ -6,12 +6,12 @@ import {
   searchBody,
   requiresLocation,
   formInstant,
-} from "../src/modules/TransportModule/providers/state";
+} from "../src/modules/TransportCoreModule/providers/state";
 import { validateSearch } from "../src/modules/TransportModule/server/handlers";
 import { createCoreClient } from "../src/modules/CoreModule/server/php-core";
 import { createTransportProvider } from "../src/modules/TransportModule/server/provider";
-import { escapeHtml } from "../src/modules/TransportModule/providers/render";
-import type { SearchState } from "../src/modules/TransportModule/types";
+import { escapeHtml } from "../src/modules/TransportJourneyModule/providers/render";
+import type { SearchState } from "../src/modules/TransportCoreModule/types";
 const state: SearchState = {
   from: { type: "stop", id: "stop_1", label: "Praha, Muzeum" },
   to: { type: "coordinates", lat: 50.1, lon: 14.2, label: "Mapa" },

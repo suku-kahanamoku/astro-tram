@@ -4,7 +4,7 @@ import Hero from "../modules/LandingModule/components/HeroSection.astro";
 import Story from "../modules/LandingModule/components/StorySections.astro";
 import Search from "../modules/TransportModule/components/Search.astro";
 import { dictionary } from "../modules/LandingModule/providers/translations";
-import { dictionary as transportDictionary } from "../modules/TransportModule/providers/translations";
+import { dictionary as transportDictionary } from "../modules/TransportCoreModule/providers/translations";
 import { resolveRoute, url } from "../config/routes";
 import { localeFromPath } from "../modules/LangModule/providers/locale";
 const route = resolveRoute(Astro.url.pathname),

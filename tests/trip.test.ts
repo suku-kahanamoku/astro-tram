@@ -1,13 +1,17 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import TripStops from "../src/modules/TransportModule/components/TripStops";
-import type { Dictionary } from "../src/modules/TransportModule/providers/translations";
+import TripStops from "../src/modules/TransportJourneyModule/components/TripStops";
+import type { Dictionary } from "../src/modules/TransportCoreModule/providers/translations";
 const renderTrip = (trip: Trip, t: Dictionary, locale: string, leg?: Leg) =>
   renderToStaticMarkup(createElement(TripStops, { trip, t, locale, leg }));
 import test from "node:test";
 import assert from "node:assert/strict";
-import { intermediateStops } from "../src/modules/TransportModule/providers/trip";
-import type { Leg, Trip, TripStop } from "../src/modules/TransportModule/types";
+import { intermediateStops } from "../src/modules/TransportJourneyModule/providers/trip";
+import type {
+  Leg,
+  Trip,
+  TripStop,
+} from "../src/modules/TransportCoreModule/types";
 const call = (id: string, clock: string): TripStop => ({
   stop: { id, name: id, lat: null, lon: null, platform: null },
   arrival: `2026-10-01T${clock}:00Z`,
@@ -63,7 +67,7 @@ test("direct adjacent calls have no intermediate stops and unique boundaries tol
 
 test("stop rows show zones separately from request-stop marks and preserve source precision", async () => {
   const { dictionary } =
-    await import("../src/modules/TransportModule/providers/translations");
+    await import("../src/modules/TransportCoreModule/providers/translations");
   const enriched: Trip = {
     ...trip,
     stops: [
@@ -97,7 +101,7 @@ test("stop rows show zones separately from request-stop marks and preserve sourc
 
 test("full trip highlights boarding, intermediate and alighting calls only at the matching occurrence", async () => {
   const { dictionary } =
-    await import("../src/modules/TransportModule/providers/translations");
+    await import("../src/modules/TransportCoreModule/providers/translations");
   const html = renderTrip(trip, dictionary("cs"), "cs", leg);
   const rows = [
     ...html.matchAll(

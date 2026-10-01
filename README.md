@@ -27,7 +27,13 @@ Backend musí mít aplikované `schema.sql`, `tram_schema.sql`, `tram_seed.sql`,
 
 - `src/config/site.ts`, `routes.ts`: brand, aktivní moduly a jazykové URL.
 - `LandingModule`: intro, vysvětlení, ilustrace, FAQ.
-- `TransportModule`: formulář, URL stav, našeptávač, výsledky, detail, mapa, serverový provider a HTTP handlery.
+- `TransportModule`: facade, URL orchestrace, overlay composition a serverové HTTP handlery.
+- `TransportCoreModule`: transportní typy, klient, validace, geolokace, konfigurace a locale.
+- `TransportSearchModule`: formulář, našeptávač, katalog měst a online hledání.
+- `TransportJourneyModule`: výsledky, detaily jízd, zastávky, timeline a výpočty průběhu.
+- `TransportTrackingModule`: transportní realtime pozorování, zpoždění a tracking subscriptions.
+- `TransportMapModule`: transportní mapový dialog a adapter pro obecný `MapModule`.
+- `MapModule`: znovupoužitelné OpenLayers jádro, lifecycle mapy, route rendering a GPS picking.
 - `CoreModule/server/php-core.ts`: jediný HTTP klient k php-core. Klíč i pevný tenant zůstávají na serveru; žádný univerzální proxy endpoint.
 - `UIModule`: theme, základní ovládací prvky a ikony.
 - `LangModule`: čeština, angličtina, němčina; společné komponenty pro všechny jazyky.
@@ -49,8 +55,8 @@ providery jsou samostatné TypeScript moduly. Backendové klíče zůstávají n
   Formulář se zpřístupní po hydrataci, aby neztratil první vstup uživatele.
 - `useJourneySearch` vlastní online hledání, chyby a opakování dotazu;
   `useTrip` načítá detail pouze pro otevřený pohled. Výsledky se neukládají do
-  browser storage. `TransportModule/config/client.ts` obsahuje klientské limity,
-  výchozí města, středy map a BFF endpointy.
+  browser storage. Klientské limity, středy map a BFF endpointy jsou v
+  `TransportCoreModule/config/client.ts`.
 - `JourneyResults`, `TripStops` a `TripLegend` jsou React komponenty. Poznámky
   poskytovatelů se vykreslují jako text a odkazy mají kontrolovaný protokol.
 - `UrlNavigationProvider` a `NavLink` z UIModule obsluhují URL a historii;

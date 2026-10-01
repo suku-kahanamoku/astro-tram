@@ -4,8 +4,8 @@ import {
   expandedJourneys,
   toggleJourney,
   journeyContext,
-} from "../src/modules/TransportModule/providers/journeyExpansion";
-import { navHref } from "../src/modules/TransportModule/providers/render";
+} from "../src/modules/TransportJourneyModule/providers/journeyExpansion";
+import { navHref } from "../src/modules/TransportJourneyModule/providers/render";
 test("journey expansion preserves other cards, legacy links and dialog context", () => {
   const original = new URL("https://tram.test/spojeni/?journey=a&stops=1");
   assert.deepEqual([...expandedJourneys(original)], ["a"]);

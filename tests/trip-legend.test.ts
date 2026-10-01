@@ -2,8 +2,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import TripLegend, {
   LinkedNote,
-} from "../src/modules/TransportModule/components/TripLegend";
-import type { Dictionary } from "../src/modules/TransportModule/providers/translations";
+} from "../src/modules/TransportJourneyModule/components/TripLegend";
+import type { Dictionary } from "../src/modules/TransportCoreModule/providers/translations";
 const renderTripLegend = (
   trip: Trip,
   leg: Leg,
@@ -14,9 +14,9 @@ const linkedNote = (text: string) =>
   renderToStaticMarkup(createElement(LinkedNote, { text }));
 import test from "node:test";
 import assert from "node:assert/strict";
-import { safeWebUrl } from "../src/modules/TransportModule/providers/tripLegend";
-import { dictionary } from "../src/modules/TransportModule/providers/translations";
-import type { Leg, Trip } from "../src/modules/TransportModule/types";
+import { safeWebUrl } from "../src/modules/TransportJourneyModule/providers/tripLegend";
+import { dictionary } from "../src/modules/TransportCoreModule/providers/translations";
+import type { Leg, Trip } from "../src/modules/TransportCoreModule/types";
 const leg = { operator: "", line: "35" } as Leg;
 const trip: Trip = {
   sourceMode: "live",

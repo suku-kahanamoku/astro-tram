@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setImmediate } from "node:timers/promises";
-import { createTripResources } from "../src/modules/TransportModule/providers/tripResources";
-import type { Trip } from "../src/modules/TransportModule/types";
+import { createTripResources } from "../src/modules/TransportJourneyModule/providers/tripResources";
+import type { Trip } from "../src/modules/TransportCoreModule/types";
 const trip: Trip = { stops: [], sourceMode: "schedule" };
 test("static prefetch is bounded, deduplicated and prioritizes an opened trip", async () => {
   const started: string[] = [];

@@ -9,12 +9,12 @@ import {
   transferAtRisk,
   trackedJourney,
   callTime,
-} from "../src/modules/TransportModule/providers/tracking";
+} from "../src/modules/TransportTrackingModule/providers/tracking";
 import type {
   Leg,
   Journey,
   TripStop,
-} from "../src/modules/TransportModule/types";
+} from "../src/modules/TransportCoreModule/types";
 const leg = {
   mode: "bus",
   scheduledDeparture: "2026-10-01T08:00:00Z",

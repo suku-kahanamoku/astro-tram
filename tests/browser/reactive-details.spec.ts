@@ -1,4 +1,4 @@
-import type { Trip } from "../../src/modules/TransportModule/types";
+import type { Trip } from "../../src/modules/TransportCoreModule/types";
 import { test, expect } from "@playwright/test";
 const stopId = (id: string) =>
   Buffer.from(JSON.stringify(["tram", "pid", "stop", id, null])).toString(

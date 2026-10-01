@@ -1,7 +1,10 @@
 import type { APIRoute } from "astro";
 import { HttpError, errorResponse } from "../../CoreModule/server/errors";
 import { readFields } from "../../CoreModule/server/request";
-import { validCoordinates, validInstant } from "../providers/state";
+import {
+  validCoordinates,
+  validInstant,
+} from "../../TransportCoreModule/providers/state";
 function fail(): never {
   throw new HttpError(422, "invalid_input");
 }

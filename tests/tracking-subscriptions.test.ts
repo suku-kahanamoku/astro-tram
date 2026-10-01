@@ -1,10 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setImmediate } from "node:timers/promises";
-import { createTrackingStore } from "../src/modules/TransportModule/providers/trackingStore";
-import { createTrackingSubscriptions } from "../src/modules/TransportModule/providers/trackingSubscriptions";
-import { TransportRequestError } from "../src/modules/TransportModule/providers/client";
-import type { TrackingSession } from "../src/modules/TransportModule/types";
+import { createTrackingStore } from "../src/modules/TransportTrackingModule/providers/trackingStore";
+import { createTrackingSubscriptions } from "../src/modules/TransportTrackingModule/providers/trackingSubscriptions";
+import { TransportRequestError } from "../src/modules/TransportCoreModule/providers/client";
+import type { TrackingSession } from "../src/modules/TransportCoreModule/types";
 
 test("adding/removing watched trips preserves other sockets and reuses unexpired tickets", async (t) => {
   t.mock.timers.enable({ apis: ["setTimeout", "setInterval", "Date"] });

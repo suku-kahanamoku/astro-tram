@@ -2,7 +2,7 @@ import {
   tripFeatures,
   reservationLabels,
   type TripFeature,
-} from "../config/tripFeatures";
+} from "../../TransportCoreModule/config/tripFeatures";
 import { createHash } from "node:crypto";
 import type { CoreClient } from "../../CoreModule/server/php-core";
 import { HttpError } from "../../CoreModule/server/errors";
@@ -15,8 +15,11 @@ import type {
   Trip,
   SearchResult,
   TripMetadata,
-} from "../types";
-import { validCoordinates, validInstant } from "../providers/state";
+} from "../../TransportCoreModule/types";
+import {
+  validCoordinates,
+  validInstant,
+} from "../../TransportCoreModule/providers/state";
 const object = (value: unknown): Record<string, unknown> =>
   value !== null && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
