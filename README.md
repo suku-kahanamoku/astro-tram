@@ -226,3 +226,15 @@ tažení z obsahu ven jej nezavře. Animace respektují `prefers-reduced-motion`
 Barevné badge spoje otevírají stejný detail z přehledu i z rozbalené cesty.
 Načtené mezilehlé zastávky zůstávají při otevření jejich detailu zachované.
 Mapy mají vyhrazenou výšku během načítání; zoom nastavuje `config/client.ts`.
+
+### Živé sledování a zpoždění
+
+Otevřený detail spojení odebírá aktuální pozorování přes `useTripTracking` a společný `RealtimeModule`. BFF `POST /api/transport/tracking/` vydává pouze krátkodobý ticket; klíče poskytovatelů zůstávají v php-core. Je potřeba samostatně nakonfigurovat a spustit backendovou gateway podle [provozní dokumentace](../../php/php-core/docs/tram-realtime-tracking.md). Bez gateway se zobrazí nedostupnost, u nepodporovaného zdroje explicitní informace.
+
+`trackedJourney` společně přepočítává časy, délku cesty, chůzi a návaznosti. Živý badge je jen pro kladné zpoždění, zastávkové odhady mají `≈`. Zastaralá měření odstraní lokální timer i bez další síťové odpovědi. Zavření detailu/skrytí stránky odpojí odběry, žádná poloha se neukládá do storage ani URL. Současný pohyb vozidla automaticky nevytváří náhradní trasu: při ohroženém přestupu UI vyzve k novému vyhledání.
+
+Detail spoje používá `TripTimeline` s osou vlevo od časů a bodem u každé zastávky. `tripProgress` promítá pouze čerstvou GPS na jednoznačný úsek mezi sousedními zastávkami; bod mezi nimi vyjadřuje přibližný postup na schematické ose, nikoli odhad polohy podle hodin. Chybějící souřadnice, nejednoznačné smyčky nebo bod mimo trasu se nepřemosťují. Limity projekce jsou v `TransportModule/config/client.ts`. `useTripTimeline` měří skutečné výšky řádků i po změně šířky a při zalomení názvů. Bez GPS zůstává osa bez červeného bodu; aktuální mapa je nad výpisem.
+
+Badge zpoždění každého úseku umí využít samostatnou čerstvou zastávkovou predikci nebo číselné zpoždění i tehdy, když GPS poskytovatel nemá. Neznámé, nulové a záporné zpoždění badge nevytváří. Brněnské spoje ze současného Spojenka adaptéru bez napojeného GPS zdroje zůstávají ve stavu `unsupported`; tato úprava UI nepřidává nový adaptér IDS JMK.
+
+Při nejednoznačném přiřazení nové GPS ponechá `useTripProgress` poslední jednoznačný bod stejného spoje s označením „Poslední jednoznačná poloha na trase“. Platnost se řídí původním měřením a nová nejednoznačná data ji neprodlužují. Po vypršení, ztrátě živého odběru, zrušení spoje nebo změně detailu se bod odstraní; stav je pouze v paměti otevřeného dialogu.

@@ -908,3 +908,299 @@ test("trip equipment is visible below stops and technical timetable codes need e
   await notes.locator("summary").click();
   await expect(notes.getByText(/^Grafikony:/)).toBeVisible();
 });
+
+test("live vehicle tracking shares the selected journey, shows delay and removes expired GPS", async ({
+  page,
+}) => {
+  let sessions = 0,
+    closed = 0;
+  await page.route("**/api/transport/tracking/", async (route) => {
+    sessions++;
+    const { id } = route.request().postDataJSON();
+    await route.fulfill({
+      json: {
+        success: true,
+        data: {
+          status: "available",
+          url: "ws://localhost:4328/fixture-tracking",
+          ticket: id,
+          expiresAt: new Date(Date.now() + 900000).toISOString(),
+        },
+      },
+    });
+  });
+  await page.routeWebSocket("ws://localhost:4328/fixture-tracking", (ws) => {
+    ws.onClose(() => {
+      closed++;
+    });
+    ws.onMessage((message) => {
+      const m = JSON.parse(String(message));
+      if (m.type !== "subscribe") return;
+      const now = Date.now();
+      ws.send(
+        JSON.stringify({
+          type: "observation",
+          trip: m.ticket,
+          data: {
+            status: "live",
+            position: { lat: 50.08, lon: 14.42 },
+            observed_at: new Date(now).toISOString(),
+            valid_until: new Date(now + 4000).toISOString(),
+            delay_seconds: 480,
+            cancelled: false,
+          },
+        }),
+      );
+    });
+  });
+  await page.goto(`/spojeni/?${query()}`);
+  const scheduledTime = await page
+    .locator(".journey-summary .journey-time")
+    .first()
+    .innerText();
+  const originalDuration =
+    (await page.locator(".journey-duration").first().textContent()) ?? "";
+  await page.locator(".journey-summary").first().click();
+  await expect(page.locator(".journey-detail [data-delay-badge]")).toHaveText(
+    "Zpoždění 8 min",
+  );
+  const [hours, minutes] = scheduledTime.trim().split(":").map(Number);
+  const delayed = (hours * 60 + minutes + 8) % (24 * 60);
+  const delayedLabel = `${Math.floor(delayed / 60)
+    .toString()
+    .padStart(2, "0")}:${(delayed % 60).toString().padStart(2, "0")}`;
+  await expect(
+    page.locator(".journey-summary .journey-time").first(),
+  ).toHaveText(delayedLabel);
+  await expect(page.locator(".journey-duration").first()).toHaveText(
+    originalDuration,
+  );
+  await page.locator("[data-trip-open]").first().click();
+  await expect(
+    page.locator("[data-trip-dialog] [data-vehicle-map]"),
+  ).toBeVisible();
+  expect(sessions).toBe(1);
+  await expect(
+    page.locator("[data-trip-dialog] .trip-stops time").first(),
+  ).toContainText("≈");
+  await expect(
+    page.locator("[data-trip-dialog] [data-vehicle-map]"),
+  ).toHaveCount(0, { timeout: 8000 });
+  await expect(page.locator(".journey-detail [data-delay-badge]")).toHaveCount(
+    0,
+  );
+  await page.locator("[data-close-trip]").click();
+  await page.locator(".journey-summary").first().click();
+  await expect.poll(() => closed).toBe(1);
+});
+
+for (const width of [390, 1280]) {
+  test(`trip timeline places live GPS between row anchors and follows resizing (${width}px)`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: 900 });
+    let push: (lat: number, lon: number, ttl?: number) => void = () => {};
+    await page.route("**/api/transport/tracking/", async (route) => {
+      const { id } = route.request().postDataJSON();
+      await route.fulfill({
+        json: {
+          success: true,
+          data: {
+            status: "available",
+            url: "ws://localhost:4328/timeline-fixture",
+            ticket: id,
+            expiresAt: new Date(Date.now() + 900000).toISOString(),
+          },
+        },
+      });
+    });
+    await page.routeWebSocket("ws://localhost:4328/timeline-fixture", (ws) => {
+      ws.onMessage((message) => {
+        const m = JSON.parse(String(message));
+        if (m.type !== "subscribe") return;
+        push = (lat, lon, ttl = 30000) => {
+          const now = Date.now();
+          ws.send(
+            JSON.stringify({
+              type: "observation",
+              trip: m.ticket,
+              data: {
+                status: "live",
+                position: { lat, lon },
+                observed_at: new Date(now).toISOString(),
+                valid_until: new Date(now + ttl).toISOString(),
+                delay_seconds: 480,
+                cancelled: false,
+              },
+            }),
+          );
+        };
+        push(50.0775, 14.4255);
+      });
+    });
+    await page.goto(`/spojeni/?${query()}`);
+    await page.locator("[data-summary-trip]").first().click();
+    const dialog = page.locator("[data-trip-dialog]");
+    await expect(dialog.locator("[data-trip-point]")).toHaveCount(3);
+    const dot = dialog.locator("[data-trip-vehicle-dot]");
+    await expect(dot).toHaveAttribute("data-from", "0");
+    await expect(dot).toHaveAttribute("data-to", "1");
+    await expect(dot).toHaveAttribute(
+      "aria-label",
+      /mezi zastávkami Praha, Muzeum a Praha, Malostranská/,
+    );
+    const aligned = () =>
+      dialog.evaluate((element) => {
+        const a = element
+            .querySelector('[data-trip-point="0"]')!
+            .getBoundingClientRect(),
+          b = element
+            .querySelector('[data-trip-point="1"]')!
+            .getBoundingClientRect(),
+          marker = element
+            .querySelector("[data-trip-vehicle-dot]")!
+            .getBoundingClientRect(),
+          clock = element
+            .querySelector(".trip-call time")!
+            .getBoundingClientRect();
+        const markerY = marker.y + marker.height / 2,
+          mean = (a.y + a.height / 2 + b.y + b.height / 2) / 2;
+        return (
+          Math.abs(markerY - mean) < 2 &&
+          Math.abs(marker.x + marker.width / 2 - a.x - a.width / 2) < 2 &&
+          a.right < clock.left
+        );
+      });
+    await expect.poll(aligned).toBe(true);
+    await dialog.locator("[data-trip-timeline]").scrollIntoViewIfNeeded();
+    await page.screenshot({ path: testInfo.outputPath("timeline.png") });
+    await page.setViewportSize({
+      width: width === 390 ? 950 : 390,
+      height: 800,
+    });
+    await expect.poll(aligned).toBe(true);
+    push(50.2, 14.6);
+    await expect(dot).toHaveAttribute("data-retained", "true");
+    await expect(dot).toHaveAttribute("data-from", "0");
+    await expect(dot).toHaveAttribute("data-to", "1");
+    await expect.poll(aligned).toBe(true);
+    await expect(dot).toHaveAttribute(
+      "aria-label",
+      /Poslední jednoznačná poloha/,
+    );
+    push(50.08, 14.421);
+    await expect(dot).not.toHaveAttribute("data-retained", "true");
+    await expect(dot).toHaveAttribute("data-from", "1");
+    await expect(dot).toHaveAttribute("data-to", "1");
+    await expect(dot).toHaveAttribute(
+      "aria-label",
+      /u zastávky Praha, Malostranská/,
+    );
+    push(50.08, 14.421, 1200);
+    // Wait until the new observation is applied, then a newer unresolved GPS must not renew its expiry.
+    await expect
+      .poll(() => dialog.locator("[data-vehicle-map]").count())
+      .toBe(1);
+    await page.waitForTimeout(100);
+    push(50.2, 14.6);
+    await expect(dot).toHaveAttribute("data-retained", "true");
+    await expect(dot).toHaveAttribute("data-from", "1");
+    await expect(dot).toHaveCount(0, { timeout: 4000 });
+    await expect(dialog.locator("[data-trip-point]")).toHaveCount(3);
+  });
+}
+
+test("unsupported tracking keeps the stop rail but invents no red dot or delay badge", async ({
+  page,
+}) => {
+  await page.route("**/api/transport/tracking/", (route) =>
+    route.fulfill({ json: { success: true, data: { status: "unsupported" } } }),
+  );
+  await page.goto(`/spojeni/?${query()}`);
+  await page.locator("[data-summary-trip]").first().click();
+  const dialog = page.locator("[data-trip-dialog]");
+  await expect(dialog.locator("[data-trip-point]")).toHaveCount(3);
+  await expect(dialog.locator("[data-trip-vehicle-dot]")).toHaveCount(0);
+  await expect(dialog.locator("[data-delay-badge]")).toHaveCount(0);
+  await expect(
+    dialog.getByText(
+      "Poskytovatel pro tento spoj neposkytuje ověřenou živou polohu.",
+    ),
+  ).toBeVisible();
+});
+
+test("each accordion service has its own fresh delay badge even when GPS is unsupported", async ({
+  page,
+}) => {
+  const stop = (name: string) => ({
+    id: null,
+    name,
+    lat: 50,
+    lon: 14,
+    platform: null,
+  });
+  const common = {
+    mode: "tram",
+    operator: "",
+    geometry: null,
+    realtime: true,
+    cancelled: false,
+    minTransferSeconds: 60,
+    predictionValidUntil: new Date(Date.now() + 30000).toISOString(),
+  };
+  const data = {
+    journeys: [
+      {
+        key: "two-services",
+        duration: 3600,
+        transfers: 1,
+        source: {
+          provider: "fixture",
+          mode: "live",
+          limited: false,
+          attribution: "fixture",
+        },
+        legs: [
+          {
+            ...common,
+            line: "3",
+            tripId: "serviceA",
+            from: stop("A"),
+            to: stop("B"),
+            scheduledDeparture: "2026-10-06T08:00:00Z",
+            scheduledArrival: "2026-10-06T08:20:00Z",
+            expectedDeparture: "2026-10-06T08:08:00Z",
+            expectedArrival: "2026-10-06T08:28:00Z",
+            delaySeconds: 480,
+          },
+          {
+            ...common,
+            line: "12",
+            tripId: "serviceB",
+            from: stop("B"),
+            to: stop("C"),
+            scheduledDeparture: "2026-10-06T08:40:00Z",
+            scheduledArrival: "2026-10-06T09:00:00Z",
+            expectedDeparture: null,
+            expectedArrival: "2026-10-06T09:03:00Z",
+          },
+        ],
+      },
+    ],
+    partial: false,
+  };
+  await page.route("**/api/transport/search/", (r) =>
+    r.fulfill({ json: { success: true, data } }),
+  );
+  await page.route("**/api/transport/tracking/", (r) =>
+    r.fulfill({ json: { success: true, data: { status: "unsupported" } } }),
+  );
+  await page.goto(`/spojeni/?${query()}`);
+  await page.locator(".journey-summary").click();
+  await expect(
+    page.locator(".journey-detail .leg").nth(0).locator("[data-delay-badge]"),
+  ).toHaveText("Zpoždění 8 min");
+  await expect(
+    page.locator(".journey-detail .leg").nth(1).locator("[data-delay-badge]"),
+  ).toHaveText("Zpoždění 3 min");
+});

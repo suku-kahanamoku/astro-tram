@@ -29,8 +29,10 @@ export interface Geometry {
   coordinates: number[][];
 }
 export interface Leg {
+  delaySeconds?: number | null;
   arrivalEstimated?: boolean;
   predictionValidUntil?: string | null;
+  minTransferSeconds?: number;
   mode: string;
   from: Stop;
   to: Stop;
@@ -46,6 +48,7 @@ export interface Leg {
   geometry: Geometry | null;
 }
 export interface Journey {
+  transferAtRisk?: boolean;
   key: string;
   duration: number;
   transfers: number;
@@ -81,6 +84,9 @@ export interface TripStop {
   stop: Stop;
   arrival: string | null;
   departure: string | null;
+  expectedArrival?: string | null;
+  expectedDeparture?: string | null;
+  predictionValidUntil?: string | null;
 }
 export interface TripMetadata {
   features?: TripFeature[];

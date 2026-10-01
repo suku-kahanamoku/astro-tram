@@ -504,6 +504,7 @@
 }
 .trip-stops time {
   color: var(--muted);
+  white-space: nowrap;
 }
 .results-pagination {
   display: flex;
@@ -1289,4 +1290,88 @@ a.trip-open:active {
   width: 100%;
   border-radius: 1rem;
   overflow: hidden;
+}
+
+/* The rail follows actual row heights, including wrapped names and tariff zones. */
+.trip-timeline {
+  position: relative;
+  --trip-axis-x: 8px;
+  --trip-axis-y: calc(10px + 0.7em);
+  --trip-axis-space: 26px;
+}
+.trip-dialog .trip-timeline .trip-stops {
+  margin-top: 0;
+}
+.trip-dialog .trip-timeline .trip-stops > .trip-call {
+  position: relative;
+  padding-left: var(--trip-axis-space);
+}
+.trip-dialog .trip-columns.has-timeline {
+  padding-left: 26px;
+}
+.trip-timeline .trip-call::before {
+  content: "";
+  position: absolute;
+  left: var(--trip-axis-x);
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--line);
+}
+.trip-timeline .trip-call[data-timeline-start]::before {
+  top: var(--trip-axis-y);
+}
+.trip-timeline .trip-call[data-timeline-end]::before {
+  height: var(--trip-axis-y);
+  bottom: auto;
+}
+.trip-timeline .trip-call[data-timeline-start][data-timeline-end]::before {
+  display: none;
+}
+.trip-axis-point {
+  position: absolute;
+  left: var(--trip-axis-x);
+  top: var(--trip-axis-y);
+  width: 8px;
+  height: 8px;
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--muted);
+  border-radius: 50%;
+  background: var(--paper);
+  z-index: 1;
+}
+.is-selected-segment > .trip-axis-point {
+  border-color: var(--ink);
+}
+.trip-vehicle-dot {
+  position: absolute;
+  left: var(--trip-axis-x);
+  width: 10px;
+  height: 10px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow:
+    0 0 0 3px var(--paper),
+    0 0 0 5px color-mix(in srgb, var(--red) 20%, transparent);
+  z-index: 2;
+  transition: top 350ms ease;
+}
+.trip-timeline-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 10px 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .trip-vehicle-dot {
+    transition: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .trip-dialog .trip-columns.has-timeline,
+  .trip-timeline .trip-stops li.trip-call.has-details {
+    grid-template-columns: 48px minmax(0, 1fr) 34px 58px;
+  }
 }

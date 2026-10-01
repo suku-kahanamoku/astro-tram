@@ -1,5 +1,4 @@
 import DelayBadge from "./DelayBadge";
-import { trackedLeg, transferAtRisk } from "../providers/tracking";
 import type { TripObservation } from "../types";
 import { Fragment } from "react";
 import Collapse from "../../UIModule/components/Collapse";
@@ -124,18 +123,13 @@ function JourneyDetail({
           {t.routeMap} <Icon name="map" size={16} />
         </NavLink>
       </div>
-      {transferAtRisk(
-        journey.legs.map((l) =>
-          trackedLeg(l, l.tripId ? tracking[l.tripId] : undefined),
-        ),
-      ) && (
+      {journey.transferAtRisk && (
         <p className="notice" role="status">
           {t.transferAtRisk}
         </p>
       )}
-      {journey.legs.map((original, i) => {
-        const live = original.tripId ? tracking[original.tripId] : undefined;
-        const l = trackedLeg(original, live);
+      {journey.legs.map((l, i) => {
+        const live = l.tripId ? tracking[l.tripId] : undefined;
         const expanded = url.searchParams.get("stops") === String(i);
         const segment = expanded && trip ? tripSegment(trip, l) : null;
         return (
@@ -210,6 +204,7 @@ function JourneyDetail({
                               segment.to,
                             ),
                           }}
+                          live={live}
                           t={t}
                           locale={locale}
                           current={url}
@@ -227,15 +222,15 @@ function JourneyDetail({
                 <StopLink stop={l.to} index={i} side="to" url={url} t={t} />
               </div>
             </div>
-            <DelayBadge leg={original} live={live} t={t} />
+            <DelayBadge leg={l} live={live} t={t} />
             {l.arrivalEstimated && (
               <small className="leg-info">{t.arrivalEstimated}</small>
             )}
             <p className="leg-info">
-              {date(l.scheduledDeparture, locale)}
-              {date(l.scheduledDeparture, locale) !==
-              date(l.scheduledArrival, locale)
-                ? ` → ${date(l.scheduledArrival, locale)}`
+              {date(l.expectedDeparture ?? l.scheduledDeparture, locale)}
+              {date(l.expectedDeparture ?? l.scheduledDeparture, locale) !==
+              date(l.expectedArrival ?? l.scheduledArrival, locale)
+                ? ` → ${date(l.expectedArrival ?? l.scheduledArrival, locale)}`
                 : ""}{" "}
               · {l.realtime ? t.live : t.scheduled}
               {l.expectedDeparture &&
@@ -300,7 +295,7 @@ export default function JourneyResults({
                 tripStop: null,
               })}
               aria-expanded={open}
-              aria-label={`${open ? t.closeDetail : t.detail} ${time(first.scheduledDeparture, locale)}`}
+              aria-label={`${open ? t.closeDetail : t.detail} ${time(first.expectedDeparture ?? first.scheduledDeparture, locale)}`}
             >
               <div className="journey-route">
                 <time
@@ -322,7 +317,9 @@ export default function JourneyResults({
                 <h3>{last.to.name}</h3>
               </div>
               <div className="journey-duration">
-                {duration(j.duration, t)}
+                {j.transferAtRisk
+                  ? t.connectionAtRisk
+                  : duration(j.duration, t)}
                 <small>
                   {j.transfers
                     ? `${j.transfers} ${j.transfers === 1 ? t.transfer : t.transfers}`
@@ -335,7 +332,10 @@ export default function JourneyResults({
             </NavLink>
             <div className="journey-summary-footer">
               <small className="journey-date">
-                {date(first.scheduledDeparture, locale)}
+                {date(
+                  first.expectedDeparture ?? first.scheduledDeparture,
+                  locale,
+                )}
               </small>
               <div className="route-badges summary-badges">
                 {j.legs.map((l, i) => (

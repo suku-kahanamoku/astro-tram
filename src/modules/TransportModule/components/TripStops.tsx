@@ -1,3 +1,5 @@
+import { callTime } from "../providers/tracking";
+import type { TripObservation } from "../types";
 import { Fragment } from "react";
 import { NavLink } from "../../UIModule/hooks/useUrlNavigation";
 import { tripSegment } from "../providers/trip";
@@ -6,18 +8,22 @@ import type { Trip, Leg } from "../types";
 import type { Dictionary } from "../providers/translations";
 export default function TripStops({
   trip,
+  live,
   t,
   locale,
   leg,
   current,
   stopOffset = 0,
+  timeline = false,
 }: {
   trip: Trip;
+  live?: TripObservation;
   t: Dictionary;
   locale: string;
   leg?: Leg;
   current?: URL;
   stopOffset?: number;
+  timeline?: boolean;
 }) {
   const segment = leg ? tripSegment(trip, leg) : null,
     details = hasStopDetails(trip);
@@ -27,6 +33,11 @@ export default function TripStops({
         <li className="notice">{t.fallback}</li>
       )}
       {trip.stops.map((c, i) => {
+        const display = callTime(
+          c,
+          c.departure ? "departure" : "arrival",
+          live,
+        );
         const index = i + stopOffset,
           selected = segment !== null && i >= segment.from && i <= segment.to;
         const href =
@@ -50,11 +61,21 @@ export default function TripStops({
           <li
             key={`${c.stop.id}:${index}`}
             className={`trip-call ${details ? "has-details" : ""}${selected ? " is-selected-segment" : ""}`}
+            data-timeline-start={timeline && i === 0 ? true : undefined}
+            data-timeline-end={
+              timeline && i === trip.stops.length - 1 ? true : undefined
+            }
           >
-            <time>
-              {c.departure || c.arrival
-                ? time((c.departure ?? c.arrival)!, locale)
-                : "—"}
+            {timeline && (
+              <span
+                className="trip-axis-point"
+                data-trip-point={index}
+                aria-hidden="true"
+              />
+            )}
+            <time title={display.estimated ? t.arrivalEstimated : undefined}>
+              {display.estimated && <span aria-hidden="true">≈ </span>}
+              {display.value ? time(display.value, locale) : "—"}
             </time>
             <span className="trip-stop-name">
               {href ? (

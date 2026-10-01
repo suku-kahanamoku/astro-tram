@@ -146,9 +146,23 @@ function leg(value: unknown): Leg {
       l.realtime === true ? instant(l.expected_departure) : null,
     expectedArrival: l.realtime === true ? instant(l.expected_arrival) : null,
     realtime: l.realtime === true,
+    delaySeconds:
+      l.realtime === true &&
+      typeof l.delay_seconds === "number" &&
+      Number.isFinite(l.delay_seconds) &&
+      Math.abs(l.delay_seconds) <= 86400
+        ? l.delay_seconds
+        : null,
     arrivalEstimated: l.arrival_estimated === true,
+    minTransferSeconds:
+      typeof l.min_transfer_seconds === "number" && l.min_transfer_seconds >= 0
+        ? Math.min(l.min_transfer_seconds, 1800)
+        : undefined,
     predictionValidUntil:
-      l.realtime === true ? new Date(Date.now() + 30_000).toISOString() : null,
+      l.realtime === true
+        ? (instant(l.prediction_valid_until) ??
+          new Date(Date.now() + 30_000).toISOString())
+        : null,
     cancelled: l.cancelled === true,
     tripId: id(l.trip_id),
     line: text(object(l.line).code) || text(object(l.line).name),
@@ -337,6 +351,14 @@ export function createTransportProvider(core: CoreClient) {
             stop: stop(call.stop),
             arrival: instant(call.scheduled_arrival),
             departure: instant(call.scheduled_departure),
+            expectedArrival:
+              call.realtime === true ? instant(call.expected_arrival) : null,
+            expectedDeparture:
+              call.realtime === true ? instant(call.expected_departure) : null,
+            predictionValidUntil:
+              call.realtime === true
+                ? new Date(Date.now() + 30000).toISOString()
+                : null,
             tariffZones: (Array.isArray(call.tariff_zones)
               ? call.tariff_zones
               : []

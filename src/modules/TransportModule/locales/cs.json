@@ -155,5 +155,11 @@
   "trackingConnecting": "Zjišťujeme aktuální polohu…",
   "trackingUnavailable": "Aktuální poloha není dostupná.",
   "transferAtRisk": "Podle aktuálních časů nemusíš stihnout přestup. Vyhledej spojení znovu.",
-  "arrivalEstimated": "Příjezd je odhadnut podle aktuálního zpoždění."
+  "arrivalEstimated": "Příjezd je odhadnut podle aktuálního zpoždění.",
+  "connectionAtRisk": "Přestup nevychází",
+  "vehicleAtStop": "Vozidlo u zastávky {stop}",
+  "vehicleBetweenStops": "Vozidlo mezi zastávkami {from} a {to}",
+  "vehicleTimelineLastKnown": "Poslední jednoznačná poloha na trase",
+  "vehicleTimelineHint": "Přibližné umístění na ose zastávek podle aktuální GPS.",
+  "vehicleTimelineUnavailable": "Živou GPS nelze jednoznačně přiřadit k úseku mezi zastávkami. Polohu najdeš na mapě."
 }

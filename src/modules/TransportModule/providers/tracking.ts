@@ -1,5 +1,8 @@
-import type { TripObservation, Leg } from "../types";
+import type { TripObservation, Leg, Journey, TripStop } from "../types";
 import { validCoordinates, validInstant } from "./state";
+const trackingInstant = (value: unknown): value is string =>
+  typeof value === "string" &&
+  validInstant(value.replace(/\.\d{1,3}(?=Z|[+-])/, ""));
 export const unavailableObservation = (
   status = "unavailable",
 ): TripObservation => ({
@@ -24,8 +27,8 @@ export function observation(value: unknown, now = Date.now()): TripObservation {
     );
   const p = r.position as { lat?: unknown; lon?: unknown } | null;
   if (
-    !validInstant(r.observed_at) ||
-    !validInstant(r.valid_until) ||
+    !trackingInstant(r.observed_at) ||
+    !trackingInstant(r.valid_until) ||
     Date.parse(r.observed_at) > now + 5000 ||
     Date.parse(r.observed_at) + 30000 <= now ||
     Date.parse(r.valid_until) <= now ||
@@ -50,62 +53,168 @@ export function observation(value: unknown, now = Date.now()): TripObservation {
     cancelled: typeof r.cancelled === "boolean" ? r.cancelled : null,
   };
 }
-export function delayMinutes(leg: Leg, live?: TripObservation): number {
-  if (live?.status === "live" && live.delaySeconds !== null)
+export function delayMinutes(
+  leg: Leg,
+  live?: TripObservation,
+  now = Date.now(),
+): number {
+  // A missing GPS observation does not invalidate a separate fresh stop-time prediction.
+  if (
+    live?.status === "live" &&
+    live.delaySeconds !== null &&
+    Number.isFinite(live.delaySeconds) &&
+    live.observedAt &&
+    live.validUntil &&
+    Date.parse(live.validUntil) > now &&
+    Date.parse(live.observedAt) + 30000 > now &&
+    Date.parse(live.observedAt) <= now + 5000
+  )
     return Math.max(0, Math.ceil(live.delaySeconds / 60));
-  if (live && !["connecting", "unsupported", "disabled"].includes(live.status))
-    return 0;
   if (
     !leg.realtime ||
-    !leg.expectedDeparture ||
     !leg.predictionValidUntil ||
-    Date.parse(leg.predictionValidUntil) <= Date.now()
+    !Number.isFinite(Date.parse(leg.predictionValidUntil)) ||
+    Date.parse(leg.predictionValidUntil) <= now
   )
     return 0;
-  return Math.max(
-    0,
-    Math.ceil(
-      (Date.parse(leg.expectedDeparture) - Date.parse(leg.scheduledDeparture)) /
-        60000,
-    ),
+  if (typeof leg.delaySeconds === "number" && Number.isFinite(leg.delaySeconds))
+    return Math.max(0, Math.ceil(leg.delaySeconds / 60));
+  const delays = [
+    [leg.expectedDeparture, leg.scheduledDeparture],
+    [leg.expectedArrival, leg.scheduledArrival],
+  ].flatMap(([expected, scheduled]) =>
+    expected &&
+    scheduled &&
+    Number.isFinite(Date.parse(expected)) &&
+    Number.isFinite(Date.parse(scheduled))
+      ? [(Date.parse(expected) - Date.parse(scheduled)) / 60000]
+      : [],
   );
+  return Math.max(0, ...delays.map(Math.ceil));
 }
-/** Current vehicle delay is an estimate for future alighting; never a guaranteed held connection. */
-export function trackedLeg(leg: Leg, live?: TripObservation): Leg {
-  if (
-    !live ||
-    live.status !== "live" ||
-    live.delaySeconds === null ||
-    leg.mode === "walk"
-  )
-    return leg;
-  const shift = (time: string) =>
-    new Date(Date.parse(time) + live.delaySeconds! * 1000).toISOString();
-  return {
-    ...leg,
-    expectedDeparture: shift(leg.scheduledDeparture),
-    expectedArrival: shift(leg.scheduledArrival),
+/** Predictions are ephemeral. Preserve scheduled fields for URLs and exact stop matching. */
+export function trackedLeg(
+  leg: Leg,
+  live?: TripObservation,
+  now = Date.now(),
+): Leg {
+  const expired =
+    !!leg.predictionValidUntil && Date.parse(leg.predictionValidUntil) <= now;
+  let result = expired
+    ? {
+        ...leg,
+        expectedDeparture: null,
+        expectedArrival: null,
+        realtime: false,
+        delaySeconds: null,
+        arrivalEstimated: false,
+      }
+    : { ...leg };
+  if (live?.status !== "live") return result;
+  if (live.cancelled !== null) result.cancelled = live.cancelled;
+  if (live.delaySeconds === null || leg.mode === "walk") return result;
+  // Position delay estimates future calls only, not historical stop times.
+  const observed = Date.parse(live.observedAt ?? "");
+  const shift = (scheduled: string, prediction: string | null) => {
+    const estimate = Date.parse(scheduled) + live.delaySeconds! * 1000;
+    if (Number.isFinite(observed) && estimate < observed) return prediction;
+    return new Date(estimate).toISOString();
+  };
+  result = {
+    ...result,
+    expectedDeparture: shift(leg.scheduledDeparture, result.expectedDeparture),
+    expectedArrival: shift(leg.scheduledArrival, result.expectedArrival),
     realtime: true,
     arrivalEstimated: true,
-    cancelled: live.cancelled === true,
+    predictionValidUntil: live.validUntil,
   };
+  return result;
+}
+/** One calculation feeds summary, accordion, trip dialog and map selection. */
+export function trackedJourney(
+  journey: Journey,
+  observations: Record<string, TripObservation>,
+  now = Date.now(),
+): Journey {
+  let ready: number | undefined,
+    previousTransit = false,
+    risk = false;
+  const legs = journey.legs.map((original) => {
+    let leg = trackedLeg(
+      original,
+      original.tripId ? observations[original.tripId] : undefined,
+      now,
+    );
+    const scheduledDuration =
+      Date.parse(leg.scheduledArrival) - Date.parse(leg.scheduledDeparture);
+    let dep = Date.parse(leg.expectedDeparture ?? leg.scheduledDeparture),
+      arr = Date.parse(leg.expectedArrival ?? leg.scheduledArrival);
+    if (leg.cancelled) risk = true;
+    if (leg.mode === "walk" && ready !== undefined) {
+      dep = Math.max(Date.parse(leg.scheduledDeparture), ready);
+      arr = dep + scheduledDuration;
+      const moved = dep !== Date.parse(leg.scheduledDeparture);
+      leg = {
+        ...leg,
+        expectedDeparture: moved ? new Date(dep).toISOString() : null,
+        expectedArrival: moved ? new Date(arr).toISOString() : null,
+        realtime: moved,
+        arrivalEstimated: moved,
+      };
+    } else if (
+      ready !== undefined &&
+      dep <
+        ready + (leg.minTransferSeconds ?? (previousTransit ? 60 : 0)) * 1000
+    )
+      risk = true;
+    ready = arr;
+    previousTransit = leg.mode !== "walk";
+    return leg;
+  });
+  const first = legs[0],
+    last = legs.at(-1);
+  const duration =
+    first && last
+      ? Math.max(
+          0,
+          (Date.parse(last.expectedArrival ?? last.scheduledArrival) -
+            Date.parse(first.expectedDeparture ?? first.scheduledDeparture)) /
+            1000,
+        )
+      : journey.duration;
+  return { ...journey, legs, duration, transferAtRisk: risk };
 }
 export function transferAtRisk(legs: Leg[]): boolean {
-  let ready: number | undefined;
-  let transit = false;
-  for (const l of legs) {
-    if (l.cancelled) return true;
-    const dep = Date.parse(l.expectedDeparture ?? l.scheduledDeparture),
-      arr = Date.parse(l.expectedArrival ?? l.scheduledArrival);
-    if (l.mode === "walk") {
-      ready = Math.max(ready ?? dep, dep) + Math.max(0, arr - dep);
-      transit = false;
-    } else {
-      if (ready !== undefined && dep < ready + (transit ? 60000 : 0))
-        return true;
-      ready = arr;
-      transit = true;
-    }
+  return (
+    trackedJourney({ legs, duration: 0 } as Journey, {}).transferAtRisk === true
+  );
+}
+/** Individual call prediction wins; a vehicle delay only estimates future calls. */
+export function callTime(
+  call: TripStop,
+  event: "arrival" | "departure",
+  live?: TripObservation,
+  now = Date.now(),
+): { value: string | null; estimated: boolean } {
+  const scheduled =
+    call[event] ?? call[event === "arrival" ? "departure" : "arrival"];
+  const predicted =
+    event === "arrival" ? call.expectedArrival : call.expectedDeparture;
+  if (
+    predicted &&
+    call.predictionValidUntil &&
+    Date.parse(call.predictionValidUntil) > now
+  )
+    return { value: predicted, estimated: false };
+  if (
+    scheduled &&
+    live?.status === "live" &&
+    live.delaySeconds !== null &&
+    live.observedAt
+  ) {
+    const value = Date.parse(scheduled) + live.delaySeconds * 1000;
+    if (value >= Date.parse(live.observedAt))
+      return { value: new Date(value).toISOString(), estimated: true };
   }
-  return false;
+  return { value: scheduled, estimated: false };
 }

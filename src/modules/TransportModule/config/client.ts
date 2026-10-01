@@ -6,6 +6,13 @@ export const transportClientConfig = {
   gpsFutureToleranceMs: 5_000,
   gpsTimeoutMs: 12_000,
   autocompleteGpsTimeoutMs: 1_500,
+  timeline: {
+    atStopMeters: 35,
+    maxOffsetMeters: 120,
+    ambiguityMeters: 25,
+    minSegmentMeters: 10,
+    maxSegmentMeters: 10000,
+  },
   mapZoom: { stop: 17, picker: 13, journeyFitMax: 15, journeyOffset: 1 },
   defaultMapCenter: [14.42, 50.075] as [number, number],
   mapCenters: { NO: [10.752, 59.911] } as Record<string, [number, number]>,

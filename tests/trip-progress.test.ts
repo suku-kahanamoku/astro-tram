@@ -1,0 +1,109 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { tripProgress } from "../src/modules/TransportModule/providers/tripProgress";
+import {
+  delayMinutes,
+  unavailableObservation,
+} from "../src/modules/TransportModule/providers/tracking";
+import type {
+  Trip,
+  TripObservation,
+  Leg,
+} from "../src/modules/TransportModule/types";
+const now = Date.parse("2026-10-01T10:00:00Z");
+const trip: Trip = {
+  sourceMode: "live",
+  stops: [0, 1, 2].map((i) => ({
+    arrival: null,
+    departure: null,
+    stop: {
+      id: String(i),
+      name: `Stop ${i}`,
+      lat: 50 + i * 0.01,
+      lon: 14,
+      platform: null,
+    },
+  })),
+};
+const live = (lat = 50.005, lon = 14): TripObservation => ({
+  status: "live",
+  position: { lat, lon },
+  observedAt: new Date(now).toISOString(),
+  validUntil: new Date(now + 30000).toISOString(),
+  delaySeconds: 480,
+  cancelled: false,
+});
+
+test("schematic GPS projection locates a vehicle between stops without needing timetable times", () => {
+  const p = tripProgress(trip, live(), now)!;
+  assert.equal(p.from, 0);
+  assert.equal(p.to, 1);
+  assert.ok(Math.abs(p.fraction - 0.5) < 0.00001);
+  assert.equal(p.atStop, false);
+  assert.deepEqual(tripProgress(trip, live(50.01), now), {
+    from: 1,
+    to: 1,
+    fraction: 0,
+    atStop: true,
+  });
+  assert.equal(tripProgress(trip, undefined, now), null);
+  assert.equal(
+    tripProgress(trip, unavailableObservation("unsupported"), now),
+    null,
+  );
+});
+test("timeline rejects stale, future, cancelled, invalid and off-route measurements", () => {
+  assert.equal(tripProgress(trip, live(), now + 30000), null);
+  assert.equal(tripProgress(trip, live(), now - 6000), null);
+  assert.equal(tripProgress(trip, { ...live(), cancelled: true }, now), null);
+  assert.equal(tripProgress(trip, live(95), now), null);
+  assert.equal(tripProgress(trip, live(50.005, 14.1), now), null);
+  assert.equal(tripProgress(trip, live(49.99), now), null);
+  assert.equal(
+    tripProgress(
+      trip,
+      { ...live(), validUntil: new Date(now + 31000).toISOString() },
+      now,
+    ),
+    null,
+  );
+});
+test("loops, overlapping routes and missing coordinates never select an arbitrary occurrence", () => {
+  const loop = {
+    ...trip,
+    stops: [trip.stops[0], trip.stops[1], trip.stops[0]],
+  };
+  assert.equal(tripProgress(loop, live(50), now), null);
+  assert.equal(tripProgress(loop, live(50.005), now), null);
+  const missing = {
+    ...trip,
+    stops: trip.stops.map((c, i) =>
+      i === 1 ? { ...c, stop: { ...c.stop, lat: null } } : c,
+    ),
+  };
+  assert.equal(tripProgress(missing, live(50.005), now), null);
+});
+test("badges preserve independent arrival-only and numeric delays even without GPS", () => {
+  const leg = {
+    mode: "tram",
+    realtime: true,
+    predictionValidUntil: new Date(now + 30000).toISOString(),
+    scheduledDeparture: "2026-10-01T10:00:00Z",
+    scheduledArrival: "2026-10-01T10:20:00Z",
+    expectedDeparture: null,
+    expectedArrival: "2026-10-01T10:28:00Z",
+  } as Leg;
+  assert.equal(
+    delayMinutes(leg, unavailableObservation("unsupported"), now),
+    8,
+  );
+  assert.equal(delayMinutes(leg, unavailableObservation(), now), 8);
+  assert.equal(delayMinutes({ ...leg, delaySeconds: 120 }, undefined, now), 2);
+  assert.equal(delayMinutes({ ...leg, delaySeconds: 0 }, undefined, now), 0);
+  assert.equal(delayMinutes(leg, undefined, now + 30000), 0);
+  assert.equal(delayMinutes(leg, { ...live(), delaySeconds: 0 }, now), 0);
+  assert.equal(
+    delayMinutes({ ...leg, realtime: false }, live(), now + 30000),
+    0,
+  );
+});

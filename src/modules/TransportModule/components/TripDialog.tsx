@@ -5,7 +5,7 @@ import Dialog from "../../UIModule/components/Dialog";
 import Icon from "../../UIModule/components/TransitIcon";
 import { modeLabel } from "../providers/transportIcons";
 import { hasStopDetails } from "../providers/render";
-import TripStops from "./TripStops";
+import TripTimeline from "./TripTimeline";
 import TripLegend from "./TripLegend";
 import type { Trip, Leg } from "../types";
 import type { Dictionary } from "../providers/translations";
@@ -92,7 +92,7 @@ export default function TripDialog({
           {t.requestStopLegend}
         </p>
         <div
-          className="trip-columns"
+          className="trip-columns has-timeline"
           data-trip-columns
           hidden={!trip || !hasStopDetails(trip)}
           aria-hidden="true"
@@ -102,26 +102,25 @@ export default function TripDialog({
           <span>{t.tariffZones}</span>
           <span title={t.routeKmHint}>{t.routeKm}</span>
         </div>
-        <ul className="trip-stops" data-trip-dialog-stops aria-live="polite">
-          {error ? (
-            <li>{t.tripError}</li>
-          ) : !trip ? (
-            <li className="trip-loading">
-              <span className="spinner" aria-hidden="true" />
-              {t.loadingTrip}
+        {trip && !error && trip.stops.length ? (
+          <TripTimeline
+            trip={trip}
+            live={live}
+            leg={leg}
+            t={t}
+            locale={locale}
+            url={url}
+          />
+        ) : (
+          <ul className="trip-stops" data-trip-dialog-stops aria-live="polite">
+            <li className={!trip && !error ? "trip-loading" : undefined}>
+              {!trip && !error && (
+                <span className="spinner" aria-hidden="true" />
+              )}
+              {error ? t.tripError : !trip ? t.loadingTrip : t.noTripStops}
             </li>
-          ) : trip.stops.length ? (
-            <TripStops
-              trip={trip}
-              leg={leg}
-              t={t}
-              locale={locale}
-              current={url}
-            />
-          ) : (
-            <li>{t.noTripStops}</li>
-          )}
-        </ul>
+          </ul>
+        )}
       </div>
       <div data-trip-notes hidden={!trip || !!error}>
         {trip && leg && !error && (

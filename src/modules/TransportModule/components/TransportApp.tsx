@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { trackedJourney } from "../providers/tracking";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   UrlNavigationProvider,
   useUrlNavigation,
@@ -45,12 +46,44 @@ function TransportView({
   const { url, navigate } = useUrlNavigation();
   const search = useJourneySearch(results);
   const p = url.searchParams;
-  const selected = search.data?.journeys.find(
+  const selectedOriginal = search.data?.journeys.find(
     (j) => j.key === p.get("journey"),
   );
   const tracking = useTripTracking(
-    selected?.legs.flatMap((l) => (l.tripId ? [l.tripId] : [])) ?? [],
+    selectedOriginal?.legs.flatMap((l) => (l.tripId ? [l.tripId] : [])) ?? [],
   );
+  const [clock, setClock] = useState(() => Date.now());
+  useEffect(() => {
+    if (!search.data) return;
+    const timer = setInterval(() => setClock(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [search.data]);
+  const displayed = useMemo(() => {
+    if (!search.data) return undefined;
+    const journeys = search.data.journeys.map((j) =>
+      trackedJourney(j, tracking, clock),
+    );
+    journeys.sort((a, b) => {
+      if (!!a.transferAtRisk !== !!b.transferAtRisk)
+        return a.transferAtRisk ? 1 : -1;
+      if (search.state.arrive) {
+        const firstA = a.legs[0],
+          firstB = b.legs[0];
+        return (
+          Date.parse(firstB.expectedDeparture ?? firstB.scheduledDeparture) -
+          Date.parse(firstA.expectedDeparture ?? firstA.scheduledDeparture)
+        );
+      }
+      const lastA = a.legs.at(-1)!,
+        lastB = b.legs.at(-1)!;
+      return (
+        Date.parse(lastA.expectedArrival ?? lastA.scheduledArrival) -
+        Date.parse(lastB.expectedArrival ?? lastB.scheduledArrival)
+      );
+    });
+    return { ...search.data, journeys };
+  }, [search.data, search.state.arrive, tracking, clock]);
+  const selected = displayed?.journeys.find((j) => j.key === p.get("journey"));
   const index = (name: string) => {
     const v = p.get(name);
     return v !== null && /^\d+$/.test(v) ? Number(v) : -1;
@@ -202,7 +235,7 @@ function TransportView({
             ) : search.data?.journeys.length ? (
               <JourneyResults
                 tracking={tracking}
-                result={search.data}
+                result={displayed ?? search.data}
                 t={t}
                 locale={locale}
                 url={url}
@@ -211,7 +244,7 @@ function TransportView({
               />
             ) : search.data ? (
               <>
-                <ResolvedPlaces result={search.data} t={t} />
+                <ResolvedPlaces result={displayed ?? search.data} t={t} />
                 <div className="status-card">
                   <h2>{t.empty}</h2>
                   <p>{t.emptyHelp}</p>
@@ -267,7 +300,7 @@ function TransportView({
           !mapResource.trip &&
           !mapResource.error
         }
-        journey={selected}
+        journey={selectedOriginal}
         country={search.state.country}
         t={t}
         onClose={closeMap}

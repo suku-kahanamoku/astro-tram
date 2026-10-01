@@ -155,5 +155,11 @@
   "trackingConnecting": "Aktuelle Position wird ermittelt…",
   "trackingUnavailable": "Aktuelle Position ist nicht verfügbar.",
   "transferAtRisk": "Laut aktuellen Zeiten ist der Anschluss gefährdet. Bitte erneut suchen.",
-  "arrivalEstimated": "Ankunft anhand der aktuellen Verspätung geschätzt."
+  "arrivalEstimated": "Ankunft anhand der aktuellen Verspätung geschätzt.",
+  "connectionAtRisk": "Anschluss gefährdet",
+  "vehicleAtStop": "Fahrzeug bei {stop}",
+  "vehicleBetweenStops": "Fahrzeug zwischen {from} und {to}",
+  "vehicleTimelineLastKnown": "Letzte eindeutig zugeordnete Position auf der Strecke",
+  "vehicleTimelineHint": "Ungefähre Einordnung auf der Haltestellenachse anhand aktueller GPS-Daten.",
+  "vehicleTimelineUnavailable": "Die Live-GPS-Position lässt sich keinem Abschnitt eindeutig zuordnen. Die Position ist auf der Karte sichtbar."
 }

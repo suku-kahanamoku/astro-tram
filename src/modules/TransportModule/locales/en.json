@@ -155,5 +155,11 @@
   "trackingConnecting": "Getting current position…",
   "trackingUnavailable": "Current position is unavailable.",
   "transferAtRisk": "Current times put your transfer at risk. Search for connections again.",
-  "arrivalEstimated": "Arrival is estimated from the current delay."
+  "arrivalEstimated": "Arrival is estimated from the current delay.",
+  "connectionAtRisk": "Connection at risk",
+  "vehicleAtStop": "Vehicle near {stop}",
+  "vehicleBetweenStops": "Vehicle between {from} and {to}",
+  "vehicleTimelineLastKnown": "Last unambiguous position on the route",
+  "vehicleTimelineHint": "Approximate placement on the stop timeline based on current GPS.",
+  "vehicleTimelineUnavailable": "Live GPS cannot be matched unambiguously to a segment between stops. See the position on the map."
 }
