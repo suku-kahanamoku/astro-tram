@@ -1,4 +1,3 @@
-import { usePrefetchTrips } from "../hooks/usePrefetchTrips";
 import { useScrollOnContent } from "../../UIModule/hooks/useScrollOnContent";
 import { TripResources } from "../hooks/TripResources";
 import { expandedJourneys } from "../providers/journeyExpansion";
@@ -6,6 +5,7 @@ import { TrackingContext } from "../hooks/useTrackingSnapshot";
 import { useEffect, useRef, useState } from "react";
 import {
   UrlNavigationProvider,
+  LocalNavigationProvider,
   useUrlNavigation,
 } from "../../UIModule/hooks/useUrlNavigation";
 import { dictionary, type Dictionary } from "../providers/translations";
@@ -49,20 +49,9 @@ function TransportView({
   const t = dictionary(locale);
   const { url, navigate } = useUrlNavigation();
   const search = useJourneySearch(results);
-  usePrefetchTrips(search.data);
   const p = url.searchParams;
   const selectedOriginal = search.data?.journeys.find(
     (j) => j.key === p.get("journey"),
-  );
-  const tracking = useTripTracking(
-    search.data?.journeys
-      .filter(
-        (j) =>
-          expandedJourneys(url).has(j.key) ||
-          (j.key === p.get("journey") && p.has("leg")),
-      )
-      .flatMap((j) => j.legs.flatMap((l) => (l.tripId ? [l.tripId] : []))) ??
-      [],
   );
   const selected = selectedOriginal;
   const index = (name: string) => {
@@ -71,6 +60,13 @@ function TransportView({
   };
   const modalLeg = selected?.legs[index("leg")],
     middleLeg = selected?.legs[index("stops")];
+  const tracking = useTripTracking([
+    ...(search.data?.journeys
+      .filter((j) => expandedJourneys(url).has(j.key))
+      .flatMap((j) => j.legs.flatMap((l) => (l.tripId ? [l.tripId] : []))) ??
+      []),
+    ...(modalLeg?.tripId ? [modalLeg.tripId] : []),
+  ]);
   const mode = p.get("map");
   const isTripMap = mode === "stop" && p.has("tripStop");
   const modalOpen = !!modalLeg?.tripId && (!mode || isTripMap);
@@ -309,12 +305,24 @@ function TransportView({
     </TrackingContext.Provider>
   );
 }
+const interactionParameters = [
+  "journey",
+  "expanded",
+  "leg",
+  "stops",
+  "map",
+  "stopLeg",
+  "stopSide",
+  "tripStop",
+] as const;
 export default function TransportApp(props: Props) {
   return (
     <UrlNavigationProvider initialUrl={props.initialUrl}>
-      <TripResources>
-        <TransportView {...props} />
-      </TripResources>
+      <LocalNavigationProvider parameters={interactionParameters}>
+        <TripResources>
+          <TransportView {...props} />
+        </TripResources>
+      </LocalNavigationProvider>
     </UrlNavigationProvider>
   );
 }

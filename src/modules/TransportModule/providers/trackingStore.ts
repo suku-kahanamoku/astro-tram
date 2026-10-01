@@ -19,6 +19,13 @@ export function createTrackingStore() {
       values = { ...values, [id]: value };
       notify();
     },
+    remove: (id: string) => {
+      if (!(id in values)) return;
+      const next = { ...values };
+      delete next[id];
+      values = next;
+      notify();
+    },
     clear: () => {
       if (values === empty) return;
       values = empty;

@@ -337,8 +337,12 @@ export function createTransportProvider(core: CoreClient) {
         throw new HttpError(502, "invalid_backend_response");
       return mapped;
     },
-    async trip(tripId: string): Promise<Trip> {
-      const raw = object(await core.request(`/transport/v1/trips/${tripId}`)),
+    async trip(tripId: string, coordinates = false): Promise<Trip> {
+      const raw = object(
+          await core.request(`/transport/v1/trips/${tripId}`, {
+            query: { stop_coordinates: coordinates ? 1 : 0 },
+          }),
+        ),
         trip = object(raw.result);
       if (!Array.isArray(trip.stops))
         throw new HttpError(502, "invalid_backend_response");

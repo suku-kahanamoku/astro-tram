@@ -6,6 +6,15 @@ import type {
   PlaceOption,
   CityOption,
 } from "../types";
+export class TransportRequestError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public retryAfterMs?: number,
+  ) {
+    super(message);
+  }
+}
 export async function request<T>(
   path: string,
   options: RequestInit = {},
@@ -17,7 +26,18 @@ export async function request<T>(
   });
   const body = await response.json();
   if (!response.ok || body.success !== true)
-    throw new Error(body.error ?? "unavailable");
+    throw new TransportRequestError(
+      body.error ?? "unavailable",
+      response.status,
+      response.headers.has("Retry-After")
+        ? Math.max(
+            1000,
+            /^\d+$/.test(response.headers.get("Retry-After")!)
+              ? Number(response.headers.get("Retry-After")) * 1000
+              : Date.parse(response.headers.get("Retry-After")!) - Date.now(),
+          ) || undefined
+        : undefined,
+    );
   return body.data;
 }
 export const transportClient = {
@@ -58,6 +78,11 @@ export const transportClient = {
     request<Trip>(`${config.endpoints.trip}?id=${encodeURIComponent(id)}`, {
       signal,
     }),
+  tripCoordinates: (id: string, signal: AbortSignal) =>
+    request<Trip>(
+      `${config.endpoints.trip}?id=${encodeURIComponent(id)}&coordinates=1`,
+      { signal },
+    ),
   stop: (id: string, signal: AbortSignal) =>
     request<Stop>(`${config.endpoints.stop}?id=${encodeURIComponent(id)}`, {
       signal,

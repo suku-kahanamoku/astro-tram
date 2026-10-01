@@ -38,7 +38,10 @@ export function useJourneySearch(enabled: boolean) {
           abort.signal,
         );
         if (abort.signal.aborted) return;
-        const next = new URL(location.href);
+        const next = new URL(
+          `${url.pathname}?${writeState(state)}`,
+          url.origin,
+        );
         // Unknown area metadata must not erase the user's selection.
         if (data.journeys.length) {
           if (data.intercity) next.searchParams.delete("city");
@@ -48,7 +51,7 @@ export function useJourneySearch(enabled: boolean) {
         const resolvedKey = writeState(readState(next.searchParams)).toString();
         completed.current = resolvedKey;
         setValue({ key: resolvedKey, data, error: "", loading: false });
-        if (next.href !== location.href) navigate(next.href, true);
+        if (resolvedKey !== key) navigate(next.href, true);
       } catch (e) {
         if (!abort.signal.aborted) {
           completed.current = key;

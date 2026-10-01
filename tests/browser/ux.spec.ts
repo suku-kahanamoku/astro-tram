@@ -33,7 +33,7 @@ test("summary badges open the trip; backdrop closes only the top dialog and rest
   const trip = page.locator("[data-trip-dialog]");
   await expect(trip).toBeVisible();
   await expect(trip.locator(".trip-call")).toHaveCount(3);
-  await expect(page).toHaveURL(/leg=0/);
+  await expect(page).not.toHaveURL(/leg=0/);
   const stop = trip.locator('[data-trip-stop-map="1"]');
   await stop.click();
   const map = page.locator("[data-map-dialog]");
@@ -112,7 +112,7 @@ test("opening the same trip preserves loaded intermediate stops and accordion he
   await expect(list.locator(".trip-call")).toHaveCount(1);
   const after = await card.boundingBox();
   expect(Math.abs(after!.height - before!.height)).toBeLessThan(2);
-  expect(requests).toBe(3); // All distinct trips are prefetched once.
+  expect(requests).toBe(1); // The selected trip is shared by both views.
   await page.keyboard.press("Escape");
   await expect(list.locator(".trip-call")).toHaveCount(1);
 });
@@ -289,7 +289,7 @@ test("new results scroll once and the summary starts with date and service butto
   expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 });
 
-test("summary badge opens only a dialog with prefetched stops and a sticky title, delay and close button", async ({
+test("summary badge loads only its own stops into a dialog and a sticky title, delay and close button", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -309,7 +309,8 @@ test("summary badge opens only a dialog with prefetched stops and a sticky title
     finished++;
   });
   await page.goto(path);
-  await expect.poll(() => finished).toBe(3);
+  await expect(page.locator(".journey-card")).toHaveCount(2);
+  expect(finished).toBe(0);
   const card = page.locator(".journey-card").first();
   const toggle = card.locator(".journey-summary-toggle");
   await expect(toggle).toHaveAttribute("aria-expanded", "false");
@@ -352,5 +353,5 @@ test("summary badge opens only a dialog with prefetched stops and a sticky title
   await expect(card.locator("[data-intermediate-stops]")).not.toContainText(
     "Načítáme",
   );
-  expect([...requests.values()]).toEqual([1, 1, 1]);
+  expect([...requests.values()]).toEqual([1]);
 });

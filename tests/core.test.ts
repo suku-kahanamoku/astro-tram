@@ -174,3 +174,28 @@ test("body parser accepts JSON and forms but rejects malformed, unsupported and 
     status: 413,
   });
 });
+
+test("BFF preserves Retry-After on rate limits without exposing upstream messages", async () => {
+  const core = createCoreClient(config, async () =>
+    Response.json(
+      { error: "private upstream diagnostic" },
+      { status: 429, headers: { "Retry-After": "17" } },
+    ),
+  );
+  let failure: unknown;
+  try {
+    await core.request("/transport/v1/trips/example/tracking", {
+      method: "POST",
+      body: {},
+    });
+  } catch (error) {
+    failure = error;
+  }
+  const response = errorResponse(failure);
+  assert.equal(response.status, 429);
+  assert.equal(response.headers.get("Retry-After"), "17");
+  assert.deepEqual(await response.json(), {
+    success: false,
+    error: "rate_limited",
+  });
+});

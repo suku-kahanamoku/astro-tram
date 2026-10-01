@@ -54,7 +54,8 @@ providery jsou samostatné TypeScript moduly. Backendové klíče zůstávají n
 - `JourneyResults`, `TripStops` a `TripLegend` jsou React komponenty. Poznámky
   poskytovatelů se vykreslují jako text a odkazy mají kontrolovaný protokol.
 - `UrlNavigationProvider` a `NavLink` z UIModule obsluhují URL a historii;
-  zavření dialogů zachovává výběr a vrací fokus. URL zůstává zdrojem navigačního stavu.
+  `LocalNavigationProvider` drží přechodný stav detailů v Reactu bez změny historie.
+  Zavření dialogů zachovává výběr a vrací fokus.
 - `MapDialog` a `useMapView` řídí mapu. OpenLayers se importuje až při otevření,
   spravuje pouze canvas podstrom a při uzavření se odpojí spolu s GPS watch/timerem.
 - `LanguagePicker`, `MainMenu`, přepínání motivu a reklamní komponenty používají
@@ -75,7 +76,7 @@ harness leží v `tests/`, není aplikační routou a nevstupuje do produkčníh
 
 České výsledky jsou na `/spojeni/`, anglické `/en/journeys/`, německé `/de/verbindungen/`.
 
-URL nese identitu a popis obou míst, čas jako RFC3339, příjezd/odjezd, přímé spojení a oblast. `journey` identifikuje rozkliknuté spojení, `leg` dialog všech zastávek spoje, `stops` rozbalené mezilehlé zastávky úseku a `map` výběr počátku/cíle, mapu trasy nebo zastávky. Pro `map=stop` označují `stopLeg` a `stopSide` konkrétní konec úseku. Při otevření mapy ze seznamu zastávek v dialogu zůstává `leg` zachovaný a `tripStop` určuje pořadí zastávky v celém spoji. Stejnou mapu otevírají i mezilehlé zastávky v accordionu: `stopLeg` určuje úsek a `tripStop` původní pořadí v celém spoji, `stops` zachovává rozbalený seznam. Mapa se z dialogu otevírá nad detailem spoje; zavření vrací fokus na danou zastávku. Funguje refresh, přímé otevření odkazu a Zpět/Vpřed.
+URL nese identitu a popis obou míst, čas jako RFC3339, příjezd/odjezd, přímé spojení a oblast. Stav accordionů, mezilehlých zastávek a dialogů se drží pouze v Reactu prostřednictvím `LocalNavigationProvider`; jejich otevření ani zavření nevolá `pushState`, `replaceState` nebo nové vyhledávání. Více accordionů může být otevřeno současně. Po obnovení stránky jsou všechny zavřené; staré parametry `journey`, `expanded`, `leg`, `stops`, `map`, `stopLeg`, `stopSide` a `tripStop` se při inicializaci ignorují. Interní pomocné URL slouží pouze ke skládání lokálního stavu. Vyhledávací parametry a ručně vybraný bod se nadále ukládají do skutečné URL. Mapa zastávky se otevírá nad detailem spoje; zavření vrací fokus na danou zastávku.
 
 Po refreshi proběhne nové online vyhledání. Identita detailu se odvozuje ze spojů, zastávek a plánovaných časů, nikoli z krátkodobého ID databázové cache. Pokud původní cesta už není v aktuálních výsledcích, UI to oznámí. Výsledky nejsou historický snapshot.
 
@@ -112,7 +113,7 @@ npm run test:browser
 npm run format:check
 ```
 
-Playwright spouští izolovaný mock php-core na portu 4399 a Astro na 4328. Ověřuje kompletní HTTP cestu browser → Astro → provider včetně pevného tenantu a tajného klíče. Pokrývá refresh detailu, historii, příjezd/přímé spoje, GPS obnovu a zamítnutí, mapu, nedostupnost, jazykové URL a mobilní šířku. Mock není důkaz živého spojení s Golemio/Entur. Screenshoty jsou v `test-results/`.
+Playwright spouští izolovaný mock php-core na portu 4399 a Astro na 4328. Ověřuje kompletní HTTP cestu browser → Astro → provider včetně pevného tenantu a tajného klíče. Pokrývá obnovu vyhledávání, lokální stav detailů bez navigace, příjezd/přímé spoje, GPS obnovu a zamítnutí, mapu, nedostupnost, jazykové URL a mobilní šířku. Mock není důkaz živého spojení s Golemio/Entur. Screenshoty jsou v `test-results/`.
 
 Produkční frontend, host TRAM a dopravní providery musí být nakonfigurovány před veřejným spuštěním. Tento projekt je připraven pro samostatný Node SSR server (`npm run build` + `npm start`); přístupový klíč nepatří do prohlížeče.
 
@@ -173,7 +174,7 @@ nejednoznačném průjezdu stejnou zastávkou nevypisuje nesouvisející zastáv
 Kliknutí na název koncové zastávky otevře její mapu s pevným bodem. Chybějící
 souřadnice se dohledají přes detail zastávky; pokud ani ten polohu neobsahuje,
 zobrazí se nedostupnost bez náhradního bodu. Dialogy podporují Escape,
-Zpět/Vpřed i refresh URL. Detail celé jízdy se už nevypisuje pod úsekem.
+zavření kliknutím na pozadí a návrat fokusu. Detail celé jízdy se už nevypisuje pod úsekem.
 
 Pole Odkud/Kam při focusu označí celý text. Mapové tlačítko je zakázané pro
 prázdný nebo pouze rozepsaný vstup; zpřístupní jej vybraná zastávka, aktuální
@@ -243,7 +244,7 @@ Při nejednoznačném přiřazení, načítání, výpadku nebo expiraci GPS pon
 
 Výsledky hledání jsou po načtení neměnný podklad. `TransportView` neposouvá,
 nepřerovnává ani neodstraňuje karty podle WebSocketu a nemá sekundový timer
-překreslující celý strom. URL stále ovládá vybrané spojení, accordion a dialogy.
+překreslující celý strom. Accordiony a dialogy ovládá lokální React stav.
 `useTripTracking` zapisuje jen pozorování do paměťového `trackingStore`.
 `useSyncExternalStore` odebírají malé komponenty: časy úseků a zastávek,
 badge, délka cesty, upozornění na návaznost a ukazatele GPS. Přepočet
@@ -255,8 +256,8 @@ Test v prohlížeči posílá opakované změny zpoždění i výpadek dat a kon
 pořadí karet, totožnost DOM uzlů, výšku accordionu, scroll dialogu a počet HTTP
 načtení detailu. Nové pořadí výsledků vzniká až novým vyhledáním uživatele.
 
-Parametr `expanded` uchovává seznam otevřených karet; `journey` určuje kontext
-aktuálně zvoleného dialogu nebo mapy. Původní odkazy s jediným `journey` fungují dál.
+Lokální stav uchovává otevřené karty a kontext zvoleného dialogu nebo mapy.
+Staré odkazy s detailem obnoví pouze vyhledání, nikoliv otevřené karty.
 Datum a badge linek jsou první částí viditelné hlavičky accordionu i při sbalení. Tlačítka badge a odkaz pro rozbalení jsou sourozenci uvnitř `.journey-summary`; kliknutí na badge otevře pouze dialog a zachová stav rozbalení. Dialog má přichycenou hlavičku s titulkem, badge zpoždění a zavíracím tlačítkem; opakované štítky plánovaných/online časů se nezobrazují.
 `TripResources` sdílí načtené statické detaily a probíhající požadavky uvnitř
 otevřeného vyhledávače. Opětovné otevření je bez dalšího HTTP požadavku; první
@@ -265,9 +266,21 @@ WebSocket běží nezávisle a aktualizuje pouze malé živé komponenty.
 
 Po načtení nových výsledků `useScrollOnContent` plynule posune stránku k jejich záhlaví. Respektuje omezení animací a nepřesouvá stránku při změnách accordionů, dialogů ani živých údajů.
 
-`usePrefetchTrips` po načtení výsledků přednačítá statické detaily všech odlišných spojů.
-`tripResources` slučuje stejné požadavky, omezuje síť na dva souběžné požadavky
-a upřednostní detail, který uživatel právě otevřel. Připravený detail se použije
-pro dialog i mezilehlé zastávky bez dalšího HTTP volání. Pokud uživatel klikne
-před dokončením prvního načtení, sdílí se rozběhnutý požadavek; chyba
-přednačítání neblokuje pozdější opakování při otevření.
+Statické detaily se načítají na vyžádání, nikoliv hromadně pro všechny výsledky.
+`tripResources` slučuje stejné požadavky a omezuje síť na dva souběžné požadavky.
+Detail se sdílí mezi dialogem a mezilehlými zastávkami po celou dobu otevřeného
+vyhledávače; nové otevření už načteného spoje nevolá další HTTP požadavek.
+BFF načítá základní detail s `stop_coordinates=0`: Spojenka tak nečeká na
+jednotlivé dotazy pro souřadnice. Teprve otevřená časová osa s chybějícími
+souřadnicemi spustí oddělené `GET /api/transport/trip/?id=...&coordinates=1`.
+`useTripCoordinates` převezme pouze souřadnice shodných zastávkových výskytů;
+původní statické řádky, názvy, časy a legendy nenahradí. Mapa zastávky má
+nadále vlastní dohledání polohy. Rychlé zobrazení vyžaduje také odpovídající
+verzi php-core s podporou `stop_coordinates`.
+
+`trackingSubscriptions` zachovává odběry při změně otevřených karet; zavřený
+accordion s otevřeným dialogem sleduje pouze konkrétní spoj. Tikety uchovává
+pouze v paměti zobrazení do expirace, nikdy v URL/storage. Nové tikety vydává
+postupně (nejvýše jeden začátek požadavku za sekundu); 429 pozastaví celou
+frontu podle `Retry-After`, nebo na 60 sekund při chybějící hlavičce.
+BFF tuto hlavičku přenáší z php-core. Limity backendu se nezvyšují.

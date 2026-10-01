@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import type { Trip } from "../types";
 import { useTripResources } from "./TripResources";
 /** Reopening a loaded trip is synchronous; simultaneous consumers share one request. */
-export function useTrip(id?: string | null) {
-  const resources = useTripResources();
+export function useTrip(id?: string | null, coordinates = false) {
+  const resources = useTripResources(coordinates);
   const [result, setResult] = useState<{
     id?: string | null;
     trip?: Trip;

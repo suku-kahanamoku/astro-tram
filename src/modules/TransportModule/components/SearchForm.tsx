@@ -26,12 +26,13 @@ export default function SearchForm({
   const [fields, setFields] = useState({ day: "", time: "" });
   const [error, setError] = useState("");
   const ready = useHydrated();
+  const persistentSearch = writeState(readState(url.searchParams)).toString();
   useEffect(() => {
     const state = readState(url.searchParams);
     setDraft(state);
     setFields(localFields(state.at ? new Date(state.at) : new Date()));
     setError("");
-  }, [url.search]);
+  }, [persistentSearch]);
   const read = () => ({ ...draft, at: formInstant(fields.day, fields.time) });
   const changeScope = (patch: Partial<SearchState>) =>
     setDraft((s) => ({ ...s, ...patch, from: undefined, to: undefined }));

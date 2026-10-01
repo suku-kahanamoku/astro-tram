@@ -180,7 +180,10 @@ export const trip: APIRoute = async ({ url, locals }) => {
     if (!/^[A-Za-z0-9_-]{1,2048}$/.test(id)) fail();
     return Response.json({
       success: true,
-      data: await locals.providers.transport.trip(id),
+      data: await locals.providers.transport.trip(
+        id,
+        url.searchParams.get("coordinates") === "1",
+      ),
     });
   } catch (error) {
     return errorResponse(error);

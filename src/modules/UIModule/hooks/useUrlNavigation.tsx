@@ -5,6 +5,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useRef,
   type AnchorHTMLAttributes,
   type ReactNode,
 } from "react";
@@ -45,6 +46,55 @@ export function UrlNavigationProvider({
     [href, navigate],
   );
   return <Context.Provider value={value}>{children}</Context.Provider>;
+}
+/** Keep transient UI parameters in React; only persistent parameters reach history. */
+export function LocalNavigationProvider({
+  parameters,
+  children,
+}: {
+  parameters: readonly string[];
+  children: ReactNode;
+}) {
+  const parent = useUrlNavigation();
+  const strip = (url: URL) => {
+    const next = new URL(url);
+    parameters.forEach((key) => next.searchParams.delete(key));
+    return next;
+  };
+  const base = strip(parent.url).href;
+  const [local, setLocal] = useState<{ base: string; values: string }>({
+    base,
+    values: "",
+  });
+  const url = new URL(base);
+  if (local.base === base)
+    new URLSearchParams(local.values).forEach((value, key) =>
+      url.searchParams.set(key, value),
+    );
+  const current = useRef({ parent, base, strip });
+  current.current = { parent, base, strip };
+  const navigate = useCallback(
+    (href: string, replace = false) => {
+      const { parent, base, strip } = current.current;
+      const next = new URL(href, base);
+      const target = strip(next).href;
+      const values = new URLSearchParams();
+      parameters.forEach((key) => {
+        const value = next.searchParams.get(key);
+        if (value !== null) values.set(key, value);
+      });
+      if (target !== base) {
+        setLocal({ base: target, values: values.toString() });
+        parent.navigate(target, replace);
+        return;
+      }
+      setLocal({ base, values: values.toString() });
+    },
+    [parameters],
+  );
+  return (
+    <Context.Provider value={{ url, navigate }}>{children}</Context.Provider>
+  );
 }
 export function useUrlNavigation() {
   const value = useContext(Context);

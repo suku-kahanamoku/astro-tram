@@ -1,4 +1,5 @@
 import { useTripObservation } from "../hooks/useTrackingSnapshot";
+import { useTripCoordinates } from "../hooks/useTripCoordinates";
 import { useRef } from "react";
 import TripStops from "./TripStops";
 import { useTripProgress } from "../hooks/useTripProgress";
@@ -24,7 +25,8 @@ export default function TripTimeline({
   const root = useRef<HTMLDivElement>(null);
   const observation = useTripObservation(leg?.tripId);
   live = live ?? observation;
-  const { progress, retained } = useTripProgress(trip, live);
+  const coordinateTrip = useTripCoordinates(trip, leg?.tripId);
+  const { progress, retained } = useTripProgress(coordinateTrip, live);
   const top = useTripTimeline(root, progress, trip);
   const locationLabel = progress
     ? progress.atStop

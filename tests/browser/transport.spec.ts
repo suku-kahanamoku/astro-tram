@@ -15,7 +15,7 @@ const query = (extra: Record<string, string> = {}) =>
     country: "CZ",
     ...extra,
   }).toString();
-test("landing, autocomplete, direct search, detail, reload and history", async ({
+test("search URL survives refresh; details are local and start closed", async ({
   page,
 }) => {
   await page.goto("/");
@@ -36,20 +36,21 @@ test("landing, autocomplete, direct search, detail, reload and history", async (
   await expect(page.locator(".journey-card")).toHaveCount(1);
   await expect(page.locator("#place-from")).toHaveValue("Praha, Muzeum");
   await page.locator(".journey-summary").click();
-  await expect(page).toHaveURL(/journey=/);
+  await expect(page).not.toHaveURL(/journey=/);
   await expect(page.locator(".journey-detail")).toBeVisible();
   const detail = page.url();
   await page.reload();
-  await expect(page.locator(".journey-detail")).toBeVisible();
+  await expect(page.locator(".journey-detail")).toHaveCount(0);
+  await page.locator(".journey-summary").first().click();
   expect(page.url()).toBe(detail);
   await page
     .getByRole("link", { name: "Zastávky spoje 22", exact: true })
     .click();
-  await expect(page).toHaveURL(/leg=0/);
+  await expect(page).not.toHaveURL(/leg=0/);
   await expect(page.locator(".trip-stops li")).toHaveCount(3);
-  await page.goBack();
+  await page.keyboard.press("Escape");
   await expect(page.locator("[data-trip-dialog]")).not.toBeVisible();
-  await page.goForward();
+  await page.locator("[data-trip-open]").first().click();
   await expect(page.locator(".trip-stops li")).toHaveCount(3);
 });
 test("arrival, partial and fallback results remain visible after refresh", async ({
@@ -82,7 +83,7 @@ test("empty, unsupported and failed searches are honest states", async ({
     await expect(page.locator(".journey-card")).toHaveCount(0);
   }
 });
-test("map picker and route map are URL navigations with refresh and Escape", async ({
+test("map dialogs are local; only the selected search point survives refresh", async ({
   page,
 }) => {
   await page.route("**/*.tile.openstreetmap.org/**", (route) => route.abort());
@@ -94,7 +95,7 @@ test("map picker and route map are URL navigations with refresh and Escape", asy
     "/?fromKind=coordinates&fromLat=50.07&fromLon=14.42&fromLabel=Vybrany+bod",
   );
   await page.getByRole("button", { name: "Vybrat na mapě – Odkud" }).click();
-  await expect(page).toHaveURL(/map=from/);
+  await expect(page).not.toHaveURL(/map=from/);
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(
     page.locator("[data-map-canvas] .ol-viewport canvas"),
@@ -109,7 +110,8 @@ test("map picker and route map are URL navigations with refresh and Escape", asy
   await page.locator("#place-to").fill("Muzeum");
   await page.getByRole("option", { name: "Praha, Muzeum" }).click();
   await page.getByRole("button", { name: "Vybrat na mapě – Kam" }).click();
-  await page.reload();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Vybrat na mapě – Kam" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(
     page.locator("[data-map-canvas] .ol-viewport canvas"),
@@ -132,6 +134,9 @@ test("map picker and route map are URL navigations with refresh and Escape", asy
     ),
   ).toBeVisible();
   await page.reload();
+  await expect(page.getByRole("dialog")).not.toBeVisible();
+  await page.locator(".journey-summary").first().click();
+  await page.getByRole("link", { name: "Trasa na mapě" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(
     page.locator("[data-map-canvas] .ol-viewport canvas"),
@@ -418,7 +423,7 @@ test("search auto selects one city and resets intercity routes to all timetables
   await expect(page.locator("#place-from")).toHaveValue("Brno, Grohova");
 });
 
-test("line opens full-trip dialog; middle button shows only intermediate stops; URL survives reload", async ({
+test("line opens full-trip dialog; middle button shows only intermediate stops; reopening reuses static stops", async ({
   page,
 }) => {
   await page.goto("/spojeni/?" + query());
@@ -431,6 +436,9 @@ test("line opens full-trip dialog; middle button shows only intermediate stops; 
   await expect(dialog.locator("[data-trip-dialog-stops] li")).toHaveCount(3);
   await expect(card.locator("[data-trip-dialog-stops]")).toHaveCount(0);
   await page.reload();
+  await expect(page.locator(".journey-card.is-open")).toHaveCount(0);
+  await page.locator(".journey-summary").first().click();
+  await card.locator('[data-trip-open="0"]').click();
   await expect(dialog).toBeVisible();
   await expect(dialog.locator("[data-trip-dialog-stops] li")).toHaveCount(3);
   await page.keyboard.press("Escape");
@@ -460,7 +468,10 @@ test("line opens full-trip dialog; middle button shows only intermediate stops; 
     });
   });
   await card.locator('[data-trip-open="0"]').click();
-  await page.reload(); // A new view loads the changed static fixture.
+  await page.reload();
+  await expect(page.locator(".journey-card.is-open")).toHaveCount(0);
+  await page.locator(".journey-summary").first().click();
+  await card.locator('[data-trip-open="0"]').click(); // A new view loads the changed static fixture.
   const highlighted = dialog.locator(".is-selected-segment");
   await expect(highlighted.locator(".trip-stop-name")).toHaveText([
     "S1",
@@ -475,6 +486,9 @@ test("line opens full-trip dialog; middle button shows only intermediate stops; 
     dialog.locator(".trip-call:not(.is-selected-segment) .trip-stop-name"),
   ).toHaveText(["OUTSIDE1", "OUTSIDE2"]);
   await page.reload();
+  await expect(page.locator(".journey-card.is-open")).toHaveCount(0);
+  await page.locator(".journey-summary").first().click();
+  await card.locator('[data-trip-open="0"]').click();
   await expect(highlighted).toHaveCount(3);
   await page.keyboard.press("Escape");
   await card.locator(".intermediate-toggle").click();
@@ -494,19 +508,19 @@ test("line opens full-trip dialog; middle button shows only intermediate stops; 
   await expect(map.locator("canvas").first()).toBeVisible();
   await expect(dialog).not.toBeVisible();
   expect(new URL(page.url()).searchParams.has("leg")).toBe(false);
-  await page.reload();
+  await page.keyboard.press("Escape");
+  await middleStop.click();
   await expect(map.locator("canvas").first()).toBeVisible();
   await expect(map.locator("h2")).toHaveText("Pouze mezilehlá");
   await page.keyboard.press("Escape");
   await expect(map).not.toBeVisible();
   await expect(middleStop).toBeFocused();
-  await expect(page).toHaveURL(/stops=0/);
-  await page.reload();
+  await expect(page).not.toHaveURL(/stops=0/);
   await expect(list).toContainText("Pouze mezilehlá");
   await expect(dialog).not.toBeVisible();
 });
 
-test("stop map fetches missing coordinates; read-only marker survives refresh and failures show no invented location", async ({
+test("stop map fetches missing coordinates; read-only marker supports reopening and failures show no invented location", async ({
   page,
 }) => {
   await page.route("**/api/transport/search/**", async (route) => {
@@ -535,8 +549,9 @@ test("stop map fetches missing coordinates; read-only marker survives refresh an
   await expect(dialog.locator("h2")).toHaveText("Praha, Malostranská");
   await expect(dialog.locator("canvas").first()).toBeVisible();
   await expect(dialog.locator("[data-map-form]")).not.toBeVisible();
-  await expect(page).toHaveURL(/map=stop/);
-  await page.reload();
+  await expect(page).not.toHaveURL(/map=stop/);
+  await page.keyboard.press("Escape");
+  await page.locator(".journey-detail .stop-map-link").nth(1).click();
   await expect(dialog.locator("canvas").first()).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(dialog).not.toBeVisible();
@@ -726,6 +741,9 @@ test("trip dialog displays provider legend with links, refresh, and clears old m
   await expect(route).toHaveText(routeName);
   await expect(legend).not.toContainText(routeName);
   await page.reload();
+  await expect(page.locator(".journey-card.is-open")).toHaveCount(0);
+  await page.locator(".journey-summary").first().click();
+  await page.locator('[data-trip-open="0"]').click();
   await expect(legend).toContainText("22/1093");
   await expect(route).toHaveText(routeName);
   await page.keyboard.press("Escape");
@@ -736,7 +754,10 @@ test("trip dialog displays provider legend with links, refresh, and clears old m
     }),
   );
   await page.locator('[data-trip-open="0"]').click();
-  await page.reload(); // Previously loaded details are intentionally reused until leaving this view.
+  await page.reload();
+  await expect(page.locator(".journey-card.is-open")).toHaveCount(0);
+  await page.locator(".journey-summary").first().click();
+  await page.locator('[data-trip-open="0"]').click(); // Previously loaded details are intentionally reused until leaving this view.
   await expect(page.locator("[data-trip-dialog-stops]")).toHaveText(
     "Podrobnosti spoje teď nejsou dostupné.",
   );
@@ -776,12 +797,15 @@ test("trip stop columns show tariff zone, request-stop explanation and source ki
     true,
   );
   await page.reload();
+  await expect(page.locator(".journey-card.is-open")).toHaveCount(0);
+  await page.locator(".journey-summary").first().click();
+  await page.locator('[data-trip-open="0"]').click();
   await expect(dialog.locator(".trip-stop-km").nth(2)).toContainText(
     "1,227 km",
   );
 });
 
-test("trip stop opens a map above the trip dialog with refresh, history, focus return and lookup failure", async ({
+test("trip stop opens a map above the trip dialog with local state, focus return and lookup failure", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -811,9 +835,9 @@ test("trip stop opens a map above the trip dialog with refresh, history, focus r
   await expect(map.locator("h2")).toHaveText("Praha, Malostranská");
   await expect(map.locator("canvas").first()).toBeVisible();
   await expect(map.locator("[data-map-form]")).not.toBeVisible();
-  await expect(page).toHaveURL(/tripStop=1/);
-  expect(new URL(page.url()).searchParams.get("leg")).toBe("0");
-  await page.reload();
+  await expect(page).not.toHaveURL(/tripStop=|leg=/);
+  await page.keyboard.press("Escape");
+  await stopLink.click();
   await expect(tripDialog).toBeVisible();
   await expect(map.locator("canvas").first()).toBeVisible();
   await expect(map.locator("h2")).toHaveText("Praha, Malostranská");
@@ -823,10 +847,10 @@ test("trip stop opens a map above the trip dialog with refresh, history, focus r
   await expect(stopLink).toBeFocused();
   await stopLink.press("Enter");
   await expect(map.locator("canvas").first()).toBeVisible();
-  await page.goBack();
+  await page.keyboard.press("Escape");
   await expect(map).not.toBeVisible();
   await expect(tripDialog).toBeVisible();
-  await page.goForward();
+  await stopLink.click();
   await expect(map.locator("canvas").first()).toBeVisible();
   await map.locator("[data-close-map]").click();
   await expect(stopLink).toBeFocused();
@@ -1452,7 +1476,7 @@ for (const width of [390, 1280]) {
   });
 }
 
-test("multiple expanded journeys survive refresh and dialogs reuse static details", async ({
+test("multiple expanded journeys use local state and dialogs reuse static details", async ({
   page,
 }) => {
   let detailRequests = 0;
@@ -1474,7 +1498,8 @@ test("multiple expanded journeys survive refresh and dialogs reuse static detail
   await expect(
     cards.first().locator(".journey-summary > .journey-summary-footer"),
   ).toBeVisible();
-  await page.reload();
+  const before = page.url();
+  const historyLength = await page.evaluate(() => history.length);
   await expect(
     page.locator(".journey-card.is-open .journey-detail"),
   ).toHaveCount(2);
@@ -1498,8 +1523,12 @@ test("multiple expanded journeys survive refresh and dialogs reuse static detail
   await cards.last().locator(".journey-summary").click();
   await expect(cards.last().locator(".journey-detail")).toHaveCount(0);
   await expect(cards.first().locator(".journey-detail")).toBeVisible();
-  await page.goBack();
+  await cards.last().locator(".journey-summary").click();
   await expect(
     page.locator(".journey-card.is-open .journey-detail"),
   ).toHaveCount(2);
+  expect(page.url()).toBe(before);
+  expect(await page.evaluate(() => history.length)).toBe(historyLength);
+  await page.reload();
+  await expect(page.locator(".journey-card.is-open")).toHaveCount(0);
 });

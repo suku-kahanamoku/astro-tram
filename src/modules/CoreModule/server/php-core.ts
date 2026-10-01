@@ -139,6 +139,9 @@ export function createCoreClient(
                 ? response.status
                 : 502,
               code,
+              response.status === 429
+                ? (response.headers.get("Retry-After") ?? "60")
+                : undefined,
             );
         }
         const status = [401, 403, 404, 409, 422, 429].includes(response.status)
@@ -151,6 +154,9 @@ export function createCoreClient(
             : status === 429
               ? "rate_limited"
               : "backend_error",
+          status === 429
+            ? (response.headers.get("Retry-After") ?? "60")
+            : undefined,
         );
       }
       let payload: Envelope<T>;

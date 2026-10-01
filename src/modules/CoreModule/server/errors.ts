@@ -12,6 +12,7 @@ export class HttpError extends Error {
   constructor(
     public status: number,
     public code: string,
+    public retryAfter?: string,
   ) {
     super(code);
   }
@@ -34,7 +35,12 @@ export function errorResponse(error: unknown): Response {
     { success: false, error: known ? error.code : "internal_error" },
     {
       status: known ? error.status : 500,
-      headers: { "Cache-Control": "no-store" },
+      headers: {
+        "Cache-Control": "no-store",
+        ...(known && error.retryAfter
+          ? { "Retry-After": error.retryAfter }
+          : {}),
+      },
     },
   );
 }
