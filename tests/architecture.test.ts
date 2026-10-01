@@ -126,7 +126,7 @@ for (const file of files) {
 }
 const allowed: Record<string, string[]> = {
   LandingModule: ["UIModule", "LangModule"],
-  TransportModule: ["UIModule", "LangModule", "CoreModule"],
+  TransportModule: ["UIModule", "LangModule", "CoreModule", "RealtimeModule"],
   UIModule: [],
   CoreModule: [],
   LangModule: ["UIModule"],

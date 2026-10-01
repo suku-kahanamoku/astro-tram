@@ -12,6 +12,7 @@ import {
 } from "../providers/state";
 import { navHref } from "../providers/render";
 import { useJourneySearch } from "../hooks/useJourneySearch";
+import { useTripTracking } from "../hooks/useTripTracking";
 import { useTrip } from "../hooks/useTrip";
 import SearchForm from "./SearchForm";
 import JourneyResults, { ResolvedPlaces } from "./JourneyResults";
@@ -46,6 +47,9 @@ function TransportView({
   const p = url.searchParams;
   const selected = search.data?.journeys.find(
     (j) => j.key === p.get("journey"),
+  );
+  const tracking = useTripTracking(
+    selected?.legs.flatMap((l) => (l.tripId ? [l.tripId] : [])) ?? [],
   );
   const index = (name: string) => {
     const v = p.get(name);
@@ -197,6 +201,7 @@ function TransportView({
               </div>
             ) : search.data?.journeys.length ? (
               <JourneyResults
+                tracking={tracking}
                 result={search.data}
                 t={t}
                 locale={locale}
@@ -237,6 +242,7 @@ function TransportView({
         </section>
       )}
       <TripDialog
+        live={modalLeg?.tripId ? tracking[modalLeg.tripId] : undefined}
         open={modalOpen}
         leg={modalLeg}
         trip={modalResource.trip}

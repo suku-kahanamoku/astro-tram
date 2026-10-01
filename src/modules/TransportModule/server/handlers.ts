@@ -224,3 +224,19 @@ export const cities: APIRoute = async ({ url, locals }) => {
     return errorResponse(error);
   }
 };
+
+/** Trip-bound ephemeral ticket; same-origin POST, no coordinates or credentials in URLs. */
+export const tracking: APIRoute = async ({ request, locals }) => {
+  try {
+    const body = await readFields(request);
+    const id = body.id;
+    if (typeof id !== "string" || !/^[A-Za-z0-9_-]{1,2048}$/.test(id))
+      return fail();
+    return Response.json(
+      { success: true, data: await locals.providers.transport.tracking(id) },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (error) {
+    return errorResponse(error);
+  }
+};

@@ -409,7 +409,6 @@
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  border-top: 1px solid #efeae0;
   padding: 9px 23px;
   font-size: 10px;
   color: var(--muted);
@@ -1264,4 +1263,30 @@ a.trip-open:active {
 .trip-technical-notes p,
 .trip-technical-notes ul {
   margin: 0.6rem 0;
+}
+
+.delay-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 0.25rem 0.6rem;
+  margin: 0.4rem 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, #dc382b 12%, var(--color-base-100, white));
+  color: #a22119;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.vehicle-tracking {
+  min-height: 3rem;
+  margin-block: 0.7rem;
+}
+.vehicle-tracking p {
+  font-size: 0.85rem;
+}
+.vehicle-map {
+  height: 220px;
+  width: 100%;
+  border-radius: 1rem;
+  overflow: hidden;
 }

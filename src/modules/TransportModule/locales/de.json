@@ -147,5 +147,13 @@
   "reservationMandatory": "Erforderlich",
   "reservationAvailable": "Möglich",
   "technicalTimetableDetails": "Technische Fahrplandaten",
-  "technicalTimetableHint": "Vom Verkehrsunternehmen gelieferte Kennungen der Fahrplanvarianten. Sie beschreiben weder die Ausstattung noch die Verkehrstage dieser konkreten Fahrt."
+  "technicalTimetableHint": "Vom Verkehrsunternehmen gelieferte Kennungen der Fahrplanvarianten. Sie beschreiben weder die Ausstattung noch die Verkehrstage dieser konkreten Fahrt.",
+  "delayBadge": "Verspätung {minutes} Min.",
+  "trackingTitle": "Aktuelle Fahrzeugposition",
+  "trackingLive": "Live-Fahrzeugposition",
+  "trackingUnsupported": "Der Anbieter liefert keine verifizierte Live-Position für diese Fahrt.",
+  "trackingConnecting": "Aktuelle Position wird ermittelt…",
+  "trackingUnavailable": "Aktuelle Position ist nicht verfügbar.",
+  "transferAtRisk": "Laut aktuellen Zeiten ist der Anschluss gefährdet. Bitte erneut suchen.",
+  "arrivalEstimated": "Ankunft anhand der aktuellen Verspätung geschätzt."
 }

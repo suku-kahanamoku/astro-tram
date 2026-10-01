@@ -10,6 +10,7 @@ export const transportClientConfig = {
   defaultMapCenter: [14.42, 50.075] as [number, number],
   mapCenters: { NO: [10.752, 59.911] } as Record<string, [number, number]>,
   endpoints: {
+    tracking: "/api/transport/tracking/",
     cities: "/api/transport/cities/",
     places: "/api/transport/places/",
     search: "/api/transport/search/",

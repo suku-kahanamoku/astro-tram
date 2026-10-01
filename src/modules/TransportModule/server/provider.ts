@@ -146,6 +146,9 @@ function leg(value: unknown): Leg {
       l.realtime === true ? instant(l.expected_departure) : null,
     expectedArrival: l.realtime === true ? instant(l.expected_arrival) : null,
     realtime: l.realtime === true,
+    arrivalEstimated: l.arrival_estimated === true,
+    predictionValidUntil:
+      l.realtime === true ? new Date(Date.now() + 30_000).toISOString() : null,
     cancelled: l.cancelled === true,
     tripId: id(l.trip_id),
     line: text(object(l.line).code) || text(object(l.line).name),
@@ -155,6 +158,24 @@ function leg(value: unknown): Leg {
 }
 export function createTransportProvider(core: CoreClient) {
   return {
+    async tracking(id: string) {
+      const r = object(
+        await core.request(`/transport/v1/trips/${id}/tracking`, {
+          method: "POST",
+          body: {},
+        }),
+      );
+      if (r.status !== "available")
+        return {
+          status: r.status === "unsupported" ? "unsupported" : "disabled",
+        };
+      const address = text(r.url, 2048),
+        ticket = text(r.ticket, 4096),
+        expiresAt = instant(r.expires_at);
+      if (!/^(wss?:)\/\//.test(address) || !ticket || !expiresAt)
+        throw new HttpError(502, "invalid_backend_response");
+      return { status: "available", url: address, ticket, expiresAt };
+    },
     async cities(country: string) {
       const raw = object(
         await core.request("/transport/v1/cities/search", {

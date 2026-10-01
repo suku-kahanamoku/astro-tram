@@ -1,3 +1,6 @@
+import DelayBadge from "./DelayBadge";
+import { trackedLeg, transferAtRisk } from "../providers/tracking";
+import type { TripObservation } from "../types";
 import { Fragment } from "react";
 import Collapse from "../../UIModule/components/Collapse";
 import { NavLink } from "../../UIModule/hooks/useUrlNavigation";
@@ -93,6 +96,7 @@ function JourneyDetail({
   url,
   trip,
   tripError,
+  tracking = {},
 }: {
   journey: Journey;
   t: Dictionary;
@@ -100,6 +104,7 @@ function JourneyDetail({
   url: URL;
   trip?: Trip;
   tripError?: string;
+  tracking?: Record<string, TripObservation>;
 }) {
   return (
     <section className="journey-detail" aria-label={t.detail}>
@@ -119,7 +124,18 @@ function JourneyDetail({
           {t.routeMap} <Icon name="map" size={16} />
         </NavLink>
       </div>
-      {journey.legs.map((l, i) => {
+      {transferAtRisk(
+        journey.legs.map((l) =>
+          trackedLeg(l, l.tripId ? tracking[l.tripId] : undefined),
+        ),
+      ) && (
+        <p className="notice" role="status">
+          {t.transferAtRisk}
+        </p>
+      )}
+      {journey.legs.map((original, i) => {
+        const live = original.tripId ? tracking[original.tripId] : undefined;
+        const l = trackedLeg(original, live);
         const expanded = url.searchParams.get("stops") === String(i);
         const segment = expanded && trip ? tripSegment(trip, l) : null;
         return (
@@ -211,6 +227,10 @@ function JourneyDetail({
                 <StopLink stop={l.to} index={i} side="to" url={url} t={t} />
               </div>
             </div>
+            <DelayBadge leg={original} live={live} t={t} />
+            {l.arrivalEstimated && (
+              <small className="leg-info">{t.arrivalEstimated}</small>
+            )}
             <p className="leg-info">
               {date(l.scheduledDeparture, locale)}
               {date(l.scheduledDeparture, locale) !==
@@ -236,6 +256,7 @@ export default function JourneyResults({
   url,
   trip,
   tripError,
+  tracking = {},
 }: {
   result: SearchResult;
   t: Dictionary;
@@ -243,6 +264,7 @@ export default function JourneyResults({
   url: URL;
   trip?: Trip;
   tripError?: string;
+  tracking?: Record<string, TripObservation>;
 }) {
   const selected = url.searchParams.get("journey");
   return (
@@ -347,16 +369,27 @@ export default function JourneyResults({
                 ))}
               </div>
             </div>
-            <div className="journey-meta">
-              <span className={j.source.mode === "fallback" ? "fallback" : ""}>
-                {j.source.mode === "fallback" ? t.fallback : t.live}
-                {j.legs.some((l) => l.cancelled) ? ` · ${t.cancelled}` : ""}
-              </span>
-              <span>{j.source.attribution || j.source.provider}</span>
-            </div>
+            {(j.source.mode === "fallback" ||
+              j.legs.some((l) => l.cancelled)) && (
+              <div className="journey-meta">
+                <span
+                  className={j.source.mode === "fallback" ? "fallback" : ""}
+                >
+                  {j.source.mode === "fallback" ? t.fallback : t.cancelled}
+                  {j.source.mode === "fallback" &&
+                  j.legs.some((l) => l.cancelled)
+                    ? ` · ${t.cancelled}`
+                    : ""}
+                </span>
+                {j.source.mode === "fallback" && (
+                  <span>{j.source.attribution || j.source.provider}</span>
+                )}
+              </div>
+            )}
             <Collapse open={open}>
               <JourneyDetail
                 journey={j}
+                tracking={tracking}
                 t={t}
                 locale={locale}
                 url={url}

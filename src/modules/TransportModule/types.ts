@@ -29,6 +29,8 @@ export interface Geometry {
   coordinates: number[][];
 }
 export interface Leg {
+  arrivalEstimated?: boolean;
+  predictionValidUntil?: string | null;
   mode: string;
   from: Stop;
   to: Stop;
@@ -112,4 +114,19 @@ export interface CityOption {
   name: string;
   state: string;
   sourceMode: string;
+}
+
+export interface TrackingSession {
+  status: string;
+  url?: string;
+  ticket?: string;
+  expiresAt?: string;
+}
+export interface TripObservation {
+  status: string;
+  position: { lat: number; lon: number } | null;
+  observedAt: string | null;
+  validUntil: string | null;
+  delaySeconds: number | null;
+  cancelled: boolean | null;
 }

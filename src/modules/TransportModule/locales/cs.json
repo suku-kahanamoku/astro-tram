@@ -147,5 +147,13 @@
   "reservationMandatory": "Povinná",
   "reservationAvailable": "Možná",
   "technicalTimetableDetails": "Technické údaje jízdního řádu",
-  "technicalTimetableHint": "Označení variant jízdního řádu dodaná dopravcem. Nejde o údaj o vybavení ani o potvrzení, kdy tento konkrétní spoj jede."
+  "technicalTimetableHint": "Označení variant jízdního řádu dodaná dopravcem. Nejde o údaj o vybavení ani o potvrzení, kdy tento konkrétní spoj jede.",
+  "delayBadge": "Zpoždění {minutes} min",
+  "trackingTitle": "Aktuální poloha vozidla",
+  "trackingLive": "Živá poloha vozidla",
+  "trackingUnsupported": "Poskytovatel pro tento spoj neposkytuje ověřenou živou polohu.",
+  "trackingConnecting": "Zjišťujeme aktuální polohu…",
+  "trackingUnavailable": "Aktuální poloha není dostupná.",
+  "transferAtRisk": "Podle aktuálních časů nemusíš stihnout přestup. Vyhledej spojení znovu.",
+  "arrivalEstimated": "Příjezd je odhadnut podle aktuálního zpoždění."
 }

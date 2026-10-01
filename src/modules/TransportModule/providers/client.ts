@@ -21,6 +21,12 @@ export async function request<T>(
   return body.data;
 }
 export const transportClient = {
+  tracking: (id: string, signal: AbortSignal) =>
+    request<import("../types").TrackingSession>(config.endpoints.tracking, {
+      method: "POST",
+      body: JSON.stringify({ id }),
+      signal,
+    }),
   cities: (country: string, signal: AbortSignal) =>
     request<CityOption[]>(
       `${config.endpoints.cities}?q=${encodeURIComponent(JSON.stringify({ state: country }))}`,

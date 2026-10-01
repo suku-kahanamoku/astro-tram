@@ -147,5 +147,13 @@
   "reservationMandatory": "Required",
   "reservationAvailable": "Available",
   "technicalTimetableDetails": "Technical timetable details",
-  "technicalTimetableHint": "Timetable variant identifiers supplied by the operator. These do not describe facilities or confirm when this specific service runs."
+  "technicalTimetableHint": "Timetable variant identifiers supplied by the operator. These do not describe facilities or confirm when this specific service runs.",
+  "delayBadge": "Delay {minutes} min",
+  "trackingTitle": "Current vehicle position",
+  "trackingLive": "Live vehicle position",
+  "trackingUnsupported": "The provider does not supply a verified live position for this service.",
+  "trackingConnecting": "Getting current position…",
+  "trackingUnavailable": "Current position is unavailable.",
+  "transferAtRisk": "Current times put your transfer at risk. Search for connections again.",
+  "arrivalEstimated": "Arrival is estimated from the current delay."
 }

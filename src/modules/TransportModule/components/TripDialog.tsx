@@ -1,3 +1,6 @@
+import VehicleTracking from "./VehicleTracking";
+import DelayBadge from "./DelayBadge";
+import type { TripObservation } from "../types";
 import Dialog from "../../UIModule/components/Dialog";
 import Icon from "../../UIModule/components/TransitIcon";
 import { modeLabel } from "../providers/transportIcons";
@@ -7,6 +10,7 @@ import TripLegend from "./TripLegend";
 import type { Trip, Leg } from "../types";
 import type { Dictionary } from "../providers/translations";
 export default function TripDialog({
+  live,
   open,
   leg,
   trip,
@@ -16,6 +20,7 @@ export default function TripDialog({
   url,
   onClose,
 }: {
+  live?: TripObservation;
   open: boolean;
   leg?: Leg;
   trip?: Trip;
@@ -76,6 +81,8 @@ export default function TripDialog({
           />
         )}
       </div>
+      {open && <VehicleTracking live={live} t={t} />}
+      {leg && <DelayBadge leg={leg} live={live} t={t} />}
       <div className="trip-body" aria-busy={!trip && !error}>
         <p
           className="trip-stop-legend"
