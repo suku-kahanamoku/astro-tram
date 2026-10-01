@@ -3,6 +3,7 @@ export function expandedJourneys(url: URL): Set<string> {
   const keys = new Set(
     (url.searchParams.get("expanded") ?? "").split(",").filter(Boolean),
   );
+  if (url.searchParams.has("expanded")) return keys;
   const focused = url.searchParams.get("journey");
   if (focused) keys.add(focused);
   return keys;
@@ -14,9 +15,9 @@ export function toggleJourney(url: URL, key: string) {
   return {
     expanded: keys.size ? [...keys].join(",") : null,
     journey: closing
-      ? url.searchParams.get("journey") === key
-        ? ([...keys].at(-1) ?? null)
-        : url.searchParams.get("journey")
+      ? keys.has(url.searchParams.get("journey") ?? "")
+        ? url.searchParams.get("journey")
+        : ([...keys].at(-1) ?? null)
       : key,
     leg: null,
     stops: null,

@@ -20,7 +20,7 @@ const blockTiles = async (page: Page) => {
   await page.route("**/*tile.openstreetmap.org/**", (route) => route.abort());
 };
 
-test("expanded accordion badges open the trip; backdrop closes only the top dialog and restores focus", async ({
+test("summary badges open the trip; backdrop closes only the top dialog and restores focus", async ({
   page,
 }) => {
   await blockTiles(page);
@@ -112,7 +112,7 @@ test("opening the same trip preserves loaded intermediate stops and accordion he
   await expect(list.locator(".trip-call")).toHaveCount(1);
   const after = await card.boundingBox();
   expect(Math.abs(after!.height - before!.height)).toBeLessThan(2);
-  expect(requests).toBe(1);
+  expect(requests).toBe(3); // All distinct trips are prefetched once.
   await page.keyboard.press("Escape");
   await expect(list.locator(".trip-call")).toHaveCount(1);
 });
@@ -243,7 +243,7 @@ test("map loading reserves space and keeps its canvas throughout the exit transi
   await expect(page.locator('[data-map="from"]')).toBeFocused();
 });
 
-test("new results scroll into view once; date and service badges expand with the accordion", async ({
+test("new results scroll once and the summary starts with date and service buttons", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -267,7 +267,7 @@ test("new results scroll into view once; date and service badges expand with the
   expect(heading!.y).toBeGreaterThanOrEqual(
     Math.max(0, header!.y + header!.height),
   );
-  await expect(page.locator(".journey-summary-footer")).toHaveCount(0);
+  await expect(page.locator(".journey-summary-footer")).toHaveCount(2);
   const card = page.locator(".journey-card").first();
   await card.locator(".journey-summary").click();
   await expect(card.locator(".journey-summary-footer")).toBeVisible();
@@ -275,7 +275,7 @@ test("new results scroll into view once; date and service badges expand with the
   await expect(page.locator("[data-trip-dialog]")).toBeVisible();
   await page.keyboard.press("Escape");
   await card.locator(".journey-summary").click();
-  await expect(card.locator(".journey-summary-footer")).toHaveCount(0);
+  await expect(card.locator(".journey-summary-footer")).toBeVisible();
   expect(await page.evaluate(() => (window as any).resultScrolls)).toBe(1);
   const previousAt = new URL(page.url()).searchParams.get("at");
   await page.locator("#travel-time").fill("11:00");
@@ -287,4 +287,70 @@ test("new results scroll into view once; date and service badges expand with the
     .poll(() => page.evaluate(() => (window as any).resultScrolls))
     .toBe(1);
   expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+});
+
+test("summary badge opens only a dialog with prefetched stops and a sticky title, delay and close button", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  let finished = 0;
+  const requests = new Map<string, number>();
+  await page.route("**/api/transport/trip/**", async (route) => {
+    const id = new URL(route.request().url()).searchParams.get("id")!;
+    requests.set(id, (requests.get(id) ?? 0) + 1);
+    const response = await route.fetch();
+    const payload = await response.json();
+    const stops = payload.data.stops;
+    payload.data.stops = Array.from({ length: 30 }, (_, i) => ({
+      ...stops[i % stops.length],
+      stop: { ...stops[i % stops.length].stop, name: `Zastávka ${i + 1}` },
+    }));
+    await route.fulfill({ json: payload });
+    finished++;
+  });
+  await page.goto(path);
+  await expect.poll(() => finished).toBe(3);
+  const card = page.locator(".journey-card").first();
+  const toggle = card.locator(".journey-summary-toggle");
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  expect(
+    await card
+      .locator(".journey-summary")
+      .evaluate((el) => el.firstElementChild?.className),
+  ).toBe("journey-summary-footer");
+  const badge = card.locator("[data-summary-trip]").first();
+  await expect(badge).not.toHaveAttribute("href");
+  await badge.click();
+  const dialog = page.locator("[data-trip-dialog]");
+  await expect(dialog).toBeVisible();
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(dialog.locator(".trip-call")).toHaveCount(30);
+  await expect(dialog.locator(".trip-loading")).toHaveCount(0);
+  await expect(
+    dialog.locator(".trip-sticky-header [data-delay-badge]"),
+  ).toBeVisible();
+  await dialog.evaluate(async (el) => {
+    await Promise.allSettled(el.getAnimations().map((a) => a.finished));
+  });
+  const before = await dialog.locator(".trip-sticky-header").boundingBox();
+  await dialog.evaluate((el) => {
+    el.scrollTop = 500;
+  });
+  const after = await dialog.locator(".trip-sticky-header").boundingBox();
+  expect(Math.abs(after!.y - before!.y)).toBeLessThan(2);
+  const close = await dialog.locator("[data-close-trip]").boundingBox();
+  const title = await dialog.locator("#trip-title").boundingBox();
+  expect(title!.x + title!.width).toBeLessThanOrEqual(close!.x);
+  const colors = await dialog
+    .locator(".request-stop")
+    .evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).color));
+  expect(new Set(colors).size).toBe(1);
+  await dialog.locator("[data-close-trip]").click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await toggle.click();
+  await card.locator(".intermediate-toggle").click();
+  await expect(card.locator("[data-intermediate-stops]")).not.toContainText(
+    "Načítáme",
+  );
+  expect([...requests.values()]).toEqual([1, 1, 1]);
 });

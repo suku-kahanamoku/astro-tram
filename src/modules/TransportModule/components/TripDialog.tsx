@@ -39,7 +39,7 @@ export default function TripDialog({
       data-trip-dialog
       aria-labelledby="trip-title"
     >
-      <div className="map-header">
+      <div className="map-header trip-sticky-header">
         <div>
           <span className="eyebrow">TRAM / {t.tripStops}</span>
           <h2 id="trip-title">
@@ -58,6 +58,7 @@ export default function TripDialog({
               t.tripStops
             )}
           </h2>
+          {leg && <DelayBadge leg={leg} live={live} t={t} />}
         </div>
         <button
           className="icon-button"
@@ -81,12 +82,14 @@ export default function TripDialog({
             />
           </div>
         )}
-        {leg && <DelayBadge leg={leg} live={live} t={t} />}
       </div>
       <div className="trip-body" aria-busy={!trip && !error}>
         {trip?.stops.some((c) => c.requestStop) && (
           <p className="trip-stop-legend" data-trip-stop-legend>
-            {t.requestStopLegend}
+            <abbr className="request-stop" title={t.requestStop}>
+              z
+            </abbr>
+            {t.requestStopLegend.slice(1)}
           </p>
         )}
         {trip && hasStopDetails(trip) && (

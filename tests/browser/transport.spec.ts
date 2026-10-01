@@ -689,11 +689,11 @@ test("GPS map stays fresh, never stores coordinates and ends tracking on close",
 test("trip dialog displays provider legend with links, refresh, and clears old metadata on error", async ({
   page,
 }) => {
-  await page.goto("/spojeni/?" + query());
-  await page.locator(".journey-summary").first().click();
   const response = page.waitForResponse((r) =>
     r.url().includes("/api/transport/trip/"),
   );
+  await page.goto("/spojeni/?" + query());
+  await page.locator(".journey-summary").first().click();
   await page.locator('[data-trip-open="0"]').click();
   const payload = await (await response).json();
   expect(JSON.stringify(payload)).not.toContain("DO_NOT_EXPOSE");
@@ -749,11 +749,11 @@ test("trip stop columns show tariff zone, request-stop explanation and source ki
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/spojeni/?" + query());
-  await page.locator(".journey-summary").first().click();
   const response = page.waitForResponse((r) =>
     r.url().includes("/api/transport/trip/"),
   );
+  await page.goto("/spojeni/?" + query());
+  await page.locator(".journey-summary").first().click();
   await page.locator('[data-trip-open="0"]').click();
   const data = (await (await response).json()).data;
   expect(data.stops[1].routeKm).toBe(0.303);
@@ -771,7 +771,7 @@ test("trip stop columns show tariff zone, request-stop explanation and source ki
   await expect(dialog.locator(".trip-stop-km").nth(2)).toContainText(
     "1,227 km",
   );
-  await expect(dialog.locator(".request-stop")).toHaveCount(1);
+  await expect(dialog.locator(".request-stop")).toHaveCount(2);
   expect(await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(
     true,
   );
@@ -983,7 +983,7 @@ test("live vehicle tracking shares the selected journey, shows delay and removes
   );
   await page.locator("[data-trip-open]").first().click();
   await expect(
-    page.locator("[data-trip-dialog] .trip-summary-header [data-delay-badge]"),
+    page.locator("[data-trip-dialog] .trip-sticky-header [data-delay-badge]"),
   ).toHaveText("Zpoždění 8 min");
   expect(sessions).toBe(1);
   await expect(
@@ -1122,13 +1122,19 @@ for (const width of [390, 1280]) {
       /u zastávky Praha, Malostranská/,
     );
     push(50.08, 14.421, 1200);
-    // Wait until the new observation is applied, then a newer unresolved GPS must not renew its expiry.
+    // After expiry, retain the last resolved point while awaiting another measurement.
     await expect(dot).toBeVisible();
     await page.waitForTimeout(100);
     push(50.2, 14.6);
     await expect(dot).toHaveAttribute("data-retained", "true");
     await expect(dot).toHaveAttribute("data-from", "1");
-    await expect(dot).toHaveCount(0, { timeout: 4000 });
+    await page.waitForTimeout(1400);
+    await expect(dot).toBeVisible();
+    await expect(dot).toHaveAttribute("data-retained", "true");
+    push(50.08, 14.421);
+    await expect(dot).not.toHaveAttribute("data-retained", "true");
+    await expect(dot).toHaveAttribute("data-from", "1");
+    await expect(dot).toHaveAttribute("data-to", "1");
     await expect(dialog.locator("[data-trip-point]")).toHaveCount(3);
   });
 }
@@ -1379,7 +1385,7 @@ for (const width of [390, 1280]) {
           nodes.map((node) => node.getAttribute("data-journey")),
         ),
       ).toEqual(order);
-      await expect(first.locator(".journey-summary")).toHaveAttribute(
+      await expect(first.locator(".journey-summary-toggle")).toHaveAttribute(
         "aria-expanded",
         "true",
       );
@@ -1466,7 +1472,7 @@ test("multiple expanded journeys survive refresh and dialogs reuse static detail
     await cards.first().evaluate((el) => el.firstElementChild?.className),
   ).toBe("journey-summary");
   await expect(
-    cards.first().locator(".disclosure-motion .journey-summary-footer"),
+    cards.first().locator(".journey-summary > .journey-summary-footer"),
   ).toBeVisible();
   await page.reload();
   await expect(
@@ -1476,7 +1482,7 @@ test("multiple expanded journeys survive refresh and dialogs reuse static detail
   const dialog = page.locator("[data-trip-dialog]");
   await expect(dialog.locator(".trip-call")).toHaveCount(3);
   await expect(
-    dialog.locator(".trip-summary-header [data-delay-badge]"),
+    dialog.locator(".trip-sticky-header [data-delay-badge]"),
   ).toBeVisible();
   await expect(
     dialog.locator(".vehicle-map, .vehicle-tracking, .trip-timeline-hint"),

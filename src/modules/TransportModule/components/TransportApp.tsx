@@ -1,3 +1,4 @@
+import { usePrefetchTrips } from "../hooks/usePrefetchTrips";
 import { useScrollOnContent } from "../../UIModule/hooks/useScrollOnContent";
 import { TripResources } from "../hooks/TripResources";
 import { expandedJourneys } from "../providers/journeyExpansion";
@@ -48,13 +49,18 @@ function TransportView({
   const t = dictionary(locale);
   const { url, navigate } = useUrlNavigation();
   const search = useJourneySearch(results);
+  usePrefetchTrips(search.data);
   const p = url.searchParams;
   const selectedOriginal = search.data?.journeys.find(
     (j) => j.key === p.get("journey"),
   );
   const tracking = useTripTracking(
     search.data?.journeys
-      .filter((j) => expandedJourneys(url).has(j.key))
+      .filter(
+        (j) =>
+          expandedJourneys(url).has(j.key) ||
+          (j.key === p.get("journey") && p.has("leg")),
+      )
       .flatMap((j) => j.legs.flatMap((l) => (l.tripId ? [l.tripId] : []))) ??
       [],
   );
@@ -263,7 +269,7 @@ function TransportView({
           locale={locale}
           url={url}
           onClose={() => {
-            focusAfter.current = `${focusedCard} [data-trip-open="${index("leg")}"]`;
+            focusAfter.current = `${focusedCard} [${selected && expandedJourneys(url).has(selected.key) ? "data-trip-open" : "data-summary-trip"}="${index("leg")}"]`;
             navigate(navHref(url, { leg: null }), true);
           }}
         />

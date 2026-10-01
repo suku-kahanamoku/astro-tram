@@ -12,7 +12,10 @@ import {
 } from "./JourneyLiveFields";
 import { Fragment } from "react";
 import Collapse from "../../UIModule/components/Collapse";
-import { NavLink } from "../../UIModule/hooks/useUrlNavigation";
+import {
+  NavLink,
+  useUrlNavigation,
+} from "../../UIModule/hooks/useUrlNavigation";
 import Icon from "../../UIModule/components/TransitIcon";
 import { modeLabel } from "../providers/transportIcons";
 import { navHref } from "../providers/render";
@@ -257,6 +260,7 @@ export default function JourneyResults({
   trip?: Trip;
   tripError?: string;
 }) {
+  const { navigate } = useUrlNavigation();
   const selected = url.searchParams.get("journey");
   return (
     <>
@@ -278,13 +282,57 @@ export default function JourneyResults({
             data-journey={j.key}
             key={j.key}
           >
-            <NavLink
-              className="journey-summary"
-              data-nav
-              href={navHref(url, toggleJourney(url, j.key))}
-              aria-expanded={open}
-              aria-label={open ? t.closeDetail : t.detail}
-            >
+            <div className="journey-summary">
+              <div className="journey-summary-footer">
+                <JourneyDate journey={j} locale={locale} />
+                <div className="route-badges summary-badges">
+                  {j.legs.map((l, i) => (
+                    <Fragment key={i}>
+                      {i > 0 && <span aria-hidden="true">›</span>}
+                      {l.tripId ? (
+                        <button
+                          className="route-badge trip-open"
+                          data-mode={l.mode}
+                          data-summary-trip={i}
+                          aria-haspopup="dialog"
+                          aria-label={`${modeLabel(l.mode, t)}: ${t.tripStops} ${l.line || ""}`}
+                          type="button"
+                          onClick={() =>
+                            navigate(
+                              navHref(url, {
+                                journey: j.key,
+                                expanded: [...expandedJourneys(url)].join(","),
+                                leg: String(i),
+                                stops:
+                                  selected === j.key
+                                    ? url.searchParams.get("stops")
+                                    : null,
+                                map: null,
+                                stopLeg: null,
+                                stopSide: null,
+                                tripStop: null,
+                              }),
+                            )
+                          }
+                        >
+                          <Badge leg={l} t={t} />
+                        </button>
+                      ) : (
+                        <span className="route-badge" data-mode={l.mode}>
+                          <Badge leg={l} t={t} />
+                        </span>
+                      )}
+                    </Fragment>
+                  ))}
+                </div>
+              </div>
+              <NavLink
+                className="journey-summary-toggle"
+                data-nav
+                href={navHref(url, toggleJourney(url, j.key))}
+                aria-expanded={open}
+                aria-label={open ? t.closeDetail : t.detail}
+              />
               <div className="journey-route">
                 <JourneyTime
                   journey={j}
@@ -307,7 +355,7 @@ export default function JourneyResults({
               <span className="journey-arrow" aria-hidden="true">
                 <span className="disclosure-chevron">⌄</span>
               </span>
-            </NavLink>
+            </div>
             {(j.source.mode === "fallback" ||
               j.legs.some((l) => l.cancelled)) && (
               <div className="journey-meta">
@@ -326,43 +374,6 @@ export default function JourneyResults({
               </div>
             )}
             <Collapse open={open}>
-              <div className="journey-summary-footer">
-                <JourneyDate journey={j} locale={locale} />
-                <div className="route-badges summary-badges">
-                  {j.legs.map((l, i) => (
-                    <Fragment key={i}>
-                      {i > 0 && <span aria-hidden="true">›</span>}
-                      {l.tripId ? (
-                        <NavLink
-                          className="route-badge trip-open"
-                          data-mode={l.mode}
-                          data-summary-trip={i}
-                          aria-haspopup="dialog"
-                          aria-label={`${modeLabel(l.mode, t)}: ${t.tripStops} ${l.line || ""}`}
-                          href={navHref(journeyContext(url, j.key), {
-                            journey: j.key,
-                            leg: String(i),
-                            stops:
-                              selected === j.key
-                                ? url.searchParams.get("stops")
-                                : null,
-                            map: null,
-                            stopLeg: null,
-                            stopSide: null,
-                            tripStop: null,
-                          })}
-                        >
-                          <Badge leg={l} t={t} />
-                        </NavLink>
-                      ) : (
-                        <span className="route-badge" data-mode={l.mode}>
-                          <Badge leg={l} t={t} />
-                        </span>
-                      )}
-                    </Fragment>
-                  ))}
-                </div>
-              </div>
               <JourneyDetail
                 journey={j}
                 t={t}

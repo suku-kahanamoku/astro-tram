@@ -60,7 +60,7 @@ export default function TripTimeline({
           style={{ top }}
           role="img"
           aria-label={label}
-          title={`${label}. ${t.vehicleTimelineHint}`}
+          title={retained ? label : `${label}. ${t.vehicleTimelineHint}`}
         />
       )}
       {label && (

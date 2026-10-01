@@ -229,15 +229,15 @@ Mapy mají vyhrazenou výšku během načítání; zoom nastavuje `config/client
 
 ### Živé sledování a zpoždění
 
-Otevřený detail spojení odebírá aktuální pozorování přes `useTripTracking` a společný `RealtimeModule`. BFF `POST /api/transport/tracking/` vydává pouze krátkodobý ticket; klíče poskytovatelů zůstávají v php-core. Je potřeba samostatně nakonfigurovat a spustit backendovou gateway podle [provozní dokumentace](../../php/php-core/docs/tram-realtime-tracking.md). Bez dostupného živého odběru zůstává statický detail; červený bod vyžaduje čerstvou ověřenou GPS.
+Otevřený detail spojení odebírá aktuální pozorování přes `useTripTracking` a společný `RealtimeModule`. BFF `POST /api/transport/tracking/` vydává pouze krátkodobý ticket; klíče poskytovatelů zůstávají v php-core. Je potřeba samostatně nakonfigurovat a spustit backendovou gateway podle [provozní dokumentace](../../php/php-core/docs/tram-realtime-tracking.md). Bez dostupného živého odběru zůstává statický detail; první umístění červeného bodu vyžaduje čerstvou ověřenou GPS.
 
 `trackedJourney` společně přepočítává časy, délku cesty, chůzi a návaznosti. Badge je vedle označení spoje: kladné zpoždění červeně, nulové i dosud neznámé zpoždění zeleně „Bez zpoždění“ podle požadovaného UI. Neznámá hodnota zůstává ve výpočtech `null`, není potvrzením včasného příjezdu. `useDelayStatus` ponechá poslední potvrzenou hodnotu po dobu zobrazení komponenty i mezi aktualizacemi; tooltip a přístupný popisek označí neaktuální údaj. Tato paměť slouží pouze badge, ne výpočtu trasy. GPS a časové predikce nadále expirují původním timerem. Časy zastávek se zobrazují bez pomocné značky odhadu. Zavření detailu/skrytí stránky odpojí odběry, žádná poloha se neukládá do storage ani URL. Současný pohyb vozidla automaticky nevytváří náhradní trasu: při ohroženém přestupu UI vyzve k novému vyhledání.
 
-Detail spoje používá `TripTimeline` s osou vlevo od časů a bodem u každé zastávky. `tripProgress` promítá pouze čerstvou GPS na jednoznačný úsek mezi sousedními zastávkami; bod mezi nimi vyjadřuje přibližný postup na schematické ose, nikoli odhad polohy podle hodin. Chybějící souřadnice, nejednoznačné smyčky nebo bod mimo trasu se nepřemosťují. Limity projekce jsou v `TransportModule/config/client.ts`. `useTripTimeline` měří skutečné výšky řádků i po změně šířky a při zalomení názvů. Bez GPS zůstává osa bez červeného bodu. Živá mapa ani hláška o nedostupné poloze nejsou součástí dialogu; mapy zastávek a trasy zůstávají dostupné.
+Detail spoje používá `TripTimeline` s osou vlevo od časů a bodem u každé zastávky. `tripProgress` promítá pouze čerstvou GPS na jednoznačný úsek mezi sousedními zastávkami; bod mezi nimi vyjadřuje přibližný postup na schematické ose, nikoli odhad polohy podle hodin. Chybějící souřadnice, nejednoznačné smyčky nebo bod mimo trasu se nepřemosťují. Limity projekce jsou v `TransportModule/config/client.ts`. `useTripTimeline` měří skutečné výšky řádků i po změně šířky a při zalomení názvů. Před prvním ověřeným měřením zůstává osa bez červeného bodu. Živá mapa ani hláška o nedostupné poloze nejsou součástí dialogu; mapy zastávek a trasy zůstávají dostupné.
 
-Badge zpoždění každého úseku umí využít samostatnou čerstvou zastávkovou predikci nebo číselné zpoždění i tehdy, když GPS poskytovatel nemá. Neznámé zpoždění se pro výpočty nikdy nepřevádí na potvrzenou nulu. Brněnské Spojenka/CIS spoje mohou využít backendový adaptér IDS JMK, pokud je zapnutý pro tenant. Aktuální preset pokrývá CIS linky 737001–737099 a 738001–738099 a ověřuje konkrétní dnešní jízdu. Původní trip ID i frontendový kontrakt zůstávají stejné; React nezná konkrétního poskytovatele. Bez čerstvého měření se bod nezobrazuje a potvrzené nulové zpoždění zobrazí zelený badge. Konfigurace a omezení jsou v provozní dokumentaci výše.
+Badge zpoždění každého úseku umí využít samostatnou čerstvou zastávkovou predikci nebo číselné zpoždění i tehdy, když GPS poskytovatel nemá. Neznámé zpoždění se pro výpočty nikdy nepřevádí na potvrzenou nulu. Brněnské Spojenka/CIS spoje mohou využít backendový adaptér IDS JMK, pokud je zapnutý pro tenant. Aktuální preset pokrývá CIS linky 737001–737099 a 738001–738099 a ověřuje konkrétní dnešní jízdu. Původní trip ID i frontendový kontrakt zůstávají stejné; React nezná konkrétního poskytovatele. Bez čerstvého měření se dříve zobrazený bod ponechá jako poslední známá poloha; potvrzené nulové zpoždění zobrazí zelený badge. Konfigurace a omezení jsou v provozní dokumentaci výše.
 
-Při nejednoznačném přiřazení nové GPS ponechá `useTripProgress` poslední jednoznačný bod stejného spoje s označením „Poslední jednoznačná poloha na trase“. Platnost se řídí původním měřením a nová nejednoznačná data ji neprodlužují. Po vypršení, ztrátě živého odběru, zrušení spoje nebo změně detailu se bod odstraní; stav je pouze v paměti otevřeného dialogu.
+Při nejednoznačném přiřazení, načítání, výpadku nebo expiraci GPS ponechá `useTripProgress` poslední jednoznačně určený bod stejného spoje. Tooltip a přístupný popisek jej označí jako poslední známou polohu; nová platná GPS jej znovu aktualizuje. Uchovává se pouze index úseku a poměr na ose v paměti otevřeného dialogu, nikoliv GPS v databázi či storage. Při změně spoje nebo zavření dialogu se tato paměť uvolní. Časy a výpočty nadále využívají jen platné predikce. Bez jediného ověřeného bodu nelze polohu na ose zobrazit.
 
 ### Stabilní výsledky při živých aktualizacích
 
@@ -250,18 +250,24 @@ badge, délka cesty, upozornění na návaznost a ukazatele GPS. Přepočet
 `trackedJourney` je pouze projekce časů pro tyto komponenty; seznam zastávek,
 legendy, názvy i načtené detaily nemění a nic znovu nestahuje.
 
-Ztráta čerstvé GPS odstraní pouze červený marker. Časy používají stejně široké číslice a badge mají stálou minimální šířku. Nepotřebné hlášky, prázdné legendy, zavřené nabídky a uzavřené accordiony se nevykreslují. Dialog ponechá obsah jen během zavírací animace.
+Ztráta čerstvé GPS ponechá poslední známý marker na místě. Časy používají stejně široké číslice a badge mají stálou minimální šířku. Nepotřebné hlášky, prázdné legendy, zavřené nabídky a uzavřené accordiony se nevykreslují. Dialog ponechá obsah jen během zavírací animace.
 Test v prohlížeči posílá opakované změny zpoždění i výpadek dat a kontroluje
 pořadí karet, totožnost DOM uzlů, výšku accordionu, scroll dialogu a počet HTTP
 načtení detailu. Nové pořadí výsledků vzniká až novým vyhledáním uživatele.
 
 Parametr `expanded` uchovává seznam otevřených karet; `journey` určuje kontext
 aktuálně zvoleného dialogu nebo mapy. Původní odkazy s jediným `journey` fungují dál.
-Datum a badge linek jsou uvnitř rozbaleného accordionu nad podrobnostmi cesty. Dialog má badge zpoždění vedle data
-a čísla spoje; opakované štítky plánovaných/online časů se nezobrazují.
+Datum a badge linek jsou první částí viditelné hlavičky accordionu i při sbalení. Tlačítka badge a odkaz pro rozbalení jsou sourozenci uvnitř `.journey-summary`; kliknutí na badge otevře pouze dialog a zachová stav rozbalení. Dialog má přichycenou hlavičku s titulkem, badge zpoždění a zavíracím tlačítkem; opakované štítky plánovaných/online časů se nezobrazují.
 `TripResources` sdílí načtené statické detaily a probíhající požadavky uvnitř
 otevřeného vyhledávače. Opětovné otevření je bez dalšího HTTP požadavku; první
 otevření dosud nenačteného spoje zobrazí hlavičku a stav načítání zastávek.
 WebSocket běží nezávisle a aktualizuje pouze malé živé komponenty.
 
 Po načtení nových výsledků `useScrollOnContent` plynule posune stránku k jejich záhlaví. Respektuje omezení animací a nepřesouvá stránku při změnách accordionů, dialogů ani živých údajů.
+
+`usePrefetchTrips` po načtení výsledků přednačítá statické detaily všech odlišných spojů.
+`tripResources` slučuje stejné požadavky, omezuje síť na dva souběžné požadavky
+a upřednostní detail, který uživatel právě otevřel. Připravený detail se použije
+pro dialog i mezilehlé zastávky bez dalšího HTTP volání. Pokud uživatel klikne
+před dokončením prvního načtení, sdílí se rozběhnutý požadavek; chyba
+přednačítání neblokuje pozdější opakování při otevření.

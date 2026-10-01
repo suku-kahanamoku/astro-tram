@@ -516,9 +516,10 @@
   margin-bottom: 16px;
 }
 .map-dialog {
+  --dialog-padding: 25px;
   width: min(900px, calc(100% - 30px));
   max-height: calc(100dvh - 40px);
-  padding: 25px;
+  padding: var(--dialog-padding);
   border: 1px solid var(--line);
   border-radius: 18px;
   color: var(--ink);
@@ -727,7 +728,7 @@
     text-align: right;
   }
   .map-dialog {
-    padding: 18px;
+    --dialog-padding: 18px;
     max-height: calc(100dvh - 24px);
   }
   .map-canvas {
@@ -1135,7 +1136,9 @@ a.trip-open:active {
   display: inline-block;
   transition: transform 220ms ease;
 }
-[aria-expanded="true"] .disclosure-chevron {
+[aria-expanded="true"] .disclosure-chevron,
+.journey-summary:has(> .journey-summary-toggle[aria-expanded="true"])
+  .disclosure-chevron {
   transform: rotate(180deg);
 }
 .suggestions {
@@ -1392,4 +1395,56 @@ a.trip-open:active {
 }
 .trip-summary-header .trip-legend {
   margin-block: 0;
+}
+
+/* The summary link and service buttons are siblings, never nested interactive elements. */
+.journey-summary {
+  position: relative;
+}
+.journey-summary > .journey-summary-footer {
+  grid-column: 1 / -1;
+  padding: 0;
+}
+.journey-summary-toggle {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+}
+.journey-summary button.route-badge {
+  position: relative;
+  z-index: 2;
+  cursor: pointer;
+}
+.trip-dialog .trip-sticky-header {
+  position: sticky;
+  top: calc(-1 * var(--dialog-padding));
+  z-index: 5;
+  background: var(--paper);
+  margin: calc(-1 * var(--dialog-padding)) calc(-1 * var(--dialog-padding)) 20px;
+  padding: var(--dialog-padding) calc(var(--dialog-padding) + 48px) 16px
+    var(--dialog-padding);
+  border-bottom: 1px solid var(--line);
+}
+.trip-dialog .trip-sticky-header > .icon-button {
+  top: var(--dialog-padding);
+  right: var(--dialog-padding);
+}
+.trip-sticky-header > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.trip-sticky-header .eyebrow {
+  flex-basis: 100%;
+}
+.trip-dialog .trip-sticky-header #trip-title {
+  flex: 1 1 260px;
+  margin: 0;
+}
+.trip-vehicle-dot[data-retained] {
+  box-shadow:
+    0 0 0 3px var(--paper),
+    0 0 0 5px var(--muted);
 }
