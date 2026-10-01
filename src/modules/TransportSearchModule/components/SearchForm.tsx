@@ -37,21 +37,36 @@ export default function SearchForm({
   const changeScope = (patch: Partial<SearchState>) =>
     setDraft((s) => ({ ...s, ...patch, from: undefined, to: undefined }));
   const scope = `${draft.country}:${draft.city ?? ""}`;
+  const countries = [
+    { code: "CZ", flag: "🇨🇿", label: t.cz },
+    { code: "SK", flag: "🇸🇰", label: t.sk },
+    { code: "AT", flag: "🇦🇹", label: t.at },
+    { code: "PL", flag: "🇵🇱", label: t.pl },
+  ];
+  const countryId = draft.country.toLowerCase();
   return (
     <>
       <div className="country-tabs" role="tablist" aria-label={t.country}>
-        <button
-          type="button"
-          role="tab"
-          id="country-cz"
-          aria-selected="true"
-          aria-controls="country-search-cz"
-          tabIndex={0}
-        >
-          <span aria-hidden="true">🇨🇿</span> {t.cz}
-        </button>
+        {countries.map(({ code, flag, label }) => (
+          <button
+            key={code}
+            type="button"
+            role="tab"
+            id={`country-${code.toLowerCase()}`}
+            aria-selected={draft.country === code}
+            aria-controls={`country-search-${code.toLowerCase()}`}
+            tabIndex={draft.country === code ? 0 : -1}
+            onClick={() => changeScope({ country: code })}
+          >
+            <span aria-hidden="true">{flag}</span> {label}
+          </button>
+        ))}
       </div>
-      <div role="tabpanel" id="country-search-cz" aria-labelledby="country-cz">
+      <div
+        role="tabpanel"
+        id={`country-search-${countryId}`}
+        aria-labelledby={`country-${countryId}`}
+      >
         <form
           className="journey-form"
           data-search-form
