@@ -11,7 +11,7 @@ export function freshPosition(lat: number, lon: number, timestamp: number) {
   );
 }
 /** Only in-memory measurements. Call anew for each search; never persist or put in a URL. */
-export function getFix(): Promise<Fix> {
+export function getFix(timeoutMs: number = config.gpsTimeoutMs): Promise<Fix> {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
       reject(new Error("location"));
@@ -34,7 +34,28 @@ export function getFix(): Promise<Fix> {
         });
       },
       () => reject(new Error("location")),
-      { enableHighAccuracy: true, maximumAge: 0, timeout: config.gpsTimeoutMs },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: timeoutMs },
+    );
+  });
+}
+
+/** Optional fresh location for ranking: denial or a slow fix must not block text search. */
+export function getAutocompleteFix(): Promise<Fix | undefined> {
+  return new Promise((resolve) => {
+    // Browser timeout may exclude time spent in the permission prompt.
+    const timer = setTimeout(
+      () => resolve(undefined),
+      config.autocompleteGpsTimeoutMs,
+    );
+    void getFix(config.autocompleteGpsTimeoutMs).then(
+      (fix) => {
+        clearTimeout(timer);
+        resolve(fix);
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(undefined);
+      },
     );
   });
 }

@@ -756,9 +756,6 @@
 .form-bottom {
   flex-wrap: wrap;
 }
-.scope-location {
-  cursor: pointer;
-}
 
 .country-tabs {
   display: flex;
@@ -1253,4 +1250,18 @@ a.trip-open:active {
   .disclosure-mark::after {
     transition: none;
   }
+}
+
+.trip-technical-notes {
+  margin-top: 1rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.trip-technical-notes summary {
+  cursor: pointer;
+  padding: 0.6rem 0;
+}
+.trip-technical-notes p,
+.trip-technical-notes ul {
+  margin: 0.6rem 0;
 }

@@ -258,14 +258,18 @@ test("a delayed GPS response cannot overwrite a manually selected stop", async (
   page,
 }) => {
   await page.addInitScript(() => {
+    const pending: PositionCallback[] = [];
     Object.defineProperty(navigator, "geolocation", {
       value: {
         getCurrentPosition: (ok: PositionCallback) => {
-          (window as any).finishGps = () =>
-            ok({
-              timestamp: Date.now(),
-              coords: { latitude: 50.08, longitude: 14.41 },
-            } as GeolocationPosition);
+          pending.push(ok);
+          (window as any).finishGps = () => {
+            for (const callback of pending.splice(0))
+              callback({
+                timestamp: Date.now(),
+                coords: { latitude: 50.08, longitude: 14.41 },
+              } as GeolocationPosition);
+          };
         },
       },
     });
@@ -334,14 +338,14 @@ test("country and city scope reaches autocomplete and persists in journey URLs",
   await expect(page.locator(".journey-card").first()).toBeVisible();
 });
 
-test("GPS scope uses a fresh fix in POST only and explicit city takes priority", async ({
+test("autocomplete uses fresh GPS automatically in POST only and explicit city takes priority", async ({
   page,
   context,
 }) => {
   await context.grantPermissions(["geolocation"]);
   await context.setGeolocation({ latitude: 49.195, longitude: 16.61 });
   await page.goto("/");
-  await page.locator("[data-scope-location]").check();
+  await expect(page.locator("[data-scope-location]")).toHaveCount(0);
   const pending = page.waitForRequest((r) =>
     r.url().includes("/api/transport/places/"),
   );
@@ -839,4 +843,72 @@ test("trip stop opens a map above the trip dialog with refresh, history, focus r
   await expect(stopLink).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(tripDialog).not.toBeVisible();
+});
+
+test("missing inferred area keeps selected Třebíč in the form and URL after search and refresh", async ({
+  page,
+}) => {
+  let searches = 0;
+  await page.route("**/api/transport/search/**", async (route) => {
+    searches++;
+    expect(route.request().postDataJSON().city).toBe("Třebíč");
+    const response = await route.fetch();
+    const body = await response.json();
+    body.data.city = null;
+    body.data.intercity = false;
+    await route.fulfill({ json: body });
+  });
+  await page.goto(
+    "/spojeni/?" +
+      query({
+        city: "Třebíč",
+        fromLabel: "Třebíč, Hrotovická",
+        toLabel: "Třebíč, Kubišova",
+      }),
+  );
+  await expect(page.locator(".journey-card")).toHaveCount(2);
+  await expect(page.locator("#travel-city")).toHaveValue("Třebíč");
+  expect(new URL(page.url()).searchParams.get("city")).toBe("Třebíč");
+  expect(searches).toBe(1);
+  await page.reload();
+  await expect(page.locator(".journey-card")).toHaveCount(2);
+  await expect(page.locator("#travel-city")).toHaveValue("Třebíč");
+  expect(searches).toBe(2);
+});
+
+test("trip equipment is visible below stops and technical timetable codes need explicit expansion", async ({
+  page,
+}) => {
+  await page.route("**/api/transport/trip/**", async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    Object.assign(body.data.metadata, {
+      features: ["BICYCLE_TRANSPORT", "WIFI", "TOILETS", "SOCKETS_230V"],
+      accessibility: "accessible",
+      reservations: { bicycle: "mandatory" },
+    });
+    body.data.metadata.notes.push({
+      scope: "line",
+      category: "technical",
+      texts: { cs: "Grafikony: PD: T2610 SN: T2609 Pz: P2610" },
+      defaultLanguage: "cs",
+    });
+    await route.fulfill({ json: body });
+  });
+  await page.goto("/spojeni/?" + query());
+  await page.locator("[data-journey-key]").first().click();
+  await page.locator('[data-trip-open="0"]').first().click();
+  const notes = page.locator("[data-trip-notes]");
+  await expect(
+    notes.getByText("Přeprava jízdních kol", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    notes.getByText("Bezbariérové vozidlo podle jízdního řádu", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(notes.locator(".trip-legend li")).not.toHaveCount(3);
+  await expect(notes.getByText(/^Grafikony:/)).toBeHidden();
+  await notes.locator("summary").click();
+  await expect(notes.getByText(/^Grafikony:/)).toBeVisible();
 });

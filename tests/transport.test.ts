@@ -4,6 +4,7 @@ import {
   readState,
   writeState,
   searchBody,
+  requiresLocation,
   formInstant,
 } from "../src/modules/TransportModule/providers/state";
 import { validateSearch } from "../src/modules/TransportModule/server/handlers";
@@ -184,4 +185,13 @@ test("no configured place sources is not presented as a successful empty search"
     await provider([{ provider: "pid", status: "ok" }]).places("Tabor", "CZ"),
     { data: [], partial: false },
   );
+});
+
+test("legacy GPS scope links do not request device location or survive URL serialization", () => {
+  const params = writeState(state);
+  params.set("scopeLocation", "1");
+  const restored = readState(params);
+  assert.equal(requiresLocation(restored), false);
+  assert.equal(writeState(restored).has("scopeLocation"), false);
+  assert.equal(searchBody(restored).location, undefined);
 });

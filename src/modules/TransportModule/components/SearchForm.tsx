@@ -35,7 +35,7 @@ export default function SearchForm({
   const read = () => ({ ...draft, at: formInstant(fields.day, fields.time) });
   const changeScope = (patch: Partial<SearchState>) =>
     setDraft((s) => ({ ...s, ...patch, from: undefined, to: undefined }));
-  const scope = `${draft.country}:${draft.city ?? ""}:${!!draft.scopeLocation}`;
+  const scope = `${draft.country}:${draft.city ?? ""}`;
   return (
     <>
       <div className="country-tabs" role="tablist" aria-label={t.country}>
@@ -178,17 +178,6 @@ export default function SearchForm({
               </button>
             </div>
             <div className="form-bottom">
-              <label className="scope-location">
-                <input
-                  type="checkbox"
-                  data-scope-location
-                  checked={!!draft.scopeLocation}
-                  onChange={(e) =>
-                    changeScope({ scopeLocation: e.target.checked })
-                  }
-                />
-                <span>{t.scopeLocation}</span>
-              </label>
               <span>
                 <Icon name="clock" size={14} />
                 {t.timezone}

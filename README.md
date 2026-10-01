@@ -86,6 +86,7 @@ Datum a čas formuláře i výsledků se zobrazují v časovém pásmu zařízen
 ## Veřejná serverová vrstva
 
 - `GET /api/transport/places/?q={"name":{"$regex":"Praha"},"state":"CZ"}`: povolený `q` filtr, nejvýše 20 míst pod `data`; předává standardní filtr na php-core `POST /transport/v1/places/search`. Volitelné `city` omezuje obec.
+- `GET /api/transport/cities/?q={"state":"CZ"}`: online katalog obcí, přes php-core `POST /transport/v1/cities/search`; pouze vybraná veřejná pole. Stejnojmenné obce jsou sloučené, protože filtr cest pracuje s názvem města.
 - `POST /api/transport/search/`: doménový příkaz nad existujícím kontraktem TRAM (`from-dest`, `to-dest`, právě jeden `from-date`/`to-date`, `state`, `city`, `location`, `max-transfers`, `limit`). Není generické prohledávání tabulky. Validace vstupu, originu a limit těla 16 KiB.
 - `GET /api/transport/trip/?id=...`: konkrétní provozní jízda a její zastávky.
 - `GET /api/transport/stop/?id=...`: veřejný detail zastávky z php-core; pro mapu doplní souřadnice chybějící ve výsledku hledání.
@@ -119,12 +120,21 @@ Produkční frontend, host TRAM a dopravní providery musí být nakonfigurován
 
 Formulář je pod záložkou **Česká republika** (`country=CZ`). Nad Odkud/Kam je
 vyhledávatelný výběr **Město / jízdní řády**, výchozí **Všechny jízdní řády**.
-Praha a Brno se nabídnou po ověření online; další obce lze dohledat psaním názvu.
-Nabídka používá metadata `city` z existujícího online našeptávače zastávek,
-nejde o úplný seznam všech obcí stažený do prohlížeče. Stát a vybrané město
-se přenášejí do našeptávání i hledání cest. Prázdné město znamená všechna města daného státu. Volba „Oblast podle aktuální
-GPS“ načte nový fix pro každý dotaz. Výslovné město má přednost; stát lze s GPS
-kombinovat. GPS našeptávání používá `POST /api/transport/places/` s `q` v těle,
+Po připojení formuláře se předem načte online katalog měst z php-core, bez pevného seznamu
+Praha/Brno a bez limitu prvních dvaceti zastávek. Psaní filtruje všechny načtené
+názvy bez diakritiky. Delší nabídka vykresluje položky postupně po stovkách při
+scrollování; klávesnice i filtrování pracují s celým katalogem. Data žijí jen
+v otevřeném formuláři: opakované otevření sdílí probíhající požadavek nebo používá
+již načtený katalog. Zavření nabídky načítání neruší. Změna státu nebo obnovení
+stránky načte katalog znovu online; neúspěšný požadavek lze zopakovat otevřením
+nabídky. Názvy se seřadí a normalizují jednou, psaní pouze filtruje připravený
+index. Toto znovupoužití statických metadat se netýká polohy ani spojů. Nový endpoint
+vyžaduje současné nasazení změn modulu Transport v php-core, bez DB migrace. Stát a vybrané město
+se přenášejí do našeptávání i hledání cest. Prázdné město znamená všechna města daného státu. Bez vybraného města našeptávání automaticky požádá o čerstvou GPS a řadí
+textové shody podle vzdálenosti, pak textové relevance. GPS nezúží nabídku
+na aktuální město; pro zvolený stát zůstávají zapojené všechny dostupné zdroje.
+Při odmítnutí nebo nedostupnosti GPS (limit 1,5 sekundy) funguje textové hledání
+bez polohy. Výslovné město má přednost a automatickou GPS nepoužívá. GPS našeptávání používá `POST /api/transport/places/` s `q` v těle,
 nikdy souřadnice v URL. Backend vybírá všechny relevantní schopné poskytovatele
 podle jejich nakonfigurovaného pokrytí; GPS obdélníky nenahrazují přesné hranice
 obcí ani globální reverse geocoder.

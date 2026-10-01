@@ -1,8 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Combobox from "../../UIModule/components/Combobox";
-import { useAsyncOptions } from "../../UIModule/hooks/useAsyncOptions";
-import { transportClient } from "../providers/client";
-import { transportClientConfig as config } from "../config/client";
+import { useCityCatalog } from "../hooks/useCityCatalog";
 import type { Dictionary } from "../providers/translations";
 const normalize = (value: string) =>
   value.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase();
@@ -17,45 +15,44 @@ export default function CityPicker({
   t: Dictionary;
   onChange: (city: string) => void;
 }) {
+  const [query, setQuery] = useState("");
   const [text, setText] = useState(value || t.allTimetables),
     [open, setOpen] = useState(false);
   const input = useRef<HTMLInputElement>(null);
-  const { options, loading, error, run, cancel } = useAsyncOptions<string>();
+  const { options, loading, error, ensureLoaded } = useCityCatalog(country);
   useEffect(() => {
     setText(value || t.allTimetables);
     setOpen(false);
-    cancel();
-  }, [value, t.allTimetables, cancel]);
-  const load = (query: string, delay = 0) => {
+  }, [value, country, t.allTimetables]);
+  const load = () => {
+    setQuery("");
     setOpen(true);
-    run(async (signal) => {
-      const terms =
-        query.length >= config.minimumQueryLength
-          ? [query]
-          : config.defaultCities;
-      const rows = await Promise.all(
-        terms.map((term) =>
-          transportClient.places(
-            { name: { $regex: term }, state: country },
-            signal,
-          ),
-        ),
-      );
-      return [
-        ...new Set(
-          rows
-            .flat()
-            .map((p) => p.city)
-            .filter(
-              (c): c is string =>
-                !!c && (!query || normalize(c).includes(normalize(query))),
-            ),
-        ),
-      ].sort((a, b) => a.localeCompare(b, "cs"));
-    }, delay);
+    ensureLoaded();
   };
+  const index = useMemo(() => {
+    const collator = new Intl.Collator("cs");
+    return options
+      .map((city) => ({ city, searchName: normalize(city.name) }))
+      .sort((a, b) => collator.compare(a.city.name, b.city.name));
+  }, [options]);
+  const choices = useMemo(() => {
+    const term = normalize(query);
+    return index
+      .filter((item) => item.searchName.includes(term))
+      .map((item) => item.city);
+  }, [index, query]);
+  const comboOptions = useMemo(
+    () => [
+      { key: "", label: t.allTimetables },
+      ...choices.map((city) => ({
+        key: city.id,
+        label: city.name,
+        detail: city.sourceMode === "fallback" ? t.fallback : undefined,
+      })),
+    ],
+    [choices, t.allTimetables, t.fallback],
+  );
   const hide = () => {
-    cancel();
     setOpen(false);
     setText(value || t.allTimetables);
   };
@@ -71,27 +68,26 @@ export default function CityPicker({
         autoComplete="off"
         open={open}
         listId="city-options"
-        options={["", ...options].map((c) => ({
-          key: c,
-          label: c || t.allTimetables,
-        }))}
+        options={comboOptions}
         hint={
           loading
             ? t.loadingPlaces
             : error
               ? t.citiesError
-              : open && !options.length
+              : open && !choices.length
                 ? t.noCities
                 : ""
         }
         hintAttributes={{ "data-city-hint": "" }}
         onText={(q) => {
           setText(q);
-          load(q.trim(), config.autocompleteDelayMs);
+          setQuery(q.trim());
+          setOpen(true);
         }}
         onChoose={(i) => {
           hide();
-          const next = ["", ...options][i];
+          const next = i === 0 ? "" : choices[i - 1]?.name;
+          if (next === undefined) return;
           setText(next || t.allTimetables);
           onChange(next);
         }}
@@ -99,7 +95,13 @@ export default function CityPicker({
         onBlur={hide}
         onFocus={(e) => {
           e.target.select();
-          load("");
+          load();
+        }}
+        onClick={(e) => {
+          if (!open) {
+            e.currentTarget.select();
+            load();
+          }
         }}
         buttons={
           <button
@@ -108,8 +110,8 @@ export default function CityPicker({
             data-city-toggle
             aria-label={t.cityTimetables}
             onClick={() => {
-              input.current?.focus();
-              load("");
+              if (document.activeElement === input.current) load();
+              else input.current?.focus();
             }}
           >
             ⌄

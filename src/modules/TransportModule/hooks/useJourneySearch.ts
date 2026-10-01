@@ -39,9 +39,11 @@ export function useJourneySearch(enabled: boolean) {
         );
         if (abort.signal.aborted) return;
         const next = new URL(location.href);
+        // Unknown area metadata must not erase the user's selection.
         if (data.journeys.length) {
-          if (data.city) next.searchParams.set("city", data.city);
-          else next.searchParams.delete("city");
+          if (data.intercity) next.searchParams.delete("city");
+          else if (!state.city && data.city)
+            next.searchParams.set("city", data.city);
         }
         const resolvedKey = writeState(readState(next.searchParams)).toString();
         completed.current = resolvedKey;

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Combobox from "../../UIModule/components/Combobox";
 import Icon from "../../UIModule/components/TransitIcon";
 import { useAsyncOptions } from "../../UIModule/hooks/useAsyncOptions";
-import { getFix } from "../providers/geolocation";
+import { getAutocompleteFix, getFix } from "../providers/geolocation";
 import { transportClient } from "../providers/client";
 import { transportClientConfig as config } from "../config/client";
 import type { Dictionary } from "../providers/translations";
@@ -99,8 +99,7 @@ export default function PlaceField({
     setNearby(false);
     setOpen(true);
     run(async (signal) => {
-      const fix =
-        state.scopeLocation && !state.city ? await getFix() : undefined;
+      const fix = !state.city ? await getAutocompleteFix() : undefined;
       if (signal.aborted) return [];
       return transportClient.places(
         {

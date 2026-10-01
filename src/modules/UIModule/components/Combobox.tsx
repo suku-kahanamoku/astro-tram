@@ -43,6 +43,11 @@ export default function Combobox({
   ...props
 }: Props) {
   const [active, setActive] = useState(-1);
+  const [visibleCount, setVisibleCount] = useState(100);
+  useEffect(() => {
+    setVisibleCount(100);
+    setActive(-1);
+  }, [value, open, options]);
   const list = useRef<HTMLUListElement>(null);
   useEffect(() => {
     if (!open) setActive(-1);
@@ -81,11 +86,11 @@ export default function Combobox({
             if (!open || !options.length) return;
             if (e.key === "ArrowDown" || e.key === "ArrowUp") {
               e.preventDefault();
-              setActive(
-                (i) =>
-                  (i + (e.key === "ArrowDown" ? 1 : -1) + options.length) %
-                  options.length,
-              );
+              const next =
+                (active + (e.key === "ArrowDown" ? 1 : -1) + options.length) %
+                options.length;
+              setVisibleCount((count) => Math.max(count, next + 1));
+              setActive(next);
             }
             if (e.key === "Enter") {
               e.preventDefault();
@@ -102,13 +107,20 @@ export default function Combobox({
         role="listbox"
         hidden={!open || !options.length}
         onMouseDown={(e) => e.preventDefault()}
+        onScroll={(e) => {
+          const list = e.currentTarget;
+          if (list.scrollHeight - list.scrollTop - list.clientHeight < 80)
+            setVisibleCount((count) => Math.min(options.length, count + 100));
+        }}
       >
-        {options.map((option, i) => (
+        {options.slice(0, visibleCount).map((option, i) => (
           <li
             key={option.key}
             id={`${listId}-${i}`}
             role="option"
             aria-selected={active === i}
+            aria-setsize={options.length}
+            aria-posinset={i + 1}
             onClick={() => {
               setActive(-1);
               onChoose(i);

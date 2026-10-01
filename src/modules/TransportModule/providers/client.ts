@@ -1,5 +1,11 @@
 import { transportClientConfig as config } from "../config/client";
-import type { Trip, Stop, SearchResult, PlaceOption } from "../types";
+import type {
+  Trip,
+  Stop,
+  SearchResult,
+  PlaceOption,
+  CityOption,
+} from "../types";
 export async function request<T>(
   path: string,
   options: RequestInit = {},
@@ -15,6 +21,11 @@ export async function request<T>(
   return body.data;
 }
 export const transportClient = {
+  cities: (country: string, signal: AbortSignal) =>
+    request<CityOption[]>(
+      `${config.endpoints.cities}?q=${encodeURIComponent(JSON.stringify({ state: country }))}`,
+      { signal },
+    ),
   search: (body: Record<string, unknown>, signal: AbortSignal) =>
     request<SearchResult>(config.endpoints.search, {
       method: "POST",

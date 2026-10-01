@@ -1,3 +1,8 @@
+import {
+  tripFeatures,
+  reservationLabels,
+  type ReservationKind,
+} from "../config/tripFeatures";
 import { Fragment, type ReactNode } from "react";
 import Icon from "../../UIModule/components/TransitIcon";
 import { safeWebUrl } from "../providers/tripLegend";
@@ -104,6 +109,40 @@ export default function TripLegend({
     });
   else if (m?.name && section !== "notes")
     rows.push({ icon: "ticket", label: t.tripName, value: m.name });
+  if (section !== "summary") {
+    if (m?.accessibility)
+      rows.push({
+        icon: "wheelchair",
+        label: t.accessibility,
+        value:
+          m.accessibility === "partial"
+            ? t.partiallyAccessibleVehicle
+            : t.accessibleVehicle,
+      });
+    for (const feature of m?.features ?? []) {
+      const config = tripFeatures[feature];
+      if (config)
+        rows.push({
+          icon: config.icon,
+          label: t.tripEquipment,
+          value: t[config.label],
+        });
+    }
+    for (const kind of Object.keys(reservationLabels) as ReservationKind[]) {
+      const policy = m?.reservations?.[kind];
+      if (!policy) continue;
+      const config = reservationLabels[kind];
+      rows.push({
+        icon: config.icon,
+        label: t[config.label],
+        value:
+          policy === "mandatory"
+            ? t.reservationMandatory
+            : t.reservationAvailable,
+      });
+    }
+  }
+  const technicalNotes: string[] = [];
   const seen = new Set<string>();
   for (const note of section === "summary" ? [] : (m?.notes ?? [])) {
     const text =
@@ -113,23 +152,44 @@ export default function TripLegend({
       Object.values(note.texts)[0];
     if (!text || seen.has(text)) continue;
     seen.add(text);
+    if (note.category === "technical") {
+      technicalNotes.push(text);
+      continue;
+    }
     rows.push({
       icon: "info",
       label: note.scope === "line" ? t.lineNote : t.tripNote,
       value: <LinkedNote text={text} />,
     });
   }
-  return rows.length ? (
-    <ul className="trip-legend">
-      {rows.map((r, i) => (
-        <li key={i}>
-          <Icon name={r.icon} />
-          <div>
-            <span className="trip-info-label">{r.label}</span>
-            {r.value}
-          </div>
-        </li>
-      ))}
-    </ul>
+  return rows.length || technicalNotes.length ? (
+    <>
+      {rows.length > 0 && (
+        <ul className="trip-legend">
+          {rows.map((r, i) => (
+            <li key={i}>
+              <Icon name={r.icon} />
+              <div>
+                <span className="trip-info-label">{r.label}</span>
+                {r.value}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      {technicalNotes.length > 0 && (
+        <details className="trip-technical-notes">
+          <summary>{t.technicalTimetableDetails}</summary>
+          <p>{t.technicalTimetableHint}</p>
+          <ul>
+            {technicalNotes.map((text, i) => (
+              <li key={i}>
+                <LinkedNote text={text} />
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </>
   ) : null;
 }

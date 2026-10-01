@@ -32,4 +32,12 @@ export const transitPaths: Record<string, string> = {
   route:
     "M5 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0Zm18 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM5 6h12a3 3 0 0 1 0 6H7a3 3 0 0 0 0 6h12",
   ticket: "M3 5h18v5a2 2 0 0 0 0 4v5H3v-5a2 2 0 0 0 0-4V5Zm12 0v3m0 3v2m0 3v3",
+  bicycle:
+    "M9 17a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm14 0a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM5 17l5-9 5 9H5Zm3-9h10l3 9M16 4h3v4M7 5h5",
+  wheelchair:
+    "M14 4a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM11 7v7h6l3 6 3-1M11 10h6M8 11a6 6 0 1 0 7 9",
+  wifi: "M2 8a16 16 0 0 1 20 0M5 12a11 11 0 0 1 14 0M8 16a6 6 0 0 1 8 0M12 20h.01",
+  suitcase: "M4 7h16v14H4zM9 7V3h6v4M8 7v14m8-14v14",
+  plug: "M8 2v6m8-6V2M6 8h12v4a6 6 0 0 1-12 0V8Zm6 10v4",
+  cup: "M3 8h14v8a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5V8Zm14 1h2a3 3 0 0 1 0 6h-2M6 2v3m4-3v3m4-3v3",
 };

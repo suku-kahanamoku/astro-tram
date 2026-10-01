@@ -199,3 +199,28 @@ export const stop: APIRoute = async ({ url, locals }) => {
     return errorResponse(error);
   }
 };
+
+/** Complete provider city catalogue, scoped to the selected country. */
+export const cities: APIRoute = async ({ url, locals }) => {
+  try {
+    if (url.search.length > 300) fail();
+    let q: Record<string, unknown>;
+    try {
+      q = plain(JSON.parse(url.searchParams.get("q") ?? "{}"));
+    } catch {
+      return fail();
+    }
+    if (
+      Object.keys(q).some((k) => k !== "state") ||
+      typeof q.state !== "string" ||
+      !/^[A-Z]{2}$/.test(q.state)
+    )
+      fail();
+    return Response.json({
+      success: true,
+      ...(await locals.providers.transport.cities(q.state as string)),
+    });
+  } catch (error) {
+    return errorResponse(error);
+  }
+};

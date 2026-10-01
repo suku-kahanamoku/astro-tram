@@ -1,3 +1,8 @@
+import {
+  tripFeatures,
+  reservationLabels,
+  type TripFeature,
+} from "../config/tripFeatures";
 import { createHash } from "node:crypto";
 import type { CoreClient } from "../../CoreModule/server/php-core";
 import { HttpError } from "../../CoreModule/server/errors";
@@ -27,6 +32,25 @@ function tripMetadata(value: unknown, operatorValue: unknown): TripMetadata {
   const m = object(value),
     operator = object(m.operator ?? operatorValue);
   return {
+    features: [
+      ...new Set(
+        (Array.isArray(m.features) ? m.features : []).filter(
+          (v): v is TripFeature =>
+            typeof v === "string" && Object.hasOwn(tripFeatures, v),
+        ),
+      ),
+    ],
+    accessibility:
+      m.accessibility === "accessible" || m.accessibility === "partial"
+        ? m.accessibility
+        : null,
+    reservations: Object.fromEntries(
+      Object.entries(object(m.reservations)).filter(
+        ([kind, policy]) =>
+          Object.hasOwn(reservationLabels, kind) &&
+          (policy === "available" || policy === "mandatory"),
+      ),
+    ) as TripMetadata["reservations"],
     line: text(m.line, 80) || null,
     number: text(m.number, 80) || null,
     name: text(m.name, 512) || null,
@@ -59,6 +83,10 @@ function tripMetadata(value: unknown, operatorValue: unknown): TripMetadata {
         );
         return {
           scope: n.scope === "line" ? ("line" as const) : ("trip" as const),
+          category:
+            n.category === "technical"
+              ? ("technical" as const)
+              : ("passenger" as const),
           texts,
           defaultLanguage: text(n.default_language, 35) || null,
         };
@@ -127,6 +155,37 @@ function leg(value: unknown): Leg {
 }
 export function createTransportProvider(core: CoreClient) {
   return {
+    async cities(country: string) {
+      const raw = object(
+        await core.request("/transport/v1/cities/search", {
+          method: "POST",
+          body: {
+            q: { state: country },
+            limit: 10000,
+            page: 1,
+            sort: [{ name: 1 }],
+          },
+        }),
+      );
+      if (
+        !Array.isArray(raw.data) ||
+        raw.data.length > 10000 ||
+        raw.has_more === true
+      )
+        throw new HttpError(502, "invalid_backend_response");
+      const data = raw.data.map((p) => {
+        const row = object(p);
+        return {
+          id: text(row.id),
+          name: text(row.name, 120),
+          state: text(row.state, 2),
+          sourceMode: text(row.source_mode),
+        };
+      });
+      if (data.some((p) => !p.id || !p.name || p.state !== country))
+        throw new HttpError(502, "invalid_backend_response");
+      return { data, partial: raw.partial === true };
+    },
     async places(
       query: string | null,
       country: string,
@@ -233,6 +292,7 @@ export function createTransportProvider(core: CoreClient) {
         partial: raw.partial === true,
         resolvedPlaces,
         city: text(object(raw.area).city, 120) || null,
+        intercity: object(raw.area).intercity === true,
       };
     },
     async stop(stopId: string): Promise<Stop> {

@@ -35,7 +35,6 @@ export function readState(params: URLSearchParams): SearchState {
     ...(params.get("city")?.trim()
       ? { city: params.get("city")!.trim().slice(0, 120) }
       : {}),
-    ...(params.get("scopeLocation") === "1" ? { scopeLocation: true } : {}),
     from: read("from"),
     to: read("to"),
     at: validInstant(at) ? at : undefined,
@@ -68,7 +67,6 @@ export function writeState(state: SearchState): URLSearchParams {
   if (state.direct) p.set("direct", "1");
   if (state.country) p.set("country", state.country);
   if (state.city) p.set("city", state.city);
-  if (state.scopeLocation) p.set("scopeLocation", "1");
   return p;
 }
 export function searchBody(
@@ -101,15 +99,11 @@ export function searchBody(
     [state.arrive ? "to-date" : "from-date"]: state.at,
     ...(state.country ? { state: state.country } : {}),
     ...(state.city ? { city: state.city } : {}),
-    ...(state.scopeLocation && !state.city
-      ? { location: place({ type: "current_location", label: "" }) }
-      : {}),
     "max-transfers": state.direct ? 0 : 5,
     limit: 10,
   };
 }
 export const requiresLocation = (state: SearchState) =>
-  (!!state.scopeLocation && !state.city) ||
   state.from?.type === "current_location" ||
   state.to?.type === "current_location";
 export function localFields(instant: Date) {

@@ -5,11 +5,12 @@ export const transportClientConfig = {
   gpsMaxAgeMs: 30_000,
   gpsFutureToleranceMs: 5_000,
   gpsTimeoutMs: 12_000,
-  defaultCities: ["Praha", "Brno"],
+  autocompleteGpsTimeoutMs: 1_500,
   mapZoom: { stop: 17, picker: 13, journeyFitMax: 15, journeyOffset: 1 },
   defaultMapCenter: [14.42, 50.075] as [number, number],
   mapCenters: { NO: [10.752, 59.911] } as Record<string, [number, number]>,
   endpoints: {
+    cities: "/api/transport/cities/",
     places: "/api/transport/places/",
     search: "/api/transport/search/",
     trip: "/api/transport/trip/",

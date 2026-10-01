@@ -1,3 +1,4 @@
+import type { TripFeature, ReservationKind } from "./config/tripFeatures";
 export type Place =
   | { type: "stop"; id: string; label: string }
   | { type: "coordinates"; lat: number; lon: number; label: string }
@@ -10,7 +11,6 @@ export interface SearchState {
   direct: boolean;
   country: string;
   city?: string;
-  scopeLocation?: boolean;
 }
 export interface Fix {
   lat: number;
@@ -56,6 +56,7 @@ export interface Journey {
   };
 }
 export interface SearchResult {
+  intercity?: boolean;
   city?: string | null;
   resolvedPlaces?: Partial<
     Record<"from" | "to", Stop & { sourceMode: string }>
@@ -80,6 +81,9 @@ export interface TripStop {
   departure: string | null;
 }
 export interface TripMetadata {
+  features?: TripFeature[];
+  accessibility?: "accessible" | "partial" | null;
+  reservations?: Partial<Record<ReservationKind, "available" | "mandatory">>;
   line: string | null;
   number: string | null;
   name: string | null;
@@ -92,6 +96,7 @@ export interface TripMetadata {
   } | null;
   notes: {
     scope: "line" | "trip";
+    category?: "technical" | "passenger";
     texts: Record<string, string>;
     defaultLanguage: string | null;
   }[];
@@ -99,5 +104,12 @@ export interface TripMetadata {
 export interface Trip {
   metadata?: TripMetadata;
   stops: TripStop[];
+  sourceMode: string;
+}
+
+export interface CityOption {
+  id: string;
+  name: string;
+  state: string;
   sourceMode: string;
 }

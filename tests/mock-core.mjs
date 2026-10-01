@@ -46,6 +46,33 @@ http
       return send(403, null);
     let body = "";
     for await (const chunk of req) body += chunk;
+    if (url.pathname === "/transport/v1/cities/search") {
+      const query = JSON.parse(body);
+      const names =
+        query.q.state === "CZ"
+          ? [
+              "Brno",
+              "České Budějovice",
+              "Liberec",
+              "Ostrava",
+              "Plzeň",
+              "Praha",
+              "Tábor",
+              "Třebíč",
+            ]
+          : [];
+      return send(200, {
+        data: names.map((name, i) => ({
+          id: encode("city", String(i)),
+          name,
+          state: query.q.state,
+          source_mode: "live",
+        })),
+        partial: false,
+        has_more: false,
+        total: names.length,
+      });
+    }
     if (url.pathname === "/transport/v1/places/search") {
       const query = JSON.parse(body).q;
       if (!query.name) return send(200, { data: stops, partial: false });
@@ -139,6 +166,7 @@ http
         journeys,
         area: {
           city: start.city && start.city === end.city ? start.city : null,
+          intercity: !!start.city && !!end.city && start.city !== end.city,
         },
         partial: true,
         resolved_places: {

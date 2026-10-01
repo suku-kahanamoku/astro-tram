@@ -84,3 +84,44 @@ test("line and trip notes are deduplicated and operator links use safe protocols
   assert.doesNotMatch(html, /javascript:/);
   assert.match(html, /href="tel:\+420123456789"/);
 });
+
+test("trip equipment and reservations are visible while technical notes are collapsed", () => {
+  const enriched: Trip = {
+    ...trip,
+    metadata: {
+      ...trip.metadata!,
+      accessibility: "accessible",
+      features: ["BICYCLE_TRANSPORT", "WIFI", "TOILETS", "SOCKETS_230V"],
+      reservations: { bicycle: "mandatory" },
+      notes: [
+        ...trip.metadata!.notes,
+        {
+          scope: "line",
+          category: "technical",
+          texts: { cs: "Grafikony: PD: T2610 SN: T2609 Pz: P2610" },
+          defaultLanguage: "cs",
+        },
+      ],
+    },
+  };
+  const html = renderTripLegend(enriched, leg, dictionary("cs"), "cs");
+  assert.match(html, /Bezbariérové vozidlo podle jízdního řádu/);
+  assert.match(html, /Přeprava jízdních kol/);
+  assert.match(html, /Rezervace pro kolo/);
+  assert.match(html, /Povinná/);
+  assert.match(html, /data-mode="wheelchair"/);
+  assert.match(html, /data-mode="bicycle"/);
+  assert.match(html, /<details class="trip-technical-notes"><summary>/);
+  assert.doesNotMatch(html, /<details[^>]*open/);
+  assert.match(html, /Grafikony: PD: T2610/);
+  const summary = renderToStaticMarkup(
+    createElement(TripLegend, {
+      trip: enriched,
+      leg,
+      t: dictionary("cs"),
+      locale: "cs",
+      section: "summary",
+    }),
+  );
+  assert.doesNotMatch(summary, /Přeprava jízdních kol|Grafikony|Wi-Fi/);
+});
