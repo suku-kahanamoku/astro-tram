@@ -4,6 +4,7 @@ import {
   observation,
   unavailableObservation,
   delayMinutes,
+  knownDelayMinutes,
   trackedLeg,
   transferAtRisk,
   trackedJourney,
@@ -47,7 +48,7 @@ test("vehicle positions expire based on upstream observation and reject malforme
     null,
   );
 });
-test("badge is shown only for positive verified delay; unknown is not on time", () => {
+test("delay presentation distinguishes confirmed zero, positive delay and unknown", () => {
   const live = {
     ...unavailableObservation(),
     status: "live",
@@ -55,6 +56,17 @@ test("badge is shown only for positive verified delay; unknown is not on time", 
     observedAt: new Date().toISOString(),
     validUntil: new Date(Date.now() + 30000).toISOString(),
   };
+  assert.equal(knownDelayMinutes(leg, live), 8);
+  assert.equal(knownDelayMinutes(leg, { ...live, delaySeconds: 0 }), 0);
+  assert.equal(knownDelayMinutes(leg, unavailableObservation("stale")), null);
+  assert.equal(
+    knownDelayMinutes({
+      ...leg,
+      realtime: true,
+      predictionValidUntil: live.validUntil,
+    }),
+    null,
+  );
   assert.equal(delayMinutes(leg, live), 8);
   assert.equal(delayMinutes(leg, { ...live, delaySeconds: 0 }), 0);
   assert.equal(delayMinutes(leg, { ...live, delaySeconds: -20 }), 0);

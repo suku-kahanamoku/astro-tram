@@ -912,6 +912,7 @@ test("trip equipment is visible below stops and technical timetable codes need e
 test("live vehicle tracking shares the selected journey, shows delay and removes expired GPS", async ({
   page,
 }) => {
+  let pushDelay: (seconds: number) => void = () => {};
   let sessions = 0,
     closed = 0;
   await page.route("**/api/transport/tracking/", async (route) => {
@@ -936,21 +937,24 @@ test("live vehicle tracking shares the selected journey, shows delay and removes
     ws.onMessage((message) => {
       const m = JSON.parse(String(message));
       if (m.type !== "subscribe") return;
-      const now = Date.now();
-      ws.send(
-        JSON.stringify({
-          type: "observation",
-          trip: m.ticket,
-          data: {
-            status: "live",
-            position: { lat: 50.08, lon: 14.42 },
-            observed_at: new Date(now).toISOString(),
-            valid_until: new Date(now + 4000).toISOString(),
-            delay_seconds: 480,
-            cancelled: false,
-          },
-        }),
-      );
+      pushDelay = (seconds) => {
+        const now = Date.now();
+        ws.send(
+          JSON.stringify({
+            type: "observation",
+            trip: m.ticket,
+            data: {
+              status: "live",
+              position: { lat: 50.08, lon: 14.42 },
+              observed_at: new Date(now).toISOString(),
+              valid_until: new Date(now + 4000).toISOString(),
+              delay_seconds: seconds,
+              cancelled: false,
+            },
+          }),
+        );
+      };
+      pushDelay(480);
     });
   });
   await page.goto(`/spojeni/?${query()}`);
@@ -986,9 +990,27 @@ test("live vehicle tracking shares the selected journey, shows delay and removes
   await expect(
     page.locator("[data-trip-dialog] [data-vehicle-map]"),
   ).toHaveCount(0, { timeout: 8000 });
-  await expect(page.locator(".journey-detail [data-delay-badge]")).toHaveCount(
-    0,
-  );
+  const badge = page.locator(".journey-detail .leg-title [data-delay-badge]");
+  await expect(badge).toHaveText("Zpoždění 8 min");
+  await expect(badge).toHaveAttribute("data-stale", "true");
+  await expect(
+    page.getByText("Příjezd je odhadnut podle aktuálního zpoždění.", {
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  expect(
+    await badge.evaluate((el) =>
+      el.previousElementSibling?.matches("[data-trip-open]"),
+    ),
+  ).toBe(true);
+  pushDelay(0);
+  await expect(badge).toHaveText("Bez zpoždění");
+  await expect(badge).toHaveAttribute("data-status", "on-time");
+  await expect(badge).not.toHaveAttribute("data-stale", "true");
+  await expect(badge).toHaveCSS("color", "rgb(18, 104, 50)");
+  pushDelay(120);
+  await expect(badge).toHaveText("Zpoždění 2 min");
+  await expect(badge).toHaveAttribute("data-status", "delayed");
   await page.locator("[data-close-trip]").click();
   await page.locator(".journey-summary").first().click();
   await expect.poll(() => closed).toBe(1);
@@ -1110,9 +1132,22 @@ for (const width of [390, 1280]) {
   });
 }
 
-test("unsupported tracking keeps the stop rail but invents no red dot or delay badge", async ({
+test("unsupported tracking keeps the stop rail and shows unknown delay without inventing punctuality", async ({
   page,
 }) => {
+  await page.route("**/api/transport/search/", async (route) => {
+    const response = await route.fetch();
+    const json = await response.json();
+    for (const journey of json.data.journeys)
+      for (const leg of journey.legs) {
+        leg.realtime = false;
+        leg.expectedDeparture = null;
+        leg.expectedArrival = null;
+        leg.predictionValidUntil = null;
+        leg.delaySeconds = null;
+      }
+    await route.fulfill({ json });
+  });
   await page.route("**/api/transport/tracking/", (route) =>
     route.fulfill({ json: { success: true, data: { status: "unsupported" } } }),
   );
@@ -1121,7 +1156,13 @@ test("unsupported tracking keeps the stop rail but invents no red dot or delay b
   const dialog = page.locator("[data-trip-dialog]");
   await expect(dialog.locator("[data-trip-point]")).toHaveCount(3);
   await expect(dialog.locator("[data-trip-vehicle-dot]")).toHaveCount(0);
-  await expect(dialog.locator("[data-delay-badge]")).toHaveCount(0);
+  await expect(dialog.locator("[data-delay-badge]")).toHaveText(
+    "Zpoždění neznámé",
+  );
+  await expect(dialog.locator("[data-delay-badge]")).toHaveAttribute(
+    "data-status",
+    "unknown",
+  );
   await expect(
     dialog.getByText(
       "Poskytovatel pro tento spoj neposkytuje ověřenou živou polohu.",
@@ -1204,3 +1245,205 @@ test("each accordion service has its own fresh delay badge even when GPS is unsu
     page.locator(".journey-detail .leg").nth(1).locator("[data-delay-badge]"),
   ).toHaveText("Zpoždění 3 min");
 });
+
+for (const width of [390, 1280]) {
+  test(`socket patches keep result order, loaded stops, accordion geometry and dialog scroll stable (${width}px)`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    let searches = 0,
+      trips = 0;
+    let push: (delay: number | null) => void = () => {};
+    await page.route("**/api/transport/search/", async (route) => {
+      searches++;
+      const response = await route.fetch();
+      const json = await response.json();
+      const original = json.data.journeys[0];
+      const later = structuredClone(original);
+      later.key = "later-static-result";
+      for (const leg of later.legs) {
+        for (const field of [
+          "scheduledDeparture",
+          "scheduledArrival",
+          "expectedDeparture",
+          "expectedArrival",
+        ]) {
+          if (leg[field])
+            leg[field] = new Date(Date.parse(leg[field]) + 60000).toISOString();
+        }
+      }
+      json.data.journeys = [original, later];
+      await route.fulfill({ json });
+    });
+    await page.route("**/api/transport/trip/**", async (route) => {
+      const response = await route.fetch();
+      const json = await response.json();
+      const calls = json.data.stops;
+      json.data.stops = [calls[0], calls[2], calls[1]];
+      json.data.stops.forEach((call: any, index: number) => {
+        call.arrival =
+          call.departure = `2026-10-06T08:${["00", "07", "15"][index]}:00Z`;
+      });
+      await route.fulfill({ json });
+    });
+    page.on("request", (request) => {
+      if (request.url().includes("/api/transport/trip/")) trips++;
+    });
+    await page.route("**/api/transport/tracking/", async (route) => {
+      const { id } = route.request().postDataJSON();
+      await route.fulfill({
+        json: {
+          success: true,
+          data: {
+            status: "available",
+            url: "ws://localhost:4328/stable-tracking",
+            ticket: id,
+            expiresAt: new Date(Date.now() + 900000).toISOString(),
+          },
+        },
+      });
+    });
+    await page.routeWebSocket(
+      "ws://localhost:4328/stable-tracking",
+      (socket) => {
+        socket.onMessage((message) => {
+          const request = JSON.parse(String(message));
+          if (request.type !== "subscribe") return;
+          push = (delay) =>
+            socket.send(
+              JSON.stringify({
+                type: "observation",
+                trip: request.ticket,
+                data:
+                  delay === null
+                    ? { status: "stale" }
+                    : {
+                        status: "live",
+                        position: { lat: 50.08, lon: 14.42 },
+                        observed_at: new Date().toISOString(),
+                        valid_until: new Date(Date.now() + 30000).toISOString(),
+                        delay_seconds: delay,
+                        cancelled: false,
+                      },
+              }),
+            );
+          push(0);
+        });
+      },
+    );
+    await page.goto(`/spojeni/?${query()}`);
+    const cards = page.locator(".journey-card");
+    await expect(cards).toHaveCount(2);
+    const first = cards.first();
+    await first.locator(".journey-summary").click();
+    await first.locator(".intermediate-toggle").click();
+    await expect(
+      first.locator("[data-intermediate-stops] .trip-call"),
+    ).toHaveCount(1);
+    await expect(first.locator("[data-delay-badge]")).toHaveText(
+      "Bez zpoždění",
+    );
+    await page.waitForTimeout(300);
+    const order = await cards.evaluateAll((nodes) =>
+      nodes.map((node) => node.getAttribute("data-journey")),
+    );
+    const before = await first.boundingBox();
+    const href = page.url();
+    await first.evaluate((element) => {
+      (window as any).stableNodes = [
+        element,
+        element.querySelector(".journey-detail"),
+        element.querySelector("[data-intermediate-stops] .trip-call"),
+        element.querySelector(".stop-map-link"),
+      ];
+      window.scrollTo({
+        top: element.getBoundingClientRect().top + window.scrollY - 100,
+        behavior: "instant",
+      });
+    });
+    const scroll = await page.evaluate(() => window.scrollY);
+    for (const delay of [480, null, 120, 0]) {
+      push(delay);
+      await expect(first.locator("[data-delay-badge]")).toHaveText(
+        delay === null
+          ? "Zpoždění 8 min"
+          : delay === 0
+            ? "Bez zpoždění"
+            : `Zpoždění ${delay / 60} min`,
+      );
+      await page.waitForTimeout(250);
+      expect(
+        await cards.evaluateAll((nodes) =>
+          nodes.map((node) => node.getAttribute("data-journey")),
+        ),
+      ).toEqual(order);
+      await expect(first.locator(".journey-summary")).toHaveAttribute(
+        "aria-expanded",
+        "true",
+      );
+      expect(page.url()).toBe(href);
+      expect(
+        Math.abs((await first.boundingBox())!.height - before!.height),
+      ).toBeLessThan(2);
+      expect(
+        Math.abs((await page.evaluate(() => window.scrollY)) - scroll),
+      ).toBeLessThan(2);
+      expect(
+        await first.evaluate((element) => {
+          const previous = (window as any).stableNodes;
+          return [
+            element,
+            element.querySelector(".journey-detail"),
+            element.querySelector("[data-intermediate-stops] .trip-call"),
+            element.querySelector(".stop-map-link"),
+          ].every((node, i) => node === previous[i]);
+        }),
+      ).toBe(true);
+    }
+    await first.locator("[data-trip-open]").click();
+    const dialog = page.locator("[data-trip-dialog]");
+    await expect(dialog.locator(".vehicle-map .ol-viewport")).toHaveCount(1);
+    await expect(dialog.locator(".trip-call")).toHaveCount(3);
+    await page.waitForTimeout(300);
+    const geometry = await dialog.evaluate((element) => {
+      element.scrollTop = 120;
+      (window as any).stableDialogNodes = [
+        element.querySelector(".vehicle-map"),
+        element.querySelector(".ol-viewport"),
+        element.querySelector(".trip-call"),
+        element.querySelector("#trip-title"),
+      ];
+      return {
+        height: element.getBoundingClientRect().height,
+        scroll: element.scrollTop,
+        total: element.scrollHeight,
+      };
+    });
+    for (const delay of [null, 180, 0]) {
+      push(delay);
+      await expect(dialog.locator("[data-delay-badge]")).toHaveText(
+        delay === 180 ? "Zpoždění 3 min" : "Bez zpoždění",
+      );
+      if (delay === null)
+        await expect(dialog.locator("[data-vehicle-map]")).toHaveCount(0);
+      await page.waitForTimeout(250);
+      const after = await dialog.evaluate((element) => ({
+        height: element.getBoundingClientRect().height,
+        scroll: element.scrollTop,
+        total: element.scrollHeight,
+        same: [
+          element.querySelector(".vehicle-map"),
+          element.querySelector(".ol-viewport"),
+          element.querySelector(".trip-call"),
+          element.querySelector("#trip-title"),
+        ].every((node, i) => node === (window as any).stableDialogNodes[i]),
+      }));
+      expect(after.same).toBe(true);
+      expect(Math.abs(after.height - geometry.height)).toBeLessThan(2);
+      expect(Math.abs(after.scroll - geometry.scroll)).toBeLessThan(2);
+      expect(Math.abs(after.total - geometry.total)).toBeLessThan(2);
+    }
+    expect(searches).toBe(1);
+    expect(trips).toBe(1);
+  });
+}

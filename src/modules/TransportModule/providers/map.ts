@@ -83,6 +83,7 @@ export function createMap(
   }
   return {
     pick,
+    clear: () => source.clear(),
     center: (lat: number, lon: number) =>
       map.getView().setCenter(fromLonLat([lon, lat])),
     dispose: () => {

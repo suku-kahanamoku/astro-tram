@@ -1,14 +1,13 @@
-import { callTime } from "../providers/tracking";
-import type { TripObservation } from "../types";
-import { Fragment } from "react";
+import { TripCallTime } from "./JourneyLiveFields";
+import { Fragment, memo } from "react";
 import { NavLink } from "../../UIModule/hooks/useUrlNavigation";
 import { tripSegment } from "../providers/trip";
-import { hasStopDetails, time, navHref } from "../providers/render";
+import { hasStopDetails, navHref } from "../providers/render";
 import type { Trip, Leg } from "../types";
 import type { Dictionary } from "../providers/translations";
-export default function TripStops({
+function TripStops({
   trip,
-  live,
+  tripId,
   t,
   locale,
   leg,
@@ -17,7 +16,7 @@ export default function TripStops({
   timeline = false,
 }: {
   trip: Trip;
-  live?: TripObservation;
+  tripId?: string | null;
   t: Dictionary;
   locale: string;
   leg?: Leg;
@@ -33,11 +32,6 @@ export default function TripStops({
         <li className="notice">{t.fallback}</li>
       )}
       {trip.stops.map((c, i) => {
-        const display = callTime(
-          c,
-          c.departure ? "departure" : "arrival",
-          live,
-        );
         const index = i + stopOffset,
           selected = segment !== null && i >= segment.from && i <= segment.to;
         const href =
@@ -73,10 +67,7 @@ export default function TripStops({
                 aria-hidden="true"
               />
             )}
-            <time title={display.estimated ? t.arrivalEstimated : undefined}>
-              {display.estimated && <span aria-hidden="true">≈ </span>}
-              {display.value ? time(display.value, locale) : "—"}
-            </time>
+            <TripCallTime call={c} tripId={tripId} locale={locale} />
             <span className="trip-stop-name">
               {href ? (
                 <NavLink
@@ -143,3 +134,5 @@ export default function TripStops({
     </>
   );
 }
+
+export default memo(TripStops);

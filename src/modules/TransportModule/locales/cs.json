@@ -161,5 +161,8 @@
   "vehicleBetweenStops": "Vozidlo mezi zastávkami {from} a {to}",
   "vehicleTimelineLastKnown": "Poslední jednoznačná poloha na trase",
   "vehicleTimelineHint": "Přibližné umístění na ose zastávek podle aktuální GPS.",
-  "vehicleTimelineUnavailable": "Živou GPS nelze jednoznačně přiřadit k úseku mezi zastávkami. Polohu najdeš na mapě."
+  "vehicleTimelineUnavailable": "Živou GPS nelze jednoznačně přiřadit k úseku mezi zastávkami. Polohu najdeš na mapě.",
+  "delayOnTime": "Bez zpoždění",
+  "delayUnknown": "Zpoždění neznámé",
+  "delayLastKnown": "Poslední známý údaj; čekáme na aktualizaci."
 }

@@ -1,3 +1,4 @@
+import { useTripObservation } from "../hooks/useTrackingSnapshot";
 import { useRef } from "react";
 import TripStops from "./TripStops";
 import { useTripProgress } from "../hooks/useTripProgress";
@@ -21,6 +22,8 @@ export default function TripTimeline({
   url: URL;
 }) {
   const root = useRef<HTMLDivElement>(null);
+  const observation = useTripObservation(leg?.tripId);
+  live = live ?? observation;
   const { progress, retained } = useTripProgress(trip, live);
   const top = useTripTimeline(root, progress, trip);
   const locationLabel = progress
@@ -38,7 +41,7 @@ export default function TripTimeline({
       <ul className="trip-stops" data-trip-dialog-stops>
         <TripStops
           trip={trip}
-          live={live}
+          tripId={leg?.tripId}
           leg={leg}
           t={t}
           locale={locale}
@@ -63,12 +66,17 @@ export default function TripTimeline({
       <span className="sr-only" role="status">
         {label}
       </span>
-      {retained && (
-        <p className="trip-timeline-hint">{t.vehicleTimelineLastKnown}</p>
-      )}
-      {live?.status === "live" && !progress && (
-        <p className="trip-timeline-hint">{t.vehicleTimelineUnavailable}</p>
-      )}
+      <p
+        className="trip-timeline-hint"
+        style={{
+          visibility:
+            retained || (live?.status === "live" && !progress)
+              ? "visible"
+              : "hidden",
+        }}
+      >
+        {retained ? t.vehicleTimelineLastKnown : t.vehicleTimelineUnavailable}
+      </p>
     </div>
   );
 }

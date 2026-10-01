@@ -161,5 +161,8 @@
   "vehicleBetweenStops": "Fahrzeug zwischen {from} und {to}",
   "vehicleTimelineLastKnown": "Letzte eindeutig zugeordnete Position auf der Strecke",
   "vehicleTimelineHint": "Ungefähre Einordnung auf der Haltestellenachse anhand aktueller GPS-Daten.",
-  "vehicleTimelineUnavailable": "Die Live-GPS-Position lässt sich keinem Abschnitt eindeutig zuordnen. Die Position ist auf der Karte sichtbar."
+  "vehicleTimelineUnavailable": "Die Live-GPS-Position lässt sich keinem Abschnitt eindeutig zuordnen. Die Position ist auf der Karte sichtbar.",
+  "delayOnTime": "Pünktlich",
+  "delayUnknown": "Verspätung unbekannt",
+  "delayLastKnown": "Letzter bekannter Stand; Aktualisierung ausstehend."
 }

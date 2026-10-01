@@ -231,10 +231,27 @@ Mapy mají vyhrazenou výšku během načítání; zoom nastavuje `config/client
 
 Otevřený detail spojení odebírá aktuální pozorování přes `useTripTracking` a společný `RealtimeModule`. BFF `POST /api/transport/tracking/` vydává pouze krátkodobý ticket; klíče poskytovatelů zůstávají v php-core. Je potřeba samostatně nakonfigurovat a spustit backendovou gateway podle [provozní dokumentace](../../php/php-core/docs/tram-realtime-tracking.md). Bez gateway se zobrazí nedostupnost, u nepodporovaného zdroje explicitní informace.
 
-`trackedJourney` společně přepočítává časy, délku cesty, chůzi a návaznosti. Živý badge je jen pro kladné zpoždění, zastávkové odhady mají `≈`. Zastaralá měření odstraní lokální timer i bez další síťové odpovědi. Zavření detailu/skrytí stránky odpojí odběry, žádná poloha se neukládá do storage ani URL. Současný pohyb vozidla automaticky nevytváří náhradní trasu: při ohroženém přestupu UI vyzve k novému vyhledání.
+`trackedJourney` společně přepočítává časy, délku cesty, chůzi a návaznosti. Badge je vedle označení spoje: kladné zpoždění červeně, potvrzená nula zeleně „Bez zpoždění“, neznámá hodnota neutrálně. `useDelayStatus` ponechá poslední potvrzenou hodnotu po dobu zobrazení komponenty i mezi aktualizacemi; tooltip a přístupný popisek označí neaktuální údaj. Tato paměť slouží pouze badge, ne výpočtu trasy. GPS a časové predikce nadále expirují původním timerem. Zastávkové odhady mají `≈`. Zavření detailu/skrytí stránky odpojí odběry, žádná poloha se neukládá do storage ani URL. Současný pohyb vozidla automaticky nevytváří náhradní trasu: při ohroženém přestupu UI vyzve k novému vyhledání.
 
 Detail spoje používá `TripTimeline` s osou vlevo od časů a bodem u každé zastávky. `tripProgress` promítá pouze čerstvou GPS na jednoznačný úsek mezi sousedními zastávkami; bod mezi nimi vyjadřuje přibližný postup na schematické ose, nikoli odhad polohy podle hodin. Chybějící souřadnice, nejednoznačné smyčky nebo bod mimo trasu se nepřemosťují. Limity projekce jsou v `TransportModule/config/client.ts`. `useTripTimeline` měří skutečné výšky řádků i po změně šířky a při zalomení názvů. Bez GPS zůstává osa bez červeného bodu; aktuální mapa je nad výpisem.
 
-Badge zpoždění každého úseku umí využít samostatnou čerstvou zastávkovou predikci nebo číselné zpoždění i tehdy, když GPS poskytovatel nemá. Neznámé, nulové a záporné zpoždění badge nevytváří. Brněnské spoje ze současného Spojenka adaptéru bez napojeného GPS zdroje zůstávají ve stavu `unsupported`; tato úprava UI nepřidává nový adaptér IDS JMK.
+Badge zpoždění každého úseku umí využít samostatnou čerstvou zastávkovou predikci nebo číselné zpoždění i tehdy, když GPS poskytovatel nemá. Neznámé zpoždění se nikdy nevydává za potvrzenou nulu. Brněnské Spojenka/CIS spoje mohou využít backendový adaptér IDS JMK, pokud je zapnutý pro tenant. Aktuální preset pokrývá CIS linky 737001–737099 a 738001–738099 a ověřuje konkrétní dnešní jízdu. Původní trip ID i frontendový kontrakt zůstávají stejné; React nezná konkrétního poskytovatele. Bez čerstvého měření se bod nezobrazuje a potvrzené nulové zpoždění zobrazí zelený badge. Konfigurace a omezení jsou v provozní dokumentaci výše.
 
 Při nejednoznačném přiřazení nové GPS ponechá `useTripProgress` poslední jednoznačný bod stejného spoje s označením „Poslední jednoznačná poloha na trase“. Platnost se řídí původním měřením a nová nejednoznačná data ji neprodlužují. Po vypršení, ztrátě živého odběru, zrušení spoje nebo změně detailu se bod odstraní; stav je pouze v paměti otevřeného dialogu.
+
+### Stabilní výsledky při živých aktualizacích
+
+Výsledky hledání jsou po načtení neměnný podklad. `TransportView` neposouvá,
+nepřerovnává ani neodstraňuje karty podle WebSocketu a nemá sekundový timer
+překreslující celý strom. URL stále ovládá vybrané spojení, accordion a dialogy.
+`useTripTracking` zapisuje jen pozorování do paměťového `trackingStore`.
+`useSyncExternalStore` odebírají malé komponenty: časy úseků a zastávek,
+badge, délka cesty, upozornění na návaznost a ukazatele GPS. Přepočet
+`trackedJourney` je pouze projekce časů pro tyto komponenty; seznam zastávek,
+legendy, názvy i načtené detaily nemění a nic znovu nestahuje.
+
+Ztráta čerstvé GPS smaže marker, ale ne mapový podklad ani místo vyhrazené mapě.
+Časy používají stejně široké číslice, badge a stavové texty mají rezervovaný prostor.
+Test v prohlížeči posílá opakované změny zpoždění i výpadek dat a kontroluje
+pořadí karet, totožnost DOM uzlů, výšku accordionu, scroll dialogu a počet HTTP
+načtení detailu. Nové pořadí výsledků vzniká až novým vyhledáním uživatele.

@@ -81,7 +81,14 @@ export default function TripDialog({
           />
         )}
       </div>
-      {open && <VehicleTracking live={live} t={t} />}
+      {open && (
+        <VehicleTracking
+          key={leg?.tripId}
+          tripId={leg?.tripId}
+          live={live}
+          t={t}
+        />
+      )}
       {leg && <DelayBadge leg={leg} live={live} t={t} />}
       <div className="trip-body" aria-busy={!trip && !error}>
         <p

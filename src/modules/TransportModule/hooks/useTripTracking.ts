@@ -1,27 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { createRealtimeClient } from "../../RealtimeModule/providers/client";
 import { transportClient } from "../providers/client";
 import { observation, unavailableObservation } from "../providers/tracking";
+import { createTrackingStore } from "../providers/trackingStore";
 import type { TripObservation } from "../types";
 /** A mounted detail owns subscriptions. Closing/changing it releases all sockets and timers. */
 export function useTripTracking(ids: string[]) {
   const key = JSON.stringify([...new Set(ids)].sort());
-  const [state, setState] = useState<{
-    key: string;
-    values: Record<string, TripObservation>;
-  }>({ key, values: {} });
+  const store = useMemo(() => createTrackingStore(), [key]);
   useEffect(() => {
     let controller = new AbortController();
     let generation = 0;
     let disposed = false;
     const cleanups: (() => void)[] = [];
-    setState({ key, values: {} });
+    store.clear();
     const set = (id: string, value: TripObservation) => {
-      if (!disposed)
-        setState((s) => ({
-          key,
-          values: { ...(s.key === key ? s.values : {}), [id]: value },
-        }));
+      if (!disposed) store.set(id, value);
     };
     const start = async (id: string) => {
       const cycle = generation;
@@ -104,7 +98,7 @@ export function useTripTracking(ids: string[]) {
       controller.abort();
       cleanups.splice(0).forEach((f) => f());
       controller = new AbortController();
-      setState({ key, values: {} });
+      store.clear();
       if (!document.hidden)
         for (const id of JSON.parse(key) as string[]) void start(id);
     };
@@ -114,7 +108,8 @@ export function useTripTracking(ids: string[]) {
       controller.abort();
       document.removeEventListener("visibilitychange", hide);
       cleanups.forEach((f) => f());
+      store.clear();
     };
-  }, [key]);
-  return state.key === key ? state.values : {};
+  }, [key, store]);
+  return store;
 }

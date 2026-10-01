@@ -53,11 +53,11 @@ export function observation(value: unknown, now = Date.now()): TripObservation {
     cancelled: typeof r.cancelled === "boolean" ? r.cancelled : null,
   };
 }
-export function delayMinutes(
+export function knownDelayMinutes(
   leg: Leg,
   live?: TripObservation,
   now = Date.now(),
-): number {
+): number | null {
   // A missing GPS observation does not invalidate a separate fresh stop-time prediction.
   if (
     live?.status === "live" &&
@@ -76,7 +76,7 @@ export function delayMinutes(
     !Number.isFinite(Date.parse(leg.predictionValidUntil)) ||
     Date.parse(leg.predictionValidUntil) <= now
   )
-    return 0;
+    return null;
   if (typeof leg.delaySeconds === "number" && Number.isFinite(leg.delaySeconds))
     return Math.max(0, Math.ceil(leg.delaySeconds / 60));
   const delays = [
@@ -90,7 +90,15 @@ export function delayMinutes(
       ? [(Date.parse(expected) - Date.parse(scheduled)) / 60000]
       : [],
   );
-  return Math.max(0, ...delays.map(Math.ceil));
+  return delays.length ? Math.max(0, ...delays.map(Math.ceil)) : null;
+}
+/** Numeric convenience for calculations; presentation distinguishes null from zero. */
+export function delayMinutes(
+  leg: Leg,
+  live?: TripObservation,
+  now = Date.now(),
+): number {
+  return knownDelayMinutes(leg, live, now) ?? 0;
 }
 /** Predictions are ephemeral. Preserve scheduled fields for URLs and exact stop matching. */
 export function trackedLeg(

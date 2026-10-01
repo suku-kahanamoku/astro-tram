@@ -1278,6 +1278,22 @@ a.trip-open:active {
   font-size: 0.8rem;
   font-weight: 700;
 }
+/* Status occupies the same slot beside the route while realtime is refreshed. */
+.leg-title .delay-badge {
+  margin: 0;
+}
+.delay-badge {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.delay-badge[data-status="on-time"] {
+  background: color-mix(in srgb, #16803c 12%, var(--color-base-100, white));
+  color: #126832;
+}
+.delay-badge[data-status="unknown"] {
+  background: var(--color-base-200);
+  color: var(--color-base-content);
+}
 .vehicle-tracking {
   min-height: 3rem;
   margin-block: 0.7rem;
@@ -1374,4 +1390,31 @@ a.trip-open:active {
   .trip-timeline .trip-stops li.trip-call.has-details {
     grid-template-columns: 48px minmax(0, 1fr) 34px 58px;
   }
+}
+
+/* Realtime patches text/markers inside preallocated slots; it never resizes a card. */
+.journey-time,
+.leg-stops > time,
+.trip-call > time {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.delay-badge {
+  min-inline-size: 20ch;
+  justify-content: center;
+}
+.journey-duration {
+  min-block-size: 3.5em;
+}
+.journey-risk-slot {
+  margin-block: 0 1rem;
+}
+.leg-info {
+  min-block-size: 2.8em;
+}
+.vehicle-tracking > p {
+  min-block-size: 2.8em;
+}
+.trip-timeline-hint {
+  min-block-size: 4.5em;
 }

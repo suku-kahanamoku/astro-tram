@@ -1,5 +1,5 @@
-import { trackedJourney } from "../providers/tracking";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { TrackingContext } from "../hooks/useTrackingSnapshot";
+import { useEffect, useRef, useState } from "react";
 import {
   UrlNavigationProvider,
   useUrlNavigation,
@@ -52,38 +52,7 @@ function TransportView({
   const tracking = useTripTracking(
     selectedOriginal?.legs.flatMap((l) => (l.tripId ? [l.tripId] : [])) ?? [],
   );
-  const [clock, setClock] = useState(() => Date.now());
-  useEffect(() => {
-    if (!search.data) return;
-    const timer = setInterval(() => setClock(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, [search.data]);
-  const displayed = useMemo(() => {
-    if (!search.data) return undefined;
-    const journeys = search.data.journeys.map((j) =>
-      trackedJourney(j, tracking, clock),
-    );
-    journeys.sort((a, b) => {
-      if (!!a.transferAtRisk !== !!b.transferAtRisk)
-        return a.transferAtRisk ? 1 : -1;
-      if (search.state.arrive) {
-        const firstA = a.legs[0],
-          firstB = b.legs[0];
-        return (
-          Date.parse(firstB.expectedDeparture ?? firstB.scheduledDeparture) -
-          Date.parse(firstA.expectedDeparture ?? firstA.scheduledDeparture)
-        );
-      }
-      const lastA = a.legs.at(-1)!,
-        lastB = b.legs.at(-1)!;
-      return (
-        Date.parse(lastA.expectedArrival ?? lastA.scheduledArrival) -
-        Date.parse(lastB.expectedArrival ?? lastB.scheduledArrival)
-      );
-    });
-    return { ...search.data, journeys };
-  }, [search.data, search.state.arrive, tracking, clock]);
-  const selected = displayed?.journeys.find((j) => j.key === p.get("journey"));
+  const selected = selectedOriginal;
   const index = (name: string) => {
     const v = p.get(name);
     return v !== null && /^\d+$/.test(v) ? Number(v) : -1;
@@ -170,154 +139,157 @@ function TransportView({
   const pageLink = (delta: number) =>
     `${searchUrl}?${writeState({ ...search.state, at: new Date(Date.parse(search.state.at!) + delta * 60000).toISOString().replace(".000Z", "Z") })}`;
   return (
-    <section
-      ref={root}
-      className={`search-section shell ${results ? "is-results" : ""}`}
-      id="search"
-      data-transport
-      data-ready="true"
-      data-locale={locale}
-      data-results={String(results)}
-    >
-      <div className="section-heading">
-        <div>
-          <span className="eyebrow">{t.eyebrow}</span>
-          <h2>{t.title}</h2>
+    <TrackingContext.Provider value={tracking}>
+      <section
+        ref={root}
+        className={`search-section shell ${results ? "is-results" : ""}`}
+        id="search"
+        data-transport
+        data-ready="true"
+        data-locale={locale}
+        data-results={String(results)}
+      >
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">{t.eyebrow}</span>
+            <h2>{t.title}</h2>
+          </div>
+          <p>{t.subtitle}</p>
         </div>
-        <p>{t.subtitle}</p>
-      </div>
-      <SearchForm t={t} searchUrl={searchUrl} />
-      {results && (
-        <section className="results-section" aria-label={t.results}>
-          <div className="results-heading">
-            <div>
-              <span className="eyebrow">TRAM / {t.results}</span>
-              <h1>{t.results}</h1>
-              <p>{t.resultsSub}</p>
+        <SearchForm t={t} searchUrl={searchUrl} />
+        {results && (
+          <section className="results-section" aria-label={t.results}>
+            <div className="results-heading">
+              <div>
+                <span className="eyebrow">TRAM / {t.results}</span>
+                <h1>{t.results}</h1>
+                <p>{t.resultsSub}</p>
+              </div>
+              <button
+                className="button button-outline"
+                type="button"
+                data-share
+                onClick={() =>
+                  void navigator.clipboard
+                    .writeText(location.href)
+                    .then(() => setShare(t.copied))
+                    .catch(() => setShare(t.copyError))
+                }
+              >
+                {share || t.share}
+              </button>
             </div>
-            <button
-              className="button button-outline"
-              type="button"
-              data-share
-              onClick={() =>
-                void navigator.clipboard
-                  .writeText(location.href)
-                  .then(() => setShare(t.copied))
-                  .catch(() => setShare(t.copyError))
-              }
-            >
-              {share || t.share}
-            </button>
-          </div>
-          <div data-results-content aria-live="polite">
-            {search.loading ? (
-              <div className="status-card">
-                <span className="spinner" aria-hidden="true" />
-                <h2>
-                  {requiresLocation(search.state) ? t.locating : t.searching}
-                </h2>
-              </div>
-            ) : search.error ? (
-              <div className="status-card">
-                <h2>{error[0]}</h2>
-                <p>{error[1]}</p>
-                {search.error !== "search_prompt" && (
-                  <button
-                    className="button"
-                    data-retry
-                    type="button"
-                    onClick={search.retry}
-                  >
-                    {t.retry} ↻
-                  </button>
-                )}
-              </div>
-            ) : search.data?.journeys.length ? (
-              <JourneyResults
-                tracking={tracking}
-                result={displayed ?? search.data}
-                t={t}
-                locale={locale}
-                url={url}
-                trip={middle.trip}
-                tripError={middle.error}
-              />
-            ) : search.data ? (
-              <>
-                <ResolvedPlaces result={displayed ?? search.data} t={t} />
+            <div data-results-content aria-live="polite">
+              {search.loading ? (
                 <div className="status-card">
-                  <h2>{t.empty}</h2>
-                  <p>{t.emptyHelp}</p>
+                  <span className="spinner" aria-hidden="true" />
+                  <h2>
+                    {requiresLocation(search.state) ? t.locating : t.searching}
+                  </h2>
                 </div>
-              </>
-            ) : null}
-          </div>
-          <div
-            className="results-pagination"
-            data-pagination
-            hidden={!search.state.at}
-          >
-            <a
-              className="button button-outline"
-              data-earlier
-              href={search.state.at ? pageLink(-60) : "#"}
+              ) : search.error ? (
+                <div className="status-card">
+                  <h2>{error[0]}</h2>
+                  <p>{error[1]}</p>
+                  {search.error !== "search_prompt" && (
+                    <button
+                      className="button"
+                      data-retry
+                      type="button"
+                      onClick={search.retry}
+                    >
+                      {t.retry} ↻
+                    </button>
+                  )}
+                </div>
+              ) : search.data?.journeys.length ? (
+                <JourneyResults
+                  result={search.data}
+                  t={t}
+                  locale={locale}
+                  url={url}
+                  trip={middle.trip}
+                  tripError={middle.error}
+                />
+              ) : search.data ? (
+                <>
+                  <ResolvedPlaces result={search.data} t={t} />
+                  <div className="status-card">
+                    <h2>{t.empty}</h2>
+                    <p>{t.emptyHelp}</p>
+                  </div>
+                </>
+              ) : null}
+            </div>
+            <div
+              className="results-pagination"
+              data-pagination
+              hidden={!search.state.at}
             >
-              ← {t.earlier}
-            </a>
-            <a
-              className="button button-outline"
-              data-later
-              href={search.state.at ? pageLink(60) : "#"}
-            >
-              {t.later} →
-            </a>
-          </div>
-        </section>
-      )}
-      <TripDialog
-        live={modalLeg?.tripId ? tracking[modalLeg.tripId] : undefined}
-        open={modalOpen}
-        leg={modalLeg}
-        trip={modalResource.trip}
-        error={modalResource.error}
-        t={t}
-        locale={locale}
-        url={url}
-        onClose={() => {
-          focusAfter.current = `[data-trip-open="${index("leg")}"]`;
-          navigate(navHref(url, { leg: null }), true);
-        }}
-      />
-      <MapDialog
-        open={mapOpen}
-        identity={`${mode}:${selected?.key}:${index("stopLeg")}:${p.get("stopSide")}:${p.get("leg")}:${p.get("tripStop")}:${JSON.stringify(place)}`}
-        mode={mode}
-        place={place}
-        stop={stop}
-        waiting={
-          isTripMap &&
-          !!mapLeg?.tripId &&
-          !mapResource.trip &&
-          !mapResource.error
-        }
-        journey={selectedOriginal}
-        country={search.state.country}
-        t={t}
-        onClose={closeMap}
-        onPoint={(lat, lon) => {
-          if (!validCoordinates(lat, lon) || (mode !== "from" && mode !== "to"))
-            return;
-          const state = readState(p);
-          state[mode] = {
-            type: "coordinates",
-            lat,
-            lon,
-            label: `${t.mapPoint} (${lat.toFixed(4)}, ${lon.toFixed(4)})`,
-          };
-          navigate(`${url.pathname}?${writeState(state)}`, true);
-        }}
-      />
-    </section>
+              <a
+                className="button button-outline"
+                data-earlier
+                href={search.state.at ? pageLink(-60) : "#"}
+              >
+                ← {t.earlier}
+              </a>
+              <a
+                className="button button-outline"
+                data-later
+                href={search.state.at ? pageLink(60) : "#"}
+              >
+                {t.later} →
+              </a>
+            </div>
+          </section>
+        )}
+        <TripDialog
+          open={modalOpen}
+          leg={modalLeg}
+          trip={modalResource.trip}
+          error={modalResource.error}
+          t={t}
+          locale={locale}
+          url={url}
+          onClose={() => {
+            focusAfter.current = `[data-trip-open="${index("leg")}"]`;
+            navigate(navHref(url, { leg: null }), true);
+          }}
+        />
+        <MapDialog
+          open={mapOpen}
+          identity={`${mode}:${selected?.key}:${index("stopLeg")}:${p.get("stopSide")}:${p.get("leg")}:${p.get("tripStop")}:${JSON.stringify(place)}`}
+          mode={mode}
+          place={place}
+          stop={stop}
+          waiting={
+            isTripMap &&
+            !!mapLeg?.tripId &&
+            !mapResource.trip &&
+            !mapResource.error
+          }
+          journey={selectedOriginal}
+          country={search.state.country}
+          t={t}
+          onClose={closeMap}
+          onPoint={(lat, lon) => {
+            if (
+              !validCoordinates(lat, lon) ||
+              (mode !== "from" && mode !== "to")
+            )
+              return;
+            const state = readState(p);
+            state[mode] = {
+              type: "coordinates",
+              lat,
+              lon,
+              label: `${t.mapPoint} (${lat.toFixed(4)}, ${lon.toFixed(4)})`,
+            };
+            navigate(`${url.pathname}?${writeState(state)}`, true);
+          }}
+        />
+      </section>
+    </TrackingContext.Provider>
   );
 }
 export default function TransportApp(props: Props) {

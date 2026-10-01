@@ -1,14 +1,19 @@
+import { useTripObservation } from "../hooks/useTrackingSnapshot";
 import { useEffect, useRef, useState } from "react";
 import type { TripObservation } from "../types";
 import type { Dictionary } from "../providers/translations";
 /** OpenLayers owns its canvas, React owns freshness and lifecycle. */
 export default function VehicleTracking({
   live,
+  tripId,
   t,
 }: {
   live?: TripObservation;
+  tripId?: string | null;
   t: Dictionary;
 }) {
+  const observation = useTripObservation(tripId);
+  live = live ?? observation;
   const canvas = useRef<HTMLDivElement>(null);
   const map = useRef<
     ReturnType<typeof import("../providers/map").createMap> | undefined
@@ -18,7 +23,7 @@ export default function VehicleTracking({
   const [failed, setFailed] = useState(false);
   const active = live?.status === "live" && !!live.position;
   useEffect(() => {
-    if (!active) return;
+    if (!active || map.current) return;
     let disposed = false;
     setFailed(false);
     void import("../providers/map")
@@ -35,12 +40,18 @@ export default function VehicleTracking({
       });
     return () => {
       disposed = true;
-      map.current?.dispose();
-      map.current = undefined;
     };
   }, [active]);
+  useEffect(
+    () => () => {
+      map.current?.dispose();
+      map.current = undefined;
+    },
+    [],
+  );
   useEffect(() => {
     if (live?.position) map.current?.pick(live.position.lat, live.position.lon);
+    else map.current?.clear();
   }, [live]);
   const message = active
     ? t.trackingLive
@@ -52,15 +63,13 @@ export default function VehicleTracking({
   return (
     <section className="vehicle-tracking" aria-label={t.trackingTitle}>
       <p role="status">{failed ? t.mapError : message}</p>
-      {active && (
-        <div
-          ref={canvas}
-          className="vehicle-map"
-          data-vehicle-map
-          tabIndex={0}
-          aria-label={t.trackingTitle}
-        />
-      )}
+      <div
+        ref={canvas}
+        className="vehicle-map"
+        data-vehicle-map={active ? true : undefined}
+        tabIndex={0}
+        aria-label={t.trackingTitle}
+      />
     </section>
   );
 }
