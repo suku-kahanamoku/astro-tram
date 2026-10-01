@@ -20,13 +20,14 @@ const blockTiles = async (page: Page) => {
   await page.route("**/*tile.openstreetmap.org/**", (route) => route.abort());
 };
 
-test("summary badges open the trip directly; backdrop closes only the top dialog and restores focus", async ({
+test("expanded accordion badges open the trip; backdrop closes only the top dialog and restores focus", async ({
   page,
 }) => {
   await blockTiles(page);
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(path);
+  await page.locator(".journey-summary").first().click();
   const badge = page.locator('[data-summary-trip="0"]').first();
   await badge.click();
   const trip = page.locator("[data-trip-dialog]");
@@ -135,6 +136,7 @@ test("slow trip responses keep dialog geometry stable and long headings clear of
     await route.fulfill({ json: payload });
   });
   await page.goto(path);
+  await page.locator(".journey-summary").first().click();
   await page.locator('[data-summary-trip="0"]').first().click();
   const dialog = page.locator("[data-trip-dialog]");
   await expect(dialog.locator(".trip-loading")).toBeVisible();
@@ -186,6 +188,7 @@ test("every supported mode has its own badge color; reduced motion disables tran
     await route.fulfill({ json: payload });
   });
   await page.goto(path);
+  await page.locator(".journey-summary").first().click();
   const badges = page.locator(".summary-badges .route-badge");
   await expect(badges).toHaveCount(modes.length);
   const colors = await badges.evaluateAll((els) =>
@@ -238,4 +241,50 @@ test("map loading reserves space and keeps its canvas throughout the exit transi
   await expect(dialog).not.toBeVisible();
   await expect(dialog.locator("canvas")).toHaveCount(0);
   await expect(page.locator('[data-map="from"]')).toBeFocused();
+});
+
+test("new results scroll into view once; date and service badges expand with the accordion", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.addInitScript(() => {
+    const original = Element.prototype.scrollIntoView;
+    (window as any).resultScrolls = 0;
+    Element.prototype.scrollIntoView = function (options) {
+      if (this.classList.contains("results-heading"))
+        (window as any).resultScrolls++;
+      original.call(this, options);
+    };
+  });
+  await page.goto(path);
+  await expect(page.locator(".journey-card")).toHaveCount(2);
+  await expect
+    .poll(() => page.evaluate(() => (window as any).resultScrolls))
+    .toBe(1);
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  const heading = await page.locator(".results-heading").boundingBox();
+  const header = await page.locator(".tram-header").boundingBox();
+  expect(heading!.y).toBeGreaterThanOrEqual(
+    Math.max(0, header!.y + header!.height),
+  );
+  await expect(page.locator(".journey-summary-footer")).toHaveCount(0);
+  const card = page.locator(".journey-card").first();
+  await card.locator(".journey-summary").click();
+  await expect(card.locator(".journey-summary-footer")).toBeVisible();
+  await card.locator("[data-summary-trip]").first().click();
+  await expect(page.locator("[data-trip-dialog]")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await card.locator(".journey-summary").click();
+  await expect(card.locator(".journey-summary-footer")).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).resultScrolls)).toBe(1);
+  const previousAt = new URL(page.url()).searchParams.get("at");
+  await page.locator("#travel-time").fill("11:00");
+  await page
+    .getByRole("button", { name: "Hledat spojení", exact: true })
+    .click();
+  await page.waitForURL((url) => url.searchParams.get("at") !== previousAt);
+  await expect
+    .poll(() => page.evaluate(() => (window as any).resultScrolls))
+    .toBe(1);
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 });

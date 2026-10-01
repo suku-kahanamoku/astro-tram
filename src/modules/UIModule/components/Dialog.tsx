@@ -2,6 +2,7 @@ import "../styles/motion.css";
 import {
   useEffect,
   useRef,
+  useState,
   type ReactNode,
   type DialogHTMLAttributes,
 } from "react";
@@ -17,6 +18,29 @@ export default function Dialog({
   onDismiss: () => void;
   children: ReactNode;
 }) {
+  const [present, setPresent] = useState(open);
+  useEffect(() => {
+    if (open) {
+      setPresent(true);
+      return;
+    }
+    let cancelled = false;
+    // The close effect below starts native exit animations during this commit.
+    queueMicrotask(() => {
+      const animations = ref.current?.getAnimations() ?? [];
+      void Promise.allSettled(
+        animations.map((animation) => animation.finished),
+      ).then(() => {
+        if (!cancelled) {
+          setPresent(false);
+          content.current = null;
+        }
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
   const ref = useRef<HTMLDialogElement>(null);
   const content = useRef(children);
   const opener = useRef<HTMLElement | null>(null);
@@ -86,7 +110,7 @@ export default function Dialog({
         onDismiss();
       }}
     >
-      {open ? children : content.current}
+      {open ? children : present ? content.current : null}
     </dialog>
   );
 }

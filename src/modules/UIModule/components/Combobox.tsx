@@ -100,40 +100,43 @@ export default function Combobox({
         />
         {buttons}
       </div>
-      <ul
-        id={listId}
-        ref={list}
-        className="suggestions"
-        role="listbox"
-        hidden={!open || !options.length}
-        onMouseDown={(e) => e.preventDefault()}
-        onScroll={(e) => {
-          const list = e.currentTarget;
-          if (list.scrollHeight - list.scrollTop - list.clientHeight < 80)
-            setVisibleCount((count) => Math.min(options.length, count + 100));
-        }}
-      >
-        {options.slice(0, visibleCount).map((option, i) => (
-          <li
-            key={option.key}
-            id={`${listId}-${i}`}
-            role="option"
-            aria-selected={active === i}
-            aria-setsize={options.length}
-            aria-posinset={i + 1}
-            onClick={() => {
-              setActive(-1);
-              onChoose(i);
-            }}
-          >
-            {option.label}
-            {option.detail && <small>{option.detail}</small>}
-          </li>
-        ))}
-      </ul>
-      <p className="field-hint" {...hintAttributes} role="status">
-        {hint}
-      </p>
+      {open && options.length > 0 && (
+        <ul
+          id={listId}
+          ref={list}
+          className="suggestions"
+          role="listbox"
+          onMouseDown={(e) => e.preventDefault()}
+          onScroll={(e) => {
+            const list = e.currentTarget;
+            if (list.scrollHeight - list.scrollTop - list.clientHeight < 80)
+              setVisibleCount((count) => Math.min(options.length, count + 100));
+          }}
+        >
+          {options.slice(0, visibleCount).map((option, i) => (
+            <li
+              key={option.key}
+              id={`${listId}-${i}`}
+              role="option"
+              aria-selected={active === i}
+              aria-setsize={options.length}
+              aria-posinset={i + 1}
+              onClick={() => {
+                setActive(-1);
+                onChoose(i);
+              }}
+            >
+              {option.label}
+              {option.detail && <small>{option.detail}</small>}
+            </li>
+          ))}
+        </ul>
+      )}
+      {hint && (
+        <p className="field-hint" {...hintAttributes} role="status">
+          {hint}
+        </p>
+      )}
     </>
   );
 }

@@ -89,60 +89,64 @@ export default function MapDialog({
       </div>
       <p data-map-hint>{hint}</p>
       <div className="map-stage" aria-busy={!status.ready}>
-        <div
-          ref={canvas}
-          className="map-canvas"
-          data-map-canvas
-          tabIndex={0}
-          hidden={!status.ready}
-        />
-        <p className="notice" data-map-error hidden={!status.message}>
-          {status.message}
-        </p>
+        {status.ready && (
+          <div
+            ref={status.mount}
+            className="map-canvas"
+            data-map-canvas
+            tabIndex={0}
+          />
+        )}
+        {status.message && (
+          <p className="notice" data-map-error>
+            {status.message}
+          </p>
+        )}
       </div>
-      <form
-        data-map-form
-        hidden={mode === "journey" || mode === "stop" || readonly}
-        onSubmit={(e) => {
-          e.preventDefault();
-          onPoint(point.lat, point.lon);
-        }}
-      >
-        <label>
-          {t.lat}
-          <input
-            data-lat
-            type="number"
-            step="any"
-            min={-90}
-            max={90}
-            required
-            value={point.lat}
-            onChange={(e) =>
-              setPoint((p) => ({ ...p, lat: Number(e.target.value) }))
-            }
-          />
-        </label>
-        <label>
-          {t.lon}
-          <input
-            data-lon
-            type="number"
-            step="any"
-            min={-180}
-            max={180}
-            required
-            value={point.lon}
-            onChange={(e) =>
-              setPoint((p) => ({ ...p, lon: Number(e.target.value) }))
-            }
-          />
-        </label>
-        <button className="button" type="submit">
-          {t.usePoint}
-          <Icon name="check" size={18} />
-        </button>
-      </form>
+      {mode !== "journey" && mode !== "stop" && !readonly && (
+        <form
+          data-map-form
+          onSubmit={(e) => {
+            e.preventDefault();
+            onPoint(point.lat, point.lon);
+          }}
+        >
+          <label>
+            {t.lat}
+            <input
+              data-lat
+              type="number"
+              step="any"
+              min={-90}
+              max={90}
+              required
+              value={point.lat}
+              onChange={(e) =>
+                setPoint((p) => ({ ...p, lat: Number(e.target.value) }))
+              }
+            />
+          </label>
+          <label>
+            {t.lon}
+            <input
+              data-lon
+              type="number"
+              step="any"
+              min={-180}
+              max={180}
+              required
+              value={point.lon}
+              onChange={(e) =>
+                setPoint((p) => ({ ...p, lon: Number(e.target.value) }))
+              }
+            />
+          </label>
+          <button className="button" type="submit">
+            {t.usePoint}
+            <Icon name="check" size={18} />
+          </button>
+        </form>
+      )}
     </Dialog>
   );
 }

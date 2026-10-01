@@ -1,4 +1,3 @@
-import VehicleTracking from "./VehicleTracking";
 import DelayBadge from "./DelayBadge";
 import type { TripObservation } from "../types";
 import Dialog from "../../UIModule/components/Dialog";
@@ -70,45 +69,38 @@ export default function TripDialog({
           <Icon name="close" />
         </button>
       </div>
-      <div data-trip-legend aria-label={t.tripInfo} hidden={!trip || !!error}>
+      <div className="trip-summary-header">
         {trip && leg && !error && (
-          <TripLegend
-            trip={trip}
-            leg={leg}
-            t={t}
-            locale={locale}
-            section="summary"
-          />
+          <div data-trip-legend aria-label={t.tripInfo}>
+            <TripLegend
+              trip={trip}
+              leg={leg}
+              t={t}
+              locale={locale}
+              section="summary"
+            />
+          </div>
         )}
+        {leg && <DelayBadge leg={leg} live={live} t={t} />}
       </div>
-      {open && (
-        <VehicleTracking
-          key={leg?.tripId}
-          tripId={leg?.tripId}
-          live={live}
-          t={t}
-        />
-      )}
-      {leg && <DelayBadge leg={leg} live={live} t={t} />}
       <div className="trip-body" aria-busy={!trip && !error}>
-        <p
-          className="trip-stop-legend"
-          data-trip-stop-legend
-          hidden={!trip?.stops.some((c) => c.requestStop)}
-        >
-          {t.requestStopLegend}
-        </p>
-        <div
-          className="trip-columns has-timeline"
-          data-trip-columns
-          hidden={!trip || !hasStopDetails(trip)}
-          aria-hidden="true"
-        >
-          <span>{t.time}</span>
-          <span>{t.stopName}</span>
-          <span>{t.tariffZones}</span>
-          <span title={t.routeKmHint}>{t.routeKm}</span>
-        </div>
+        {trip?.stops.some((c) => c.requestStop) && (
+          <p className="trip-stop-legend" data-trip-stop-legend>
+            {t.requestStopLegend}
+          </p>
+        )}
+        {trip && hasStopDetails(trip) && (
+          <div
+            className="trip-columns has-timeline"
+            data-trip-columns
+            aria-hidden="true"
+          >
+            <span>{t.time}</span>
+            <span>{t.stopName}</span>
+            <span>{t.tariffZones}</span>
+            <span title={t.routeKmHint}>{t.routeKm}</span>
+          </div>
+        )}
         {trip && !error && trip.stops.length ? (
           <TripTimeline
             trip={trip}
@@ -129,8 +121,8 @@ export default function TripDialog({
           </ul>
         )}
       </div>
-      <div data-trip-notes hidden={!trip || !!error}>
-        {trip && leg && !error && (
+      {trip && leg && !error && (
+        <div data-trip-notes>
           <TripLegend
             trip={trip}
             leg={leg}
@@ -138,8 +130,8 @@ export default function TripDialog({
             locale={locale}
             section="notes"
           />
-        )}
-      </div>
+        </div>
+      )}
     </Dialog>
   );
 }

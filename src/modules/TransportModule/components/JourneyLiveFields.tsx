@@ -55,38 +55,11 @@ export function JourneyDate({ journey, locale }: Omit<Props, "t">) {
 }
 export function JourneyRisk({ journey, t }: Omit<Props, "locale">) {
   const risk = useJourneyTiming(journey).transferAtRisk;
-  return (
-    <p
-      className="notice journey-risk-slot"
-      role={risk ? "status" : undefined}
-      aria-hidden={!risk}
-      style={{ visibility: risk ? "visible" : "hidden" }}
-    >
+  return risk ? (
+    <p className="notice journey-risk-slot" role="status">
       {t.transferAtRisk}
     </p>
-  );
-}
-export function JourneyLegInfo({
-  journey,
-  index,
-  locale,
-  t,
-}: Props & { index: number }) {
-  const leg = useJourneyTiming(journey).legs[index];
-  const departure = leg.expectedDeparture ?? leg.scheduledDeparture;
-  const arrival = leg.expectedArrival ?? leg.scheduledArrival;
-  return (
-    <p className="leg-info">
-      {date(departure, locale)}
-      {date(departure, locale) !== date(arrival, locale)
-        ? ` → ${date(arrival, locale)}`
-        : ""}{" "}
-      · {leg.realtime ? t.live : t.scheduled}
-      {leg.expectedDeparture && leg.expectedDeparture !== leg.scheduledDeparture
-        ? ` · ${t.scheduled} ${time(leg.scheduledDeparture, locale)}`
-        : ""}
-    </p>
-  );
+  ) : null;
 }
 export function TripCallTime({
   call,
@@ -104,16 +77,5 @@ export function TripCallTime({
     call.departure ? "departure" : "arrival",
     live,
   );
-  return (
-    <time>
-      <span
-        className="time-estimate"
-        aria-hidden="true"
-        style={{ visibility: display.estimated ? "visible" : "hidden" }}
-      >
-        ≈{" "}
-      </span>
-      {display.value ? time(display.value, locale) : "—"}
-    </time>
-  );
+  return <time>{display.value ? time(display.value, locale) : "—"}</time>;
 }

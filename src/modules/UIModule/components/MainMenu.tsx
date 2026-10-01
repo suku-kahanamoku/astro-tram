@@ -79,18 +79,19 @@ export default function MainMenu({
           </button>
         </div>
       </div>
-      <nav
-        ref={menu}
-        id={menuId}
-        className="mobile-nav"
-        aria-label={label}
-        hidden={!open}
-        onClick={(e) => {
-          if ((e.target as Element).closest("a")) setOpen(false);
-        }}
-      >
-        {links(mobileItems)}
-      </nav>
+      {open && (
+        <nav
+          ref={menu}
+          id={menuId}
+          className="mobile-nav"
+          aria-label={label}
+          onClick={(e) => {
+            if ((e.target as Element).closest("a")) setOpen(false);
+          }}
+        >
+          {links(mobileItems)}
+        </nav>
+      )}
     </header>
   );
 }

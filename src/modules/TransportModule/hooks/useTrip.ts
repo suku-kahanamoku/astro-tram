@@ -1,27 +1,33 @@
 import { useEffect, useState } from "react";
 import type { Trip } from "../types";
-import { transportClient } from "../providers/client";
-/** Trip data lives only in the mounted view; leaving it aborts pending work. */
+import { useTripResources } from "./TripResources";
+/** Reopening a loaded trip is synchronous; simultaneous consumers share one request. */
 export function useTrip(id?: string | null) {
+  const resources = useTripResources();
   const [result, setResult] = useState<{
     id?: string | null;
     trip?: Trip;
     error?: string;
   }>({});
   useEffect(() => {
-    const controller = new AbortController();
-    setResult({ id });
+    let active = true;
     if (id)
-      void transportClient
-        .trip(id, controller.signal)
+      void resources
+        .load(id)
         .then((trip) => {
-          if (!controller.signal.aborted) setResult({ id, trip });
+          if (active) setResult({ id, trip });
         })
         .catch(() => {
-          if (!controller.signal.aborted)
-            setResult({ id, error: "unavailable" });
+          if (active) setResult({ id, error: "unavailable" });
         });
-    return () => controller.abort();
-  }, [id]);
-  return result.id === id ? result : { id };
+    return () => {
+      active = false;
+    };
+  }, [id, resources]);
+  const cached = id ? resources.peek(id) : undefined;
+  return cached
+    ? { id, trip: cached, error: undefined }
+    : result.id === id
+      ? result
+      : { id };
 }

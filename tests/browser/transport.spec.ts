@@ -460,6 +460,7 @@ test("line opens full-trip dialog; middle button shows only intermediate stops; 
     });
   });
   await card.locator('[data-trip-open="0"]').click();
+  await page.reload(); // A new view loads the changed static fixture.
   const highlighted = dialog.locator(".is-selected-segment");
   await expect(highlighted.locator(".trip-stop-name")).toHaveText([
     "S1",
@@ -735,11 +736,12 @@ test("trip dialog displays provider legend with links, refresh, and clears old m
     }),
   );
   await page.locator('[data-trip-open="0"]').click();
+  await page.reload(); // Previously loaded details are intentionally reused until leaving this view.
   await expect(page.locator("[data-trip-dialog-stops]")).toHaveText(
     "Podrobnosti spoje teď nejsou dostupné.",
   );
   await expect(legend).not.toBeVisible();
-  await expect(legend).toBeEmpty();
+  await expect(legend).toHaveCount(0);
   await expect(route).toHaveCount(0);
 });
 
@@ -981,15 +983,15 @@ test("live vehicle tracking shares the selected journey, shows delay and removes
   );
   await page.locator("[data-trip-open]").first().click();
   await expect(
-    page.locator("[data-trip-dialog] [data-vehicle-map]"),
-  ).toBeVisible();
+    page.locator("[data-trip-dialog] .trip-summary-header [data-delay-badge]"),
+  ).toHaveText("Zpoždění 8 min");
   expect(sessions).toBe(1);
   await expect(
     page.locator("[data-trip-dialog] .trip-stops time").first(),
-  ).toContainText("≈");
+  ).toHaveText(delayedLabel);
   await expect(
-    page.locator("[data-trip-dialog] [data-vehicle-map]"),
-  ).toHaveCount(0, { timeout: 8000 });
+    page.locator("[data-trip-dialog] [data-delay-badge]"),
+  ).toHaveAttribute("data-stale", "true", { timeout: 8000 });
   const badge = page.locator(".journey-detail .leg-title [data-delay-badge]");
   await expect(badge).toHaveText("Zpoždění 8 min");
   await expect(badge).toHaveAttribute("data-stale", "true");
@@ -1061,6 +1063,7 @@ for (const width of [390, 1280]) {
       });
     });
     await page.goto(`/spojeni/?${query()}`);
+    await page.locator(".journey-summary").first().click();
     await page.locator("[data-summary-trip]").first().click();
     const dialog = page.locator("[data-trip-dialog]");
     await expect(dialog.locator("[data-trip-point]")).toHaveCount(3);
@@ -1120,9 +1123,7 @@ for (const width of [390, 1280]) {
     );
     push(50.08, 14.421, 1200);
     // Wait until the new observation is applied, then a newer unresolved GPS must not renew its expiry.
-    await expect
-      .poll(() => dialog.locator("[data-vehicle-map]").count())
-      .toBe(1);
+    await expect(dot).toBeVisible();
     await page.waitForTimeout(100);
     push(50.2, 14.6);
     await expect(dot).toHaveAttribute("data-retained", "true");
@@ -1132,7 +1133,7 @@ for (const width of [390, 1280]) {
   });
 }
 
-test("unsupported tracking keeps the stop rail and shows unknown delay without inventing punctuality", async ({
+test("unsupported tracking keeps static stops and displays the requested default badge without inventing GPS", async ({
   page,
 }) => {
   await page.route("**/api/transport/search/", async (route) => {
@@ -1152,22 +1153,21 @@ test("unsupported tracking keeps the stop rail and shows unknown delay without i
     route.fulfill({ json: { success: true, data: { status: "unsupported" } } }),
   );
   await page.goto(`/spojeni/?${query()}`);
+  await page.locator(".journey-summary").first().click();
   await page.locator("[data-summary-trip]").first().click();
   const dialog = page.locator("[data-trip-dialog]");
   await expect(dialog.locator("[data-trip-point]")).toHaveCount(3);
   await expect(dialog.locator("[data-trip-vehicle-dot]")).toHaveCount(0);
-  await expect(dialog.locator("[data-delay-badge]")).toHaveText(
-    "Zpoždění neznámé",
-  );
+  await expect(dialog.locator("[data-delay-badge]")).toHaveText("Bez zpoždění");
   await expect(dialog.locator("[data-delay-badge]")).toHaveAttribute(
     "data-status",
-    "unknown",
+    "on-time",
   );
   await expect(
     dialog.getByText(
       "Poskytovatel pro tento spoj neposkytuje ověřenou živou polohu.",
     ),
-  ).toBeVisible();
+  ).toHaveCount(0);
 });
 
 test("each accordion service has its own fresh delay badge even when GPS is unsupported", async ({
@@ -1309,7 +1309,8 @@ for (const width of [390, 1280]) {
         socket.onMessage((message) => {
           const request = JSON.parse(String(message));
           if (request.type !== "subscribe") return;
-          push = (delay) =>
+          push = (delay) => {
+            const now = Date.now();
             socket.send(
               JSON.stringify({
                 type: "observation",
@@ -1320,13 +1321,14 @@ for (const width of [390, 1280]) {
                     : {
                         status: "live",
                         position: { lat: 50.08, lon: 14.42 },
-                        observed_at: new Date().toISOString(),
-                        valid_until: new Date(Date.now() + 30000).toISOString(),
+                        observed_at: new Date(now).toISOString(),
+                        valid_until: new Date(now + 30000).toISOString(),
                         delay_seconds: delay,
                         cancelled: false,
                       },
               }),
             );
+          };
           push(0);
         });
       },
@@ -1402,14 +1404,12 @@ for (const width of [390, 1280]) {
     }
     await first.locator("[data-trip-open]").click();
     const dialog = page.locator("[data-trip-dialog]");
-    await expect(dialog.locator(".vehicle-map .ol-viewport")).toHaveCount(1);
+    await expect(dialog.locator(".vehicle-map")).toHaveCount(0);
     await expect(dialog.locator(".trip-call")).toHaveCount(3);
     await page.waitForTimeout(300);
     const geometry = await dialog.evaluate((element) => {
       element.scrollTop = 120;
       (window as any).stableDialogNodes = [
-        element.querySelector(".vehicle-map"),
-        element.querySelector(".ol-viewport"),
         element.querySelector(".trip-call"),
         element.querySelector("#trip-title"),
       ];
@@ -1432,8 +1432,6 @@ for (const width of [390, 1280]) {
         scroll: element.scrollTop,
         total: element.scrollHeight,
         same: [
-          element.querySelector(".vehicle-map"),
-          element.querySelector(".ol-viewport"),
           element.querySelector(".trip-call"),
           element.querySelector("#trip-title"),
         ].every((node, i) => node === (window as any).stableDialogNodes[i]),
@@ -1447,3 +1445,55 @@ for (const width of [390, 1280]) {
     expect(trips).toBe(1);
   });
 }
+
+test("multiple expanded journeys survive refresh and dialogs reuse static details", async ({
+  page,
+}) => {
+  let detailRequests = 0;
+  page.on("request", (request) => {
+    if (request.url().includes("/api/transport/trip/")) detailRequests++;
+  });
+  await page.goto(`/spojeni/?${query()}`);
+  const cards = page.locator(".journey-card");
+  await expect(cards).toHaveCount(2);
+  await cards.first().locator(".journey-summary").click();
+  await cards.last().locator(".journey-summary").click();
+  await expect(
+    page.locator(".journey-card.is-open .journey-detail"),
+  ).toHaveCount(2);
+  await expect(page.locator(".journey-risk-slot, .leg-info")).toHaveCount(0);
+  expect(
+    await cards.first().evaluate((el) => el.firstElementChild?.className),
+  ).toBe("journey-summary");
+  await expect(
+    cards.first().locator(".disclosure-motion .journey-summary-footer"),
+  ).toBeVisible();
+  await page.reload();
+  await expect(
+    page.locator(".journey-card.is-open .journey-detail"),
+  ).toHaveCount(2);
+  await cards.first().locator("[data-trip-open]").first().click();
+  const dialog = page.locator("[data-trip-dialog]");
+  await expect(dialog.locator(".trip-call")).toHaveCount(3);
+  await expect(
+    dialog.locator(".trip-summary-header [data-delay-badge]"),
+  ).toBeVisible();
+  await expect(
+    dialog.locator(".vehicle-map, .vehicle-tracking, .trip-timeline-hint"),
+  ).toHaveCount(0);
+  const count = detailRequests;
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(300);
+  await expect(dialog.locator(".trip-call")).toHaveCount(0);
+  await cards.first().locator("[data-trip-open]").first().click();
+  await expect(dialog.locator(".trip-call")).toHaveCount(3);
+  expect(detailRequests).toBe(count);
+  await page.keyboard.press("Escape");
+  await cards.last().locator(".journey-summary").click();
+  await expect(cards.last().locator(".journey-detail")).toHaveCount(0);
+  await expect(cards.first().locator(".journey-detail")).toBeVisible();
+  await page.goBack();
+  await expect(
+    page.locator(".journey-card.is-open .journey-detail"),
+  ).toHaveCount(2);
+});

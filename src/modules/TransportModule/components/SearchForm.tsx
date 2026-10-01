@@ -183,14 +183,11 @@ export default function SearchForm({
                 {t.timezone}
               </span>
             </div>
-            <p
-              className="form-error"
-              data-form-error
-              role="alert"
-              hidden={!error}
-            >
-              {error}
-            </p>
+            {error && (
+              <p className="form-error" data-form-error role="alert">
+                {error}
+              </p>
+            )}
           </fieldset>
         </form>
       </div>

@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type RefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import { transportClient } from "../providers/client";
 import { getFix, freshPosition } from "../providers/geolocation";
 import { validCoordinates } from "../providers/state";
@@ -24,6 +30,20 @@ export function useMapView(
 ) {
   const { open, identity, mode, place, stop, waiting, journey, country, t } =
     options;
+  const attachMap = useRef<
+    ((target: HTMLElement | undefined) => void) | undefined
+  >(undefined);
+  const canvasReady = useRef<
+    ((target: HTMLDivElement | null) => void) | undefined
+  >(undefined);
+  const mount = useCallback(
+    (element: HTMLDivElement | null) => {
+      canvas.current = element;
+      attachMap.current?.(element ?? undefined);
+      if (element) canvasReady.current?.(element);
+    },
+    [canvas],
+  );
   const retiredMap = useRef<(() => void) | undefined>(undefined);
   const pick = useRef(options.onPick);
   pick.current = options.onPick;
@@ -90,15 +110,22 @@ export function useMapView(
         }
         if (disposed) return;
         const { createMap } = await import("../providers/map");
-        if (disposed || !canvas.current) return;
+        if (disposed) return;
         pick.current(center[1], center[0]);
-        set(true, "", stop?.name ?? point?.name ?? "");
-        handle = createMap(canvas.current, {
+        const target = await new Promise<HTMLDivElement | null>((resolve) => {
+          canvasReady.current = resolve;
+          set(true, "", stop?.name ?? point?.name ?? "");
+          if (canvas.current) resolve(canvas.current);
+        });
+        canvasReady.current = undefined;
+        if (disposed || !target) return;
+        handle = createMap(target, {
           center,
           journey: mode === "journey" ? journey : undefined,
           readOnly,
           onPick: (lat, lon) => pick.current(lat, lon),
         });
+        attachMap.current = handle.attach;
         requestAnimationFrame(() => {
           if (!disposed) handle?.refresh();
         });
@@ -109,6 +136,7 @@ export function useMapView(
             if (disposed) return;
             clearTimeout(expiry);
             if (!freshPosition(lat, lon, timestamp)) {
+              handle?.clear();
               set(false, t.stale);
               return;
             }
@@ -116,14 +144,20 @@ export function useMapView(
             handle?.pick(lat, lon);
             handle?.refresh();
             expiry = setTimeout(
-              () => set(false, t.stale),
+              () => {
+                handle?.clear();
+                set(false, t.stale);
+              },
               config.gpsMaxAgeMs - Math.max(0, Date.now() - timestamp),
             );
           };
           update(fix.lat, fix.lon, Date.parse(fix.observedAt));
           watch = navigator.geolocation.watchPosition(
             (p) => update(p.coords.latitude, p.coords.longitude, p.timestamp),
-            () => set(false, t.locationError),
+            () => {
+              handle?.clear();
+              set(false, t.locationError);
+            },
             {
               enableHighAccuracy: true,
               maximumAge: 0,
@@ -147,6 +181,9 @@ export function useMapView(
     })();
     const stopWork = (immediate = false) => {
       disposed = true;
+      canvasReady.current?.(null);
+      canvasReady.current = undefined;
+      attachMap.current = undefined;
       abort.abort();
       if (watch !== undefined) navigator.geolocation.clearWatch(watch);
       clearTimeout(expiry);
@@ -186,5 +223,5 @@ export function useMapView(
       stopWork();
     };
   }, [open, identity, waiting, stop, journey, country, t, canvas]);
-  return status;
+  return { ...status, mount };
 }

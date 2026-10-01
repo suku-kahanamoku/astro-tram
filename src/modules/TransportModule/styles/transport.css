@@ -473,11 +473,6 @@
 .leg-stops > time {
   font-weight: 800;
 }
-.leg-info {
-  font-size: 10px;
-  color: var(--muted);
-  margin: 10px 0;
-}
 .leg a {
   font-size: 11px;
   text-decoration: underline;
@@ -1042,7 +1037,7 @@ a.trip-open:hover {
   grid-template-columns: 105px minmax(0, 1fr);
   gap: 25px;
   align-items: center;
-  padding: 0 23px 18px;
+  padding: 18px 23px 0;
 }
 .summary-badges {
   align-items: center;
@@ -1165,7 +1160,7 @@ a.trip-open:active {
   .journey-summary-footer {
     grid-template-columns: 62px minmax(0, 1fr);
     gap: 13px;
-    padding: 0 14px 14px;
+    padding: 14px 14px 0;
   }
   .map-stage {
     min-height: 300px;
@@ -1290,23 +1285,6 @@ a.trip-open:active {
   background: color-mix(in srgb, #16803c 12%, var(--color-base-100, white));
   color: #126832;
 }
-.delay-badge[data-status="unknown"] {
-  background: var(--color-base-200);
-  color: var(--color-base-content);
-}
-.vehicle-tracking {
-  min-height: 3rem;
-  margin-block: 0.7rem;
-}
-.vehicle-tracking p {
-  font-size: 0.85rem;
-}
-.vehicle-map {
-  height: 220px;
-  width: 100%;
-  border-radius: 1rem;
-  overflow: hidden;
-}
 
 /* The rail follows actual row heights, including wrapped names and tariff zones. */
 .trip-timeline {
@@ -1374,11 +1352,6 @@ a.trip-open:active {
   z-index: 2;
   transition: top 350ms ease;
 }
-.trip-timeline-hint {
-  font-size: 0.8rem;
-  color: var(--muted);
-  margin: 10px 0;
-}
 @media (prefers-reduced-motion: reduce) {
   .trip-vehicle-dot {
     transition: none;
@@ -1409,12 +1382,14 @@ a.trip-open:active {
 .journey-risk-slot {
   margin-block: 0 1rem;
 }
-.leg-info {
-  min-block-size: 2.8em;
+
+.trip-summary-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+  margin-bottom: 1rem;
 }
-.vehicle-tracking > p {
-  min-block-size: 2.8em;
-}
-.trip-timeline-hint {
-  min-block-size: 4.5em;
+.trip-summary-header .trip-legend {
+  margin-block: 0;
 }

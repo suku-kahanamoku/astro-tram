@@ -36,6 +36,7 @@ export default function Collapse({
   useLayoutEffect(() => {
     const wrapper = outer.current!,
       body = inner.current!;
+    if (!wrapper || !body) return;
     const resize = () => {
       const next = open ? body.getBoundingClientRect().height : 0;
       if (next === height.current) return;
@@ -54,7 +55,8 @@ export default function Collapse({
     const observer = new ResizeObserver(resize);
     observer.observe(body);
     return () => observer.disconnect();
-  }, [open]);
+  }, [open, present]);
+  if (!open && !present) return null;
   return (
     <div
       ref={outer}

@@ -63,20 +63,11 @@ export default function TripTimeline({
           title={`${label}. ${t.vehicleTimelineHint}`}
         />
       )}
-      <span className="sr-only" role="status">
-        {label}
-      </span>
-      <p
-        className="trip-timeline-hint"
-        style={{
-          visibility:
-            retained || (live?.status === "live" && !progress)
-              ? "visible"
-              : "hidden",
-        }}
-      >
-        {retained ? t.vehicleTimelineLastKnown : t.vehicleTimelineUnavailable}
-      </p>
+      {label && (
+        <span className="sr-only" role="status">
+          {label}
+        </span>
+      )}
     </div>
   );
 }

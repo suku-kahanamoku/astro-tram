@@ -9,6 +9,7 @@ export default function ThemeToggle({ locale }: { locale: string }) {
   const label =
     dictionaries[locale as keyof typeof dictionaries]?.themeToggle ??
     cs.themeToggle;
+  if (!ready) return null;
   return (
     <button
       type="button"
@@ -16,7 +17,6 @@ export default function ThemeToggle({ locale }: { locale: string }) {
       aria-label={label}
       title={label}
       aria-pressed={dark}
-      hidden={!ready}
       onClick={toggle}
     >
       <svg

@@ -1,3 +1,6 @@
+import { useScrollOnContent } from "../../UIModule/hooks/useScrollOnContent";
+import { TripResources } from "../hooks/TripResources";
+import { expandedJourneys } from "../providers/journeyExpansion";
 import { TrackingContext } from "../hooks/useTrackingSnapshot";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -50,7 +53,10 @@ function TransportView({
     (j) => j.key === p.get("journey"),
   );
   const tracking = useTripTracking(
-    selectedOriginal?.legs.flatMap((l) => (l.tripId ? [l.tripId] : [])) ?? [],
+    search.data?.journeys
+      .filter((j) => expandedJourneys(url).has(j.key))
+      .flatMap((j) => j.legs.flatMap((l) => (l.tripId ? [l.tripId] : []))) ??
+      [],
   );
   const selected = selectedOriginal;
   const index = (name: string) => {
@@ -102,6 +108,12 @@ function TransportView({
     mode === "from" || mode === "to"
       ? !!place
       : (mode === "journey" || mode === "stop") && !!selected;
+  const resultsHeading = useRef<HTMLDivElement>(null);
+  useScrollOnContent(
+    resultsHeading,
+    search.loading ? null : search.data,
+    modalOpen || mapOpen,
+  );
   const focusAfter = useRef<string | null>(null);
   const root = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -110,19 +122,20 @@ function TransportView({
         focusAfter.current,
       );
       if (target) {
-        target.focus();
+        target.focus({ preventScroll: true });
         focusAfter.current = null;
       }
     }
   }, [url.href, mapOpen, modalResource.trip, middle.trip]);
+  const focusedCard = `[data-journey="${selected?.key}"]`;
   const closeMap = () => {
     const tripStop = p.get("tripStop");
     focusAfter.current =
       tripStop !== null && /^\d+$/.test(tripStop)
-        ? `[data-trip-stop-map="${tripStop}"]`
+        ? `${p.has("leg") ? "[data-trip-dialog]" : focusedCard} [data-trip-stop-map="${tripStop}"]`
         : /^\d+$/.test(p.get("stopLeg") ?? "") &&
             ["from", "to"].includes(p.get("stopSide") ?? "")
-          ? `[data-stop-map="${p.get("stopLeg")}-${p.get("stopSide")}"]`
+          ? `${focusedCard} [data-stop-map="${p.get("stopLeg")}-${p.get("stopSide")}"]`
           : null;
     navigate(
       navHref(url, {
@@ -159,7 +172,7 @@ function TransportView({
         <SearchForm t={t} searchUrl={searchUrl} />
         {results && (
           <section className="results-section" aria-label={t.results}>
-            <div className="results-heading">
+            <div ref={resultsHeading} className="results-heading">
               <div>
                 <span className="eyebrow">TRAM / {t.results}</span>
                 <h1>{t.results}</h1>
@@ -221,26 +234,24 @@ function TransportView({
                 </>
               ) : null}
             </div>
-            <div
-              className="results-pagination"
-              data-pagination
-              hidden={!search.state.at}
-            >
-              <a
-                className="button button-outline"
-                data-earlier
-                href={search.state.at ? pageLink(-60) : "#"}
-              >
-                ← {t.earlier}
-              </a>
-              <a
-                className="button button-outline"
-                data-later
-                href={search.state.at ? pageLink(60) : "#"}
-              >
-                {t.later} →
-              </a>
-            </div>
+            {search.state.at && (
+              <div className="results-pagination" data-pagination>
+                <a
+                  className="button button-outline"
+                  data-earlier
+                  href={search.state.at ? pageLink(-60) : "#"}
+                >
+                  ← {t.earlier}
+                </a>
+                <a
+                  className="button button-outline"
+                  data-later
+                  href={search.state.at ? pageLink(60) : "#"}
+                >
+                  {t.later} →
+                </a>
+              </div>
+            )}
           </section>
         )}
         <TripDialog
@@ -252,7 +263,7 @@ function TransportView({
           locale={locale}
           url={url}
           onClose={() => {
-            focusAfter.current = `[data-trip-open="${index("leg")}"]`;
+            focusAfter.current = `${focusedCard} [data-trip-open="${index("leg")}"]`;
             navigate(navHref(url, { leg: null }), true);
           }}
         />
@@ -295,7 +306,9 @@ function TransportView({
 export default function TransportApp(props: Props) {
   return (
     <UrlNavigationProvider initialUrl={props.initialUrl}>
-      <TransportView {...props} />
+      <TripResources>
+        <TransportView {...props} />
+      </TripResources>
     </UrlNavigationProvider>
   );
 }

@@ -83,6 +83,10 @@ export function createMap(
   }
   return {
     pick,
+    attach: (target: HTMLElement | undefined) => {
+      map.setTarget(target);
+      if (target) map.updateSize();
+    },
     clear: () => source.clear(),
     center: (lat: number, lon: number) =>
       map.getView().setCenter(fromLonLat([lon, lat])),
