@@ -1,0 +1,30 @@
+.theme-toggle {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.theme-toggle[hidden] {
+  display: none;
+}
+.theme-toggle:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+.theme-moon {
+  display: none;
+}
+[data-theme-mode="dark"] .theme-moon {
+  display: block;
+}
+[data-theme-mode="dark"] .theme-sun {
+  display: none;
+}

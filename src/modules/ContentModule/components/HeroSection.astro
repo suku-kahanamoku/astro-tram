@@ -1,0 +1,59 @@
+---
+import "../styles/components.css";
+import Section from "../../UIModule/components/Section.astro";
+import { Image } from "astro:assets";
+import hero from "../assets/hero.svg";
+import { dictionary } from "../providers/translations";
+import { type Locale } from "../../LangModule/providers/locale";
+import { url } from "../../../config/routes";
+import { site } from "../../../config/site";
+
+/**
+ * Úvodní sekce stránky s nadpisem, popisem, volitelnou akcí na profil
+ * a ilustrací. Odkazy se staví přes `url()` a respektují aktuální jazyk.
+ */
+interface Props {
+  /** Jazyk textů sekce a cílových odkazů. */
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = dictionary(locale);
+---
+
+<Section contentClass="hero-section">
+  <div class="hero-copy">
+    <p class="eyebrow">
+      <span class="status-dot" aria-hidden="true"></span>
+      {t.home.eyebrow}
+    </p>
+    <h1>{t.home.title}</h1>
+    <p class="hero-description">{t.home.description}</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href={url(locale, "about")}>
+        {t.home.cta}
+        <span aria-hidden="true">→</span>
+      </a>
+      {site.modules.auth && (
+        <a class="text-link" href={url(locale, "account")}>
+          {t.home.secondary}
+          <span aria-hidden="true">→</span>
+        </a>
+      )}
+    </div>
+    <div class="hero-index" aria-hidden="true">
+      <span>01 — 03</span>
+      <span class="index-line"></span>
+      <span>↓</span>
+    </div>
+  </div>
+  <div class="hero-art">
+    <Image
+      src={hero}
+      alt={t.home.imageAlt}
+      width={960}
+      height={1000}
+      loading="eager"
+      fetchpriority="high"
+    />
+  </div>
+</Section>

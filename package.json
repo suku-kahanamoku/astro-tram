@@ -1,0 +1,46 @@
+{
+  "name": "astro-tram",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev --host 127.0.0.1",
+    "check": "tsx scripts/check-locales.ts && astro check",
+    "build": "npm run check && astro build",
+    "start": "node --env-file-if-exists=.env dist/server/entry.mjs",
+    "preview": "astro preview",
+    "test": "tsx --test tests/*.test.ts",
+    "test:browser": "playwright test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@astrojs/node": "^11.1.6",
+    "@astrojs/react": "^7.0.0",
+    "@astrojs/sitemap": "^3.7.4",
+    "@fontsource-variable/manrope": "^5.3.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^7.3.5",
+    "astro-seo": "^1.2.0",
+    "daisyui": "^5.7.46",
+    "ol": "^10.10.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "tailwindcss": "^4.3.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@playwright/test": "^1.58.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "prettier": "^3.9.9",
+    "prettier-plugin-astro": "^1.0.1",
+    "tsx": "^4.20.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.1"
+  }
+}

@@ -1,0 +1,64 @@
+---
+import { dictionary } from "../providers/translations";
+import Icon from "../../UIModule/components/TransitIcon.astro";
+import type { Locale } from "../../LangModule/config";
+interface Props {
+  locale: Locale;
+}
+const t = dictionary(Astro.props.locale);
+---
+
+<section class="hero-section shell">
+  <div class="hero-copy">
+    <span class="eyebrow">
+      <span class="tiny-square"></span>
+      {t.tag}
+    </span>
+    <h1>
+      {t.title1}
+      <br />
+      <span>{t.title2}</span>
+    </h1>
+    <p>{t.intro}</p>
+    <div class="hero-actions">
+      <a href="#search" class="button">
+        {t.cta}
+        <Icon name="arrow" />
+      </a>
+      <a href="#how" class="text-link">
+        {t.how}
+        <span>→</span>
+      </a>
+    </div>
+    <div class="hero-notes">
+      <span>
+        <Icon name="check" size={15} />
+        {t.note1}
+      </span>
+      <span>
+        <Icon name="check" size={15} />
+        {t.note2}
+      </span>
+    </div>
+  </div>
+  <div class="hero-art">
+    <div class="art-ring" aria-hidden="true"></div>
+    <img
+      src="/images/tram-city.png"
+      width="1536"
+      height="1024"
+      alt={t.heroAlt}
+      fetchpriority="high"
+    />
+    <div class="art-caption">
+      <span class="caption-icon">
+        <Icon name="tram" />
+      </span>
+      <span>{t.artLabel}</span>
+      <span aria-hidden="true">→</span>
+    </div>
+    <span class="art-sticker" aria-hidden="true">
+      A <span>→</span> B
+    </span>
+  </div>
+</section>

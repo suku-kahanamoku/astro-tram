@@ -1,0 +1,153 @@
+---
+import LanguagePicker from "./LanguagePicker";
+import csFlag from "../assets/flags/cs.svg?url";
+import enFlag from "../assets/flags/en.svg?url";
+import deFlag from "../assets/flags/de.svg?url";
+import { dictionary } from "../providers/translations";
+import { locales, type Locale } from "../providers/locale";
+interface Props {
+  locale: Locale;
+  href: (locale: Locale) => string;
+}
+const { locale, href } = Astro.props;
+const flags = { cs: csFlag, en: enFlag, de: deFlag };
+const items = locales.map((code) => ({
+  code,
+  href: href(code),
+  flag: flags[code],
+  name: dictionary(code).name,
+}));
+---
+
+<LanguagePicker
+  client:load
+  locale={locale}
+  label={dictionary(locale).label}
+  items={items}
+/>
+<noscript>
+  <nav aria-label={dictionary(locale).label}>
+    {items.map((item) => (
+      <a href={item.href} lang={item.code} hreflang={item.code}>
+        {item.name}
+      </a>
+    ))}
+  </nav>
+</noscript>
+
+<style is:global>
+  .language-picker {
+    --text-ui: 14px;
+    --line: var(--theme-line, #dedbce);
+    --blue: var(--theme-accent, #253da4);
+    color: var(--theme-accent, #202b49);
+    z-index: 30;
+    position: relative;
+    font-size: var(--text-ui);
+  }
+  .language-picker summary {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    list-style: none;
+    min-height: 44px;
+  }
+  .language-current {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--theme-surface, #fffdf6);
+    box-shadow: 0 2px 3px #202b4926;
+  }
+  .language-current::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background:
+      radial-gradient(ellipse at 32% 22%, #ffffff80, #ffffff00 58%),
+      radial-gradient(circle at 40% 32%, #202b4900 45%, #202b493d 100%);
+    box-shadow:
+      inset 0 1px 1px #ffffff80,
+      inset 0 -1px 2px #202b4926;
+    pointer-events: none;
+  }
+  .language-current .language-flag {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .language-picker .disclosure-chevron {
+    display: block;
+    flex-shrink: 0;
+    transform: rotate(-90deg);
+    transform-origin: center;
+    transition: transform 280ms ease-in-out;
+    pointer-events: none;
+  }
+  .language-picker[open] .language-chevron {
+    transform: rotate(0deg);
+  }
+  .language-picker summary::-webkit-details-marker {
+    display: none;
+  }
+  .language-flag {
+    display: block;
+    width: 27px;
+    height: 18px;
+    object-fit: cover;
+    border-radius: 2px;
+    box-shadow: 0 0 0 1px #202b491a;
+  }
+  .language-options {
+    position: absolute;
+    right: -10px;
+    top: 49px;
+    padding: 7px;
+    background: var(--theme-surface, #fff);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 12px 40px #16295613;
+    min-width: 60px;
+  }
+  .language-options a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 8px;
+    border-radius: 6px;
+  }
+  .language-options a:hover,
+  .language-options [aria-current] {
+    background: var(--theme-surface, #f0f5ff);
+    color: var(--blue);
+  }
+  @supports selector(details::details-content) {
+    .language-picker::details-content {
+      opacity: 0;
+      transition:
+        opacity 160ms ease,
+        content-visibility 160ms allow-discrete;
+    }
+    .language-picker[open]::details-content {
+      opacity: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .language-picker .disclosure-chevron,
+    .language-picker::details-content {
+      transition: none;
+    }
+  }
+</style>

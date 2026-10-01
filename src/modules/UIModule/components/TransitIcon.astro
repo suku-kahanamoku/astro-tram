@@ -1,0 +1,22 @@
+---
+interface Props {
+  name?: string;
+  size?: number;
+}
+const { name = "tram", size = 22 } = Astro.props;
+import { transitPaths as paths } from "../providers/transitIcons";
+---
+
+<svg
+  width={size}
+  height={size}
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.7"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+>
+  <path d={paths[name] ?? paths.tram} />
+</svg>

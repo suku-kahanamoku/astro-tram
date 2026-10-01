@@ -1,0 +1,17 @@
+---
+import TransportApp from "./TransportApp";
+import { url, type Locale } from "../../../config/routes";
+interface Props {
+  locale: Locale;
+  results?: boolean;
+}
+const { locale, results = false } = Astro.props;
+---
+
+<TransportApp
+  client:load
+  locale={locale}
+  results={results}
+  initialUrl={Astro.url.href}
+  searchUrl={url(locale, "search")}
+/>

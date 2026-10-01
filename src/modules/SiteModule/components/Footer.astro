@@ -1,0 +1,23 @@
+---
+import { dictionary } from "../providers/translations";
+import { url, type Locale } from "../../../config/routes";
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props,
+  t = dictionary(locale);
+---
+
+<footer class="tram-footer shell">
+  <div>
+    <a class="footer-logo" href={url(locale)}>
+      tram<span>.</span>
+    </a>
+    <p>{t.common.footer}</p>
+  </div>
+  <div class="footer-meta">
+    <a href={url(locale, "about")}>{t.nav.about} →</a>
+    <span>{t.common.privacy}</span>
+    <span>© {new Date().getFullYear()} TRAM</span>
+  </div>
+</footer>

@@ -1,0 +1,21 @@
+---
+import "../styles/components.css";
+import AdSlot from "./AdSlot";
+import { ads, type AdPosition } from "../../../config/ads";
+import { dictionary } from "../providers/translations";
+import type { Locale } from "../../LangModule/providers/locale";
+interface Props {
+  position: AdPosition;
+  locale: Locale;
+}
+const { position, locale } = Astro.props;
+const t = dictionary(locale);
+---
+
+<AdSlot
+  client:load
+  position={position}
+  unit={ads[position]}
+  label={t.ad}
+  placeholder={t.adSpace}
+/>

@@ -1,0 +1,27 @@
+{
+  "nav": {
+    "home": "Startseite",
+    "about": "Über TRAM",
+    "login": "Anmelden",
+    "account": "Mein Konto",
+    "menu": "Menü",
+    "search": "Verbindung finden",
+    "how": "So funktioniert’s"
+  },
+  "common": {
+    "skip": "Zum Inhalt springen",
+    "back": "Zur Startseite",
+    "footer": "Jede Reise beginnt irgendwo.",
+    "privacy": "Wir speichern deinen GPS-Standort nicht."
+  },
+  "errors": {
+    "notFound": "Diese Seite ist nicht hier.",
+    "notFoundDescription": "Vielleicht wurde sie verschoben. Beginnen Sie auf der Startseite.",
+    "unavailable": "Der Dienst ist vorübergehend nicht verfügbar.",
+    "unavailableDescription": "Bitte versuchen Sie es in Kürze erneut."
+  },
+  "brandStrip": {
+    "formula": "Eine gute Grundlage. Für jede neue Idee.",
+    "promise": "Ihre Inhalte. Ihr Stil. Ihr Raum."
+  }
+}

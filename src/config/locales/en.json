@@ -1,0 +1,9 @@
+{
+  "routes": {
+    "home": "",
+    "about": "about",
+    "login": "login",
+    "account": "account",
+    "search": "journeys"
+  }
+}

@@ -1,0 +1,24 @@
+---
+/**
+ * Generická obalová sekce stránky: vnější `<section>` s volitelným
+ * podkladem a vnitřní obal s omezenou šířkou obsahu.
+ */
+interface Props {
+  /** Třída vnější sekce, např. `hero-section`. */
+  class?: string;
+  /** Třída vnitřního obalu, určuje šířku a rozestupy obsahu. */
+  contentClass?: string;
+  /** Barva podkladu zapsaná do CSS proměnné `--section-background`. */
+  background?: string;
+}
+const { class: className, contentClass, background } = Astro.props;
+---
+
+<section
+  class:list={["page-section", className]}
+  style={background ? { "--section-background": background } : undefined}
+>
+  <div class:list={["section-inner", contentClass]}>
+    <slot />
+  </div>
+</section>

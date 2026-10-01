@@ -1,0 +1,27 @@
+{
+  "nav": {
+    "home": "Domů",
+    "about": "O TRAM",
+    "login": "Přihlášení",
+    "account": "Můj účet",
+    "menu": "Menu",
+    "search": "Najít spojení",
+    "how": "Jak to funguje"
+  },
+  "common": {
+    "skip": "Přejít k obsahu",
+    "back": "Zpět na úvod",
+    "footer": "Každá cesta někde začíná.",
+    "privacy": "Tvoji GPS polohu neukládáme."
+  },
+  "errors": {
+    "notFound": "Tahle stránka tu není.",
+    "notFoundDescription": "Možná se přestěhovala. Zkuste začít z úvodní stránky.",
+    "unavailable": "Služba je dočasně nedostupná.",
+    "unavailableDescription": "Zkuste to prosím za chvíli znovu."
+  },
+  "brandStrip": {
+    "formula": "Dobrý základ. Pro každý další nápad.",
+    "promise": "Váš obsah. Váš styl. Váš prostor."
+  }
+}

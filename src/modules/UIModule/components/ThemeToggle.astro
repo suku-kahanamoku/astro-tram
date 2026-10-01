@@ -1,0 +1,8 @@
+---
+import ThemeToggle from "./ThemeToggle";
+interface Props {
+  locale: string;
+}
+---
+
+<ThemeToggle client:load locale={Astro.props.locale} />

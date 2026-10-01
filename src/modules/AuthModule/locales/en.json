@@ -1,0 +1,17 @@
+{
+  "auth": {
+    "title": "Welcome back",
+    "description": "Sign in to your account.",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "pending": "Signing in…",
+    "invalid": "Please check your email and password.",
+    "unavailable": "Sign-in is temporarily unavailable. Please try again later.",
+    "logoutError": "Sign-out failed. Please try again.",
+    "account": "Your account",
+    "accountDescription": "Your personal space.",
+    "logout": "Sign out",
+    "eyebrow": "My account"
+  }
+}

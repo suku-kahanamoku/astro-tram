@@ -1,0 +1,33 @@
+{
+  "home": {
+    "title": "Eine gute Idee verdient ihren eigenen Raum.",
+    "description": "Eine übersichtliche Website, die mit Ihnen wächst. Von der ersten Seite bis zu einem Ort, an den man gerne zurückkehrt.",
+    "eyebrow": "Ein Zuhause für Ihr nächstes Projekt",
+    "cta": "Projekt entdecken",
+    "secondary": "Zum Konto",
+    "section": "Alles beginnt mit einer guten Grundlage.",
+    "intro": "Einfach im Auftritt. Bereit für alles, was kommt.",
+    "cards": [
+      {
+        "title": "Inhalte an erster Stelle",
+        "text": "Geben Sie Ihrer Geschichte Raum. Artikel, Leistungen und Neuigkeiten an einem Ort."
+      },
+      {
+        "title": "Komfort auf jedem Bildschirm",
+        "text": "Ein angenehmes Erlebnis auf dem Handy, Tablet und großen Monitor."
+      },
+      {
+        "title": "Näher an Ihren Menschen",
+        "text": "Mehrere Sprachen und ein persönlicher Bereich für wiederkehrende Besucher."
+      }
+    ],
+    "imageAlt": "Abstrakte geometrische Komposition in Grün und Creme"
+  },
+  "about": {
+    "title": "Ein Raum, der mit Ihnen wächst.",
+    "description": "Jedes Projekt hat eine Geschichte. Ihre beginnt hier.",
+    "body": "Ersetzen Sie diese Seite durch Ihre Markengeschichte, Leistungen oder Teamvorstellung. Das gemeinsame Layout sorgt auf jedem Gerät für Übersicht.",
+    "contact": "Bleiben wir in Kontakt",
+    "eyebrow": "Über uns"
+  }
+}

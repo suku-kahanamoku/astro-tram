@@ -1,0 +1,361 @@
+.hero-section {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  align-items: center;
+  gap: 45px;
+  padding-top: 65px;
+  padding-bottom: 70px;
+}
+.hero-copy h1 {
+  font-size: clamp(40px, 4.4vw, 63px);
+  line-height: 1.12;
+  letter-spacing: -0.06em;
+  margin: 22px 0;
+}
+.hero-copy h1 > span {
+  color: var(--red);
+  position: relative;
+}
+.hero-copy > p {
+  max-width: 425px;
+  font-size: 14px;
+  color: #53605f;
+  line-height: 1.85;
+}
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  margin: 27px 0 22px;
+}
+.hero-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.hero-notes > span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.hero-notes svg {
+  color: var(--red);
+}
+.hero-art {
+  position: relative;
+  padding: 16px 0 28px;
+  isolation: isolate;
+}
+.hero-art > img {
+  width: 100%;
+  height: 355px;
+  object-fit: cover;
+  border-radius: 130px 26px 110px 26px;
+  border: 7px solid #fffdf8;
+  box-shadow: 0 18px 45px #785c4020;
+}
+.art-ring {
+  position: absolute;
+  inset: -8px 30px;
+  border: 1px dashed #c3b5a4;
+  border-radius: 50%;
+  transform: rotate(-18deg);
+  z-index: -1;
+}
+.art-caption {
+  position: absolute;
+  left: -23px;
+  bottom: 13px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 18px;
+  background: var(--paper);
+  box-shadow: 0 10px 35px #17233712;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  transform: rotate(-3deg);
+}
+.caption-icon {
+  background: var(--sage);
+  padding: 10px;
+  border-radius: 9px;
+  color: #406251;
+}
+.art-sticker {
+  position: absolute;
+  right: -6px;
+  top: 0;
+  background: var(--red);
+  color: var(--paper);
+  border: 5px solid var(--cream);
+  padding: 18px 20px;
+  border-radius: 50%;
+  font-weight: 900;
+  font-size: 18px;
+  transform: rotate(12deg);
+}
+.art-sticker > span {
+  font-weight: 400;
+}
+.brand-strip {
+  background: var(--ink);
+  color: var(--cream);
+  padding: 25px 0;
+  margin-top: 65px;
+}
+.brand-strip > .shell {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+.brand-strip span {
+  font-size: clamp(14px, 2vw, 23px);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.brand-strip svg {
+  color: #ff8071;
+}
+.steps-section {
+  padding: 90px 0;
+}
+.steps-section > h2 {
+  font-size: 37px;
+  margin-top: 15px;
+}
+.section-intro {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 13px;
+}
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 55px;
+  margin-top: 45px;
+}
+.step-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--line);
+  padding-top: 22px;
+  margin-bottom: 22px;
+}
+.step-icon {
+  background: var(--sage);
+  border-radius: 14px;
+  color: #40594b;
+  padding: 15px;
+}
+.step-number {
+  color: #c3bfb6;
+  font-size: 33px;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+}
+.steps-grid h3 {
+  font-size: 19px;
+  margin-bottom: 12px;
+}
+.steps-grid p {
+  font-size: 12px;
+  color: var(--muted);
+}
+.discovery-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #ecefe5;
+  border-radius: 22px;
+  overflow: hidden;
+  align-items: center;
+}
+.discovery-section > img {
+  width: 100%;
+  height: 360px;
+  object-fit: cover;
+}
+.discovery-section > div {
+  padding: 35px 45px;
+}
+.discovery-section h2 {
+  font-size: 34px;
+  white-space: pre-line;
+  margin: 16px 0;
+}
+.discovery-section p {
+  font-size: 12px;
+  color: #536157;
+  max-width: 400px;
+  margin-bottom: 18px;
+}
+.faq-section {
+  padding: 90px 0 30px;
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 80px;
+}
+.faq-section h2 {
+  font-size: 37px;
+  margin-top: 16px;
+}
+.faq-section details {
+  border-bottom: 1px solid var(--line);
+  padding: 22px 0;
+}
+.faq-section details:first-child {
+  border-top: 1px solid var(--line);
+}
+.faq-section summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  font-size: 14px;
+  font-weight: 700;
+  list-style: none;
+}
+.faq-section summary > span {
+  color: var(--red);
+  font-size: 22px;
+  line-height: 20px;
+}
+.faq-section details[open] summary > span {
+  transform: rotate(45deg);
+}
+.faq-section details p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 15px;
+}
+@media (max-width: 1000px) {
+  .hero-section {
+    gap: 25px;
+  }
+  .hero-copy h1 {
+    font-size: 44px;
+  }
+  .hero-art > img {
+    height: 310px;
+  }
+  .art-caption {
+    left: -10px;
+  }
+  .steps-grid {
+    gap: 25px;
+  }
+  .discovery-section > div {
+    padding: 30px;
+  }
+  .discovery-section h2 {
+    font-size: 29px;
+  }
+}
+@media (max-width: 700px) {
+  .hero-section {
+    grid-template-columns: 1fr;
+    gap: 26px;
+    padding-top: 40px;
+    padding-bottom: 35px;
+  }
+  .hero-copy h1 {
+    font-size: 48px;
+    max-width: 520px;
+  }
+  .hero-copy > p {
+    max-width: 440px;
+  }
+  .hero-art {
+    max-width: 520px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 8px 10px 25px;
+  }
+  .hero-art > img {
+    height: 300px;
+  }
+  .art-caption {
+    left: 0;
+  }
+  .art-sticker {
+    right: 10px;
+  }
+  .steps-section {
+    padding: 55px 0;
+  }
+  .steps-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .steps-grid article {
+    display: grid;
+    grid-template-columns: 70px 1fr;
+    column-gap: 20px;
+  }
+  .step-top {
+    grid-row: span 2;
+    margin: 0;
+    border: 0;
+    padding: 0;
+    align-self: start;
+  }
+  .step-number {
+    display: none;
+  }
+  .steps-grid p {
+    max-width: 420px;
+  }
+  .discovery-section {
+    grid-template-columns: 1fr;
+  }
+  .discovery-section > img {
+    height: 260px;
+  }
+  .discovery-section > div {
+    padding: 30px;
+  }
+  .faq-section {
+    grid-template-columns: 1fr;
+    gap: 25px;
+    padding-top: 55px;
+  }
+  .steps-section > h2,
+  .faq-section h2 {
+    font-size: 31px;
+  }
+  .brand-strip {
+    margin-top: 40px;
+    padding: 20px 0;
+  }
+  .brand-strip svg {
+    flex-shrink: 0;
+  }
+  .brand-strip span {
+    font-size: 15px;
+  }
+  .hero-notes {
+    gap: 13px;
+  }
+}
+@media (max-width: 370px) {
+  .hero-copy h1 {
+    font-size: 40px;
+  }
+  .hero-actions {
+    gap: 20px;
+  }
+  .hero-art > img {
+    height: 250px;
+  }
+}
+
+@media (max-width: 700px) {
+  .art-ring {
+    inset: 10px 50px;
+  }
+}

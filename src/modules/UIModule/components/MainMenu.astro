@@ -1,0 +1,61 @@
+---
+import "../styles/main-menu.css";
+import MainMenu from "./MainMenu";
+import type { NavigationItem } from "../types";
+interface Props {
+  /** Jazyk předávaný přepínači motivu. */
+  locale: string;
+  /** Popisek navigace, použije se jako `aria-label` a výchozí text tlačítka. */
+  label: string;
+  /** Položky vodorovného menu. */
+  items: NavigationItem[];
+  /** Položky mobilního menu, výchozí hodnotou je `items`. */
+  mobileItems?: NavigationItem[];
+  /** `id` panelu mobilního menu, na který odkazuje `aria-controls`. */
+  menuId?: string;
+  /** Text tlačítka ve stavu zavřeno, výchozí hodnotou je `label`. */
+  openLabel?: string;
+  /** Text tlačítka ve stavu otevřeno, výchozí hodnotou je `label`. */
+  closeLabel?: string;
+  /** `true` přidá třídu `main-menu-framed` pro zapadnutí do rámu s reklamou. */
+  framed?: boolean;
+  /** `true` vykreslí slot `action` vedle předvolb. */
+  showAction?: boolean;
+}
+---
+
+<MainMenu client:load {...Astro.props}>
+  <div slot="brand">
+    <slot name="brand" />
+  </div>
+  <div slot="language">
+    <slot name="language" />
+  </div>
+  <div slot="action">
+    <slot name="action" />
+  </div>
+</MainMenu>
+<noscript>
+  <style is:global>
+    @media (max-width: 1279px) {
+      .main-menu .menu-toggle {
+        display: none;
+      }
+      @layer base {
+        /* Vrstvený preflight s !important je nutné přepsat ve stejné vrstvě. */
+        .main-menu .mobile-nav[hidden] {
+          display: flex !important;
+        }
+      }
+      .main-menu .mobile-nav[hidden] {
+        display: flex !important;
+        position: static;
+        max-height: none;
+        grid-column: 1 / -1;
+      }
+      .main-menu {
+        position: relative;
+      }
+    }
+  </style>
+</noscript>

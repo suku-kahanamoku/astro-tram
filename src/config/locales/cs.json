@@ -1,0 +1,9 @@
+{
+  "routes": {
+    "home": "",
+    "about": "o-nas",
+    "login": "prihlaseni",
+    "account": "ucet",
+    "search": "spojeni"
+  }
+}

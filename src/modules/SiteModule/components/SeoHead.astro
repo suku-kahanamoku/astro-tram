@@ -1,0 +1,71 @@
+---
+import { SEO } from "astro-seo";
+import { locales, type Locale } from "../../LangModule/config";
+import { url, type PageId } from "../../../config/routes";
+import { site } from "../../../config/site";
+
+/**
+ * SEO hlavička stránky: title, description, kanonická URL, Open Graph,
+ * Twitter card a vzájemné `hreflang` odkazy mezi jazyky.
+ *
+ * U `noindex` se kanonická URL ani `hreflang` nevypisují, aby se soukromé
+ * a chybové stránky nepropagovaly do indexu.
+ */
+interface Props {
+  /** Jazyk stránky, určuje Open Graph locale. */
+  locale: Locale;
+  /** Routa stránky; bez ní se kanonická URL bere ze skutečné adresy. */
+  page?: PageId;
+  /** Titulek bez názvu webu, ten se doplní automaticky. */
+  title: string;
+  /** Popisek stránky pro vyhledávače a sociální sítě. */
+  description: string;
+  /** `true` nastaví `noindex, nofollow` a vypne `hreflang` záznamy. */
+  noindex?: boolean;
+}
+const { locale, page, title, description, noindex = false } = Astro.props;
+// Bez známé routy nelze sestavit kanonickou URL ze slovníku, proto se
+// v takovém případě použije skutečná cesta požadavku.
+const canonical = new URL(
+  page ? url(locale, page) : Astro.url.pathname,
+  Astro.site,
+);
+---
+
+<SEO
+  title={`${title} | ${site.name}`}
+  {description}
+  canonical={canonical.href}
+  {noindex}
+  nofollow={noindex}
+  openGraph={{
+    basic: {
+      title,
+      type: "website",
+      image: new URL("/social.png", Astro.site).href,
+      url: canonical.href,
+    },
+    optional: {
+      description,
+      siteName: site.name,
+      locale: { cs: "cs_CZ", en: "en_GB", de: "de_DE" }[locale],
+    },
+  }}
+  twitter={{ card: "summary_large_image" }}
+/>
+{!noindex && page && (
+  <>
+    {locales.map((code) => (
+      <link
+        rel="alternate"
+        hreflang={code}
+        href={new URL(url(code, page), Astro.site)}
+      />
+    ))}
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href={new URL(url("cs", page), Astro.site)}
+    />
+  </>
+)}

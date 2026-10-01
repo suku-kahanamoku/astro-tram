@@ -1,0 +1,22 @@
+---
+import "../styles/components.css";
+import AdFrame from "./AdFrame";
+import { site } from "../../../config/site";
+import { ads } from "../../../config/ads";
+import { dictionary } from "../providers/translations";
+import type { Locale } from "../../LangModule/providers/locale";
+interface Props {
+  locale: Locale;
+}
+const t = dictionary(Astro.props.locale);
+---
+
+<AdFrame
+  client:load
+  enabled={site.modules.ads}
+  units={ads}
+  label={t.ad}
+  placeholder={t.adSpace}
+>
+  <slot />
+</AdFrame>

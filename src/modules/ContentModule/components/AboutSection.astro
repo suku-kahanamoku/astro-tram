@@ -1,0 +1,28 @@
+---
+import "../styles/components.css";
+import Section from "../../UIModule/components/Section.astro";
+import { dictionary } from "../providers/translations";
+import { type Locale } from "../../LangModule/providers/locale";
+import { site } from "../../../config/site";
+
+/**
+ * Sekce O projektu s nadpisem, perex a výzvou ke kontaktu.
+ * Texty pocházejí ze slovníku ContentModule, e-mail ze `src/config/site.ts`.
+ */
+interface Props {
+  /** Jazyk textů sekce. */
+  locale: Locale;
+}
+const t = dictionary(Astro.props.locale);
+---
+
+<Section contentClass="content-section">
+  <p class="eyebrow">{t.about.eyebrow}</p>
+  <h1>{t.about.title}</h1>
+  <p class="lead">{t.about.description}</p>
+  <p>{t.about.body}</p>
+  <a class="btn btn-primary" href={`mailto:${site.email}`}>
+    {t.about.contact}
+    <span aria-hidden="true">→</span>
+  </a>
+</Section>

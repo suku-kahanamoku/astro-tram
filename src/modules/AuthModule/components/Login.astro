@@ -1,0 +1,63 @@
+---
+import "../styles/components.css";
+import Section from "../../UIModule/components/Section.astro";
+import { dictionary } from "../providers/translations";
+import { type Locale } from "../../LangModule/providers/locale";
+
+/**
+ * Formulář přihlášení odesílaný bez JavaScriptu přímo na `POST /api/auth/login/`.
+ * Skryté pole `locale` slouží k návratu na lokalizovanou adresu, stav chyby
+ * se předává dotazním parametrem `?error=invalid|unavailable`.
+ */
+interface Props {
+  /** Jazyk textů a jazyk, do kterého se vrací po úspěšném přihlášení. */
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = dictionary(locale);
+// Server přesměrováním předá důvod neúspěchu v dotazním parametru;
+// cokoliv jiného než `invalid` se zobrazí jako nedostupnost služby.
+const error = Astro.url.searchParams.get("error");
+---
+
+<Section contentClass="auth-section">
+  <div class="card auth-card">
+    <p class="eyebrow">{t.auth.eyebrow}</p>
+    <h1>{t.auth.title}</h1>
+    <p>{t.auth.description}</p>
+    {error && (
+      <p class="alert alert-error" role="alert">
+        {error === "invalid" ? t.auth.invalid : t.auth.unavailable}
+      </p>
+    )}
+    <form method="post" action="/api/auth/login/" class="auth-form">
+      <input type="hidden" name="locale" value={locale} />
+      <label>
+        {t.auth.email}
+        <input
+          class="input w-full"
+          name="email"
+          type="email"
+          autocomplete="username"
+          required
+          maxlength="254"
+        />
+      </label>
+      <label>
+        {t.auth.password}
+        <input
+          class="input w-full"
+          name="password"
+          type="password"
+          autocomplete="current-password"
+          required
+          maxlength="1024"
+        />
+      </label>
+      <button class="btn btn-primary" type="submit">
+        {t.auth.submit}
+        <span aria-hidden="true">→</span>
+      </button>
+    </form>
+  </div>
+</Section>

@@ -1,0 +1,68 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Hero from "../modules/LandingModule/components/HeroSection.astro";
+import Story from "../modules/LandingModule/components/StorySections.astro";
+import Search from "../modules/TransportModule/components/Search.astro";
+import { dictionary } from "../modules/LandingModule/providers/translations";
+import { dictionary as transportDictionary } from "../modules/TransportModule/providers/translations";
+import { resolveRoute, url } from "../config/routes";
+import { localeFromPath } from "../modules/LangModule/providers/locale";
+const route = resolveRoute(Astro.url.pathname),
+  locale = route?.locale ?? localeFromPath(Astro.url.pathname),
+  page = route?.page;
+const t = dictionary(locale),
+  search = transportDictionary(locale);
+const error = !route || page === "login" || page === "account";
+if (error) Astro.response.status = 404;
+if (page === "search") {
+  Astro.locals.privatePage = true;
+  Astro.response.headers.set("Cache-Control", "private, no-store");
+  Astro.response.headers.set("Referrer-Policy", "no-referrer");
+}
+---
+
+<BaseLayout
+  {locale}
+  page={error ? undefined : page}
+  title={
+    error
+      ? "404"
+      : page === "search"
+        ? search.results
+        : page === "about"
+          ? t.navAbout
+          : `${t.title1} ${t.title2}`
+  }
+  description={t.intro}
+  noindex={error || page === "search"}
+>
+  {error ? (
+    <section class="shell simple-page">
+      <span class="eyebrow">404</span>
+      <h1>TRAM / 404</h1>
+      <a class="button" href={url(locale)}>
+        {t.cta} →
+      </a>
+    </section>
+  ) : page === "home" ? (
+    <>
+      <Hero {locale} />
+      <Search {locale} />
+      <Story {locale} />
+    </>
+  ) : page === "search" ? (
+    <Search {locale} results />
+  ) : (
+    <>
+      <section class="shell simple-page">
+        <span class="eyebrow">TRAM</span>
+        <h1>{t.aboutTitle}</h1>
+        <p>{t.aboutText}</p>
+        <a class="button" href={url(locale, "search")}>
+          {t.cta} →
+        </a>
+      </section>
+      <Story {locale} />
+    </>
+  )}
+</BaseLayout>

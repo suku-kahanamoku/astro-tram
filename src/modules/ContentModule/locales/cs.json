@@ -1,0 +1,33 @@
+{
+  "home": {
+    "title": "Dobrý nápad si zaslouží vlastní prostor.",
+    "description": "Přehledný web, který roste spolu s vámi. Od první stránky po místo, kam se lidé rádi vracejí.",
+    "eyebrow": "Místo pro váš další projekt",
+    "cta": "Poznat projekt",
+    "secondary": "Vstoupit do účtu",
+    "section": "Všechno začíná dobrým základem.",
+    "intro": "Jednoduché na pohled. Připravené na to, co přijde dál.",
+    "cards": [
+      {
+        "title": "Obsah na prvním místě",
+        "text": "Dejte svému příběhu prostor. Články, služby i novinky přehledně na jednom místě."
+      },
+      {
+        "title": "Pohodlně na každé obrazovce",
+        "text": "Stejně příjemný zážitek na telefonu, tabletu i velkém monitoru."
+      },
+      {
+        "title": "Blíž vašim lidem",
+        "text": "Více jazyků a osobní prostor pro návštěvníky, kteří se vracejí."
+      }
+    ],
+    "imageAlt": "Abstraktní geometrická kompozice v zelené a krémové barvě"
+  },
+  "about": {
+    "title": "Prostor, který roste s vámi.",
+    "description": "Každý projekt má vlastní příběh. Tady začíná ten váš.",
+    "body": "Tuto stránku nahraďte příběhem své značky, službami nebo představením týmu. Společný rám webu udrží obsah přehledný na všech zařízeních.",
+    "contact": "Zůstaňme v kontaktu",
+    "eyebrow": "O projektu"
+  }
+}

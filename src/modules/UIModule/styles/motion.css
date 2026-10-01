@@ -1,0 +1,49 @@
+/* Shared disclosure and modal motion; native dialogs retain their top layer on exit. */
+.disclosure-motion {
+  height: 0;
+  overflow: hidden;
+}
+.disclosure-motion > div {
+  display: flow-root;
+}
+dialog {
+  opacity: 0;
+  transform: translateY(10px) scale(0.97);
+  transition:
+    opacity 220ms ease,
+    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    display 220ms allow-discrete,
+    overlay 220ms allow-discrete;
+}
+dialog[open] {
+  opacity: 1;
+  transform: none;
+}
+dialog::backdrop {
+  opacity: 0;
+  transition:
+    opacity 220ms ease,
+    display 220ms allow-discrete,
+    overlay 220ms allow-discrete;
+}
+dialog[open]::backdrop {
+  opacity: 1;
+}
+@starting-style {
+  dialog[open] {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  dialog[open]::backdrop {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  dialog,
+  dialog::backdrop {
+    transition: none;
+  }
+}

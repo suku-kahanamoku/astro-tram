@@ -1,0 +1,195 @@
+/* Shared layout. Project-specific colours and logo styles belong to SiteModule. */
+.main-menu {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  align-self: start;
+  min-width: 0;
+  width: 100%;
+  border-bottom: 1px solid var(--menu-border, var(--theme-line, #e8e9e1));
+  background: var(
+    --menu-background,
+    var(--site-header-background, rgb(250 247 239 / 88%))
+  );
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.main-menu-framed {
+  grid-column: full;
+  display: grid;
+  grid-template-columns: subgrid;
+}
+.main-menu .header-inner {
+  box-sizing: border-box;
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+  width: min(100%, 1296px);
+  min-width: 0;
+  min-height: 88px;
+  margin-inline: auto;
+  padding: 16px 48px;
+}
+.main-menu-framed .header-inner {
+  grid-column: content;
+  width: 100%;
+}
+.main-menu .header-brand {
+  display: flex;
+  align-items: center;
+  justify-self: start;
+  min-width: 0;
+}
+.main-menu .desktop-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px 24px;
+  margin: 0;
+  min-width: 0;
+}
+.main-menu .nav-link {
+  color: var(--menu-link, inherit);
+  font-size: 13px;
+  font-weight: 550;
+  white-space: nowrap;
+}
+.main-menu .nav-link:hover,
+.main-menu .nav-link[aria-current="page"] {
+  color: var(--menu-accent, currentColor);
+  text-decoration: underline;
+  text-underline-offset: 7px;
+}
+.main-menu .header-actions {
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  gap: 20px;
+  margin: 0;
+  min-width: 0;
+}
+.main-menu .header-preferences {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.main-menu .header-primary-action {
+  display: flex;
+  align-items: center;
+}
+.main-menu .header-primary-action > a {
+  white-space: nowrap;
+}
+.main-menu .menu-toggle {
+  display: none;
+  position: relative;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.main-menu .menu-toggle span {
+  position: absolute;
+  top: 21px;
+  left: 10px;
+  width: 24px;
+  height: 2px;
+  display: block;
+  background: currentColor;
+  border-radius: 1px;
+  transform-origin: center;
+  transform: translateY(-4px);
+  transition: transform 280ms ease-in-out;
+}
+.main-menu .menu-toggle span:nth-child(2) {
+  transform: translateY(4px);
+}
+.main-menu .menu-toggle[aria-expanded="true"] span:first-child {
+  transform: rotate(45deg);
+}
+.main-menu .menu-toggle[aria-expanded="true"] span:nth-child(2) {
+  transform: rotate(-45deg);
+}
+.main-menu .mobile-nav {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 18px max(24px, calc((100% - 1200px) / 2));
+  max-height: calc(100dvh - var(--site-header-height, 88px));
+  overflow-y: auto;
+  background: var(--menu-panel, var(--theme-surface, #faf7ef));
+  border-bottom: 1px solid var(--menu-border, var(--theme-line, #dedbce));
+  box-shadow: 0 20px 30px #1328550c;
+}
+.main-menu .mobile-nav a {
+  display: flex;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--menu-border, var(--theme-line, #edf0f6));
+  white-space: normal;
+}
+.main-menu .mobile-nav[hidden] {
+  display: none;
+}
+@media (min-width: 1280px) {
+  .main-menu .mobile-nav {
+    display: none;
+  }
+}
+@media (max-width: 1279px) {
+  .main-menu .header-inner {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px;
+    padding-inline: 36px;
+  }
+  .main-menu .desktop-nav {
+    display: none;
+  }
+  .main-menu .menu-toggle {
+    display: block;
+  }
+}
+@media (max-width: 767px) {
+  .main-menu .header-inner {
+    min-height: 76px;
+    padding: 12px 16px;
+    gap: 8px;
+  }
+  .main-menu .header-actions {
+    gap: 8px;
+  }
+  .main-menu .header-primary-action {
+    display: none;
+  }
+}
+@media (max-width: 390px) {
+  .main-menu .header-inner {
+    padding-inline: 8px;
+    gap: 4px;
+  }
+  .main-menu .header-actions {
+    gap: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .main-menu .menu-toggle span {
+    transition: none;
+  }
+}
+
+html {
+  scroll-padding-top: calc(var(--site-header-height, 88px) + 16px);
+}

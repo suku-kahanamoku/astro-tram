@@ -1,0 +1,22 @@
+---
+import type { NavigationItem } from "../types";
+
+/** Seznam navigačních odkazů; aktivní položka dostane třídu `active` a `aria-current="page"`. */
+interface Props {
+  /** Odkazy, které se vykreslí jako `<a>` v pořadí zadání. */
+  items: NavigationItem[];
+  /** Volitelná třída společná všem odkazům, např. `nav-link`. */
+  class?: string;
+}
+const { items, class: className } = Astro.props;
+---
+
+{items.map((item) => (
+  <a
+    class:list={[className, { active: item.current }]}
+    href={item.href}
+    aria-current={item.current ? "page" : undefined}
+  >
+    {item.label}
+  </a>
+))}

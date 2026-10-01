@@ -1,0 +1,33 @@
+{
+  "home": {
+    "title": "A good idea deserves a space of its own.",
+    "description": "A clear, welcoming website that grows with you. From your first page to a place people love returning to.",
+    "eyebrow": "A home for your next project",
+    "cta": "Explore the project",
+    "secondary": "Go to your account",
+    "section": "Everything starts with a solid foundation.",
+    "intro": "Simple on the surface. Ready for whatever comes next.",
+    "cards": [
+      {
+        "title": "Content comes first",
+        "text": "Give your story room to grow. Articles, services and news in one place."
+      },
+      {
+        "title": "Comfort on every screen",
+        "text": "An enjoyable experience on your phone, tablet and large monitor alike."
+      },
+      {
+        "title": "Closer to your people",
+        "text": "Multiple languages and a personal space for returning visitors."
+      }
+    ],
+    "imageAlt": "Abstract geometric composition in green and cream"
+  },
+  "about": {
+    "title": "A space that grows with you.",
+    "description": "Every project has a story. Yours starts here.",
+    "body": "Replace this page with your brand story, services or team introduction. The shared layout keeps content clear on every device.",
+    "contact": "Let's keep in touch",
+    "eyebrow": "About"
+  }
+}

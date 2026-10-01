@@ -1,0 +1,20 @@
+---
+import "../styles/components.css";
+
+/** Jedna karta v mřížce vlastností s pořadovým číslem, nadpisem a popiskem. */
+interface Props {
+  /** Nadpis karty. */
+  title: string;
+  /** Krátký popisek karty. */
+  text: string;
+  /** Pořadové číslo karty, vypisuje se s nulovou předponou na dvě číslice. */
+  number: number;
+}
+const { title, text, number } = Astro.props;
+---
+
+<article class="card feature-card">
+  <span class="feature-number">{String(number).padStart(2, "0")}</span>
+  <h3>{title}</h3>
+  <p>{text}</p>
+</article>

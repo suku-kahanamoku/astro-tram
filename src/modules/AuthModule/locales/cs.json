@@ -1,0 +1,17 @@
+{
+  "auth": {
+    "title": "Vítejte zpět",
+    "description": "Přihlaste se do svého účtu.",
+    "email": "E-mail",
+    "password": "Heslo",
+    "submit": "Přihlásit se",
+    "pending": "Přihlašuji…",
+    "invalid": "Zkontrolujte e-mail a heslo.",
+    "unavailable": "Přihlášení je momentálně nedostupné. Zkuste to později.",
+    "logoutError": "Odhlášení se nezdařilo. Zkuste to znovu.",
+    "account": "Váš účet",
+    "accountDescription": "Váš osobní prostor.",
+    "logout": "Odhlásit se",
+    "eyebrow": "Můj účet"
+  }
+}

@@ -1,0 +1,80 @@
+---
+import { dictionary } from "../providers/translations";
+import Icon from "../../UIModule/components/TransitIcon.astro";
+import { url, type Locale } from "../../../config/routes";
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props,
+  t = dictionary(locale);
+---
+
+<div class="brand-strip">
+  <div class="shell">
+    <Icon name="tram" />
+    <span>{t.strip}</span>
+    <span aria-hidden="true">→</span>
+  </div>
+</div>
+<section class="steps-section shell" id="how">
+  <span class="eyebrow">01 — 02 — 03</span>
+  <h2>{t.stepsTitle}</h2>
+  <p class="section-intro">{t.stepsIntro}</p>
+  <div class="steps-grid">
+    {[
+      { title: t.step1Title, text: t.step1, icon: "pin" },
+      { title: t.step2Title, text: t.step2, icon: "map" },
+      { title: t.step3Title, text: t.step3, icon: "arrow" },
+    ].map((step, i) => (
+      <article>
+        <div class="step-top">
+          <span class="step-icon">
+            <Icon name={step.icon} size={28} />
+          </span>
+          <span class="step-number">0{i + 1}</span>
+        </div>
+        <h3>{step.title}</h3>
+        <p>{step.text}</p>
+      </article>
+    ))}
+  </div>
+</section>
+<section class="discovery-section shell">
+  <img
+    src="/images/tram-journey.png"
+    alt={t.featureAlt}
+    width="1536"
+    height="1024"
+    loading="lazy"
+  />
+  <div>
+    <span class="eyebrow">{t.featureTag}</span>
+    <h2>{t.featureTitle}</h2>
+    <p>{t.featureText}</p>
+    <a class="text-link" href={url(locale, "search")}>
+      {t.cta}
+      <Icon name="arrow" />
+    </a>
+  </div>
+</section>
+<section class="faq-section shell">
+  <div>
+    <span class="eyebrow">TRAM / FAQ</span>
+    <h2>{t.faqTitle}</h2>
+  </div>
+  <div>
+    {[
+      [t.faq1, t.answer1],
+      [t.faq2, t.answer2],
+      [t.faq3, t.answer3],
+    ].map(([q, a]) => (
+      <details>
+        <summary>
+          {q}
+          <span aria-hidden="true">+</span>
+        </summary>
+        <p>{a}</p>
+      </details>
+    ))}
+  </div>
+</section>

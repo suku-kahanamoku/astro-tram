@@ -1,0 +1,17 @@
+{
+  "auth": {
+    "title": "Willkommen zurück",
+    "description": "Melden Sie sich bei Ihrem Konto an.",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "submit": "Anmelden",
+    "pending": "Anmeldung läuft…",
+    "invalid": "Bitte prüfen Sie Ihre E-Mail und Ihr Passwort.",
+    "unavailable": "Die Anmeldung ist vorübergehend nicht verfügbar. Bitte versuchen Sie es später erneut.",
+    "logoutError": "Abmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "account": "Ihr Konto",
+    "accountDescription": "Ihr persönlicher Bereich.",
+    "logout": "Abmelden",
+    "eyebrow": "Mein Konto"
+  }
+}

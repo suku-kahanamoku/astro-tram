@@ -1,0 +1,40 @@
+---
+import SeoHead from "../modules/SiteModule/components/SeoHead.astro";
+import Header from "../modules/SiteModule/components/Header.astro";
+import Footer from "../modules/SiteModule/components/Footer.astro";
+import { dictionary } from "../modules/SiteModule/providers/translations";
+import { site } from "../config/site";
+import type { Locale, PageId } from "../config/routes";
+import "@fontsource-variable/manrope";
+import "../styles/global.css";
+interface Props {
+  locale: Locale;
+  page?: PageId;
+  title: string;
+  description: string;
+  noindex?: boolean;
+}
+const { locale, page, title, description, noindex = false } = Astro.props;
+---
+
+<!doctype html>
+<html lang={locale} data-theme="tram">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content={site.theme.color} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <SeoHead {locale} {page} {title} {description} {noindex} />
+    <slot name="head" />
+  </head>
+  <body>
+    <a href="#main-content" class="skip-link">
+      {dictionary(locale).common.skip}
+    </a>
+    <Header {locale} {page} />
+    <main id="main-content" tabindex="-1">
+      <slot />
+    </main>
+    <Footer {locale} />
+  </body>
+</html>

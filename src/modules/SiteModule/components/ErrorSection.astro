@@ -1,0 +1,33 @@
+---
+import "../styles/components.css";
+import Section from "../../UIModule/components/Section.astro";
+import { dictionary } from "../providers/translations";
+import { type Locale } from "../../LangModule/providers/locale";
+import { url } from "../../../config/routes";
+
+/**
+ * Chybová sekce pro stavy 404 a 503 s nadpisem, popisem
+ * a tlačítkem zpět na úvod.
+ */
+interface Props {
+  /** Jazyk textů chybové obrazovky. */
+  locale: Locale;
+  /** Stav, který se zobrazí; 404 pro nenalezenou cestu, 503 pro nedostupný backend. */
+  status: 404 | 503;
+}
+const { locale, status } = Astro.props;
+const t = dictionary(locale);
+---
+
+<Section contentClass="content-section">
+  <p class="eyebrow">{status}</p>
+  <h1>{status === 404 ? t.errors.notFound : t.errors.unavailable}</h1>
+  <p>
+    {status === 404
+      ? t.errors.notFoundDescription
+      : t.errors.unavailableDescription}
+  </p>
+  <a class="btn btn-primary" href={url(locale)}>
+    {t.common.back}
+  </a>
+</Section>

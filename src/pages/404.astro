@@ -1,0 +1,21 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import ErrorPage from "../modules/SiteModule/components/ErrorSection.astro";
+import { dictionary } from "../modules/SiteModule/providers/translations";
+import { localeFromPath } from "../modules/LangModule/providers/locale";
+
+// Jazyk se odvodí z cesty, aby chybová stránka odpovídala adrese, na kterou
+// návštěvník přišel; stránka je ve všech případech `noindex`.
+const locale = localeFromPath(Astro.url.pathname);
+const t = dictionary(locale);
+Astro.response.status = 404;
+---
+
+<BaseLayout
+  {locale}
+  title={t.errors.notFound}
+  description={t.errors.notFoundDescription}
+  noindex
+>
+  <ErrorPage {locale} status={404} />
+</BaseLayout>

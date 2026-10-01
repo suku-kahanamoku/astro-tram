@@ -1,0 +1,9 @@
+{
+  "routes": {
+    "home": "",
+    "about": "ueber-uns",
+    "login": "anmelden",
+    "account": "konto",
+    "search": "verbindungen"
+  }
+}

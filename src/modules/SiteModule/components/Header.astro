@@ -1,0 +1,47 @@
+---
+import BrandMark from "./BrandMark.astro";
+import LanguagePicker from "../../LangModule/components/LanguagePicker.astro";
+import Icon from "../../UIModule/components/TransitIcon.astro";
+import { dictionary } from "../providers/translations";
+import { url, type PageId, type Locale } from "../../../config/routes";
+interface Props {
+  locale: Locale;
+  page?: PageId;
+}
+const { locale, page = "home" } = Astro.props,
+  t = dictionary(locale);
+---
+
+<header class="tram-header shell">
+  <a href={url(locale)} class="tram-brand" aria-label="TRAM">
+    <BrandMark />
+    <span>
+      tram<span class="brand-period">.</span>
+    </span>
+  </a>
+  <nav class="desktop-nav" aria-label={t.nav.menu}>
+    <a
+      href={url(locale, "search")}
+      aria-current={page === "search" ? "page" : undefined}
+    >
+      {t.nav.search}
+    </a>
+    <a href={`${url(locale)}#how`}>{t.nav.how}</a>
+    <a
+      href={url(locale, "about")}
+      aria-current={page === "about" ? "page" : undefined}
+    >
+      {t.nav.about}
+    </a>
+  </nav>
+  <div class="header-actions">
+    <LanguagePicker
+      locale={locale}
+      href={(code) => url(code, page) + Astro.url.search}
+    />
+    <a href={`${url(locale)}#search`} class="button button-small">
+      {t.nav.search}
+      <Icon name="arrow" size={17} />
+    </a>
+  </div>
+</header>

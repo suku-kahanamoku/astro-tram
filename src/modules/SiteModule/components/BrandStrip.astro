@@ -1,0 +1,80 @@
+---
+import "../styles/components.css";
+import BrandMark from "./BrandMark.astro";
+import Section from "../../UIModule/components/Section.astro";
+import { dictionary } from "../providers/translations";
+import { type Locale } from "../../LangModule/providers/locale";
+
+/**
+ * Úzký pás mezi úvodním a features blokem s formulací studia,
+ * značkou a slibem závěrečné věty.
+ */
+interface Props {
+  /** Jazyk textů pásu značky. */
+  locale: Locale;
+}
+const t = dictionary(Astro.props.locale).brandStrip;
+---
+
+<Section
+  class="brand-strip"
+  contentClass="brand-strip-content"
+  background="var(--brand-strip-background, #f1ebdd)"
+>
+  <span>{t.formula}</span>
+  <BrandMark />
+  <p>{t.promise}</p>
+</Section>
+<style is:global>
+  .brand-strip {
+    margin-top: 40px;
+    padding: 23px 0;
+    border-block: 1px solid var(--theme-line, #dedbce);
+  }
+  .brand-strip-content {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 28px;
+    padding-inline: 24px;
+  }
+  .brand-strip-content > span:first-child {
+    font-family: ui-monospace, monospace;
+    color: var(--theme-accent, #253da4);
+    font-size: 14px;
+  }
+  .brand-strip p {
+    font-family: Georgia, serif;
+    font-size: 21px;
+    font-style: italic;
+    color: var(--theme-accent, #202b49);
+  }
+  @media (min-width: 640px) {
+    .brand-strip-content {
+      padding-inline: 36px;
+    }
+  }
+  @media (min-width: 1024px) {
+    .brand-strip-content {
+      padding-inline: 48px;
+    }
+  }
+  @media (max-width: 640px) {
+    .brand-strip {
+      margin-top: 24px;
+      padding-block: 20px;
+    }
+    .brand-strip-content {
+      justify-content: flex-start;
+      gap: 12px;
+    }
+    .brand-strip-content > span:first-child {
+      font-size: 11px;
+    }
+    .brand-strip p {
+      width: 100%;
+      font-size: 19px;
+    }
+  }
+</style>
