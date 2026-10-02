@@ -52,7 +52,15 @@ providery jsou samostatné TypeScript moduly. Backendové klíče zůstávají n
   `useTransport.ts` je odstraněný. Nevykresluje se přes `innerHTML`.
 - `SearchForm`, `PlaceField` a `CityPicker` používají společný `Combobox` z UIModule.
   `useAsyncOptions` řeší debounce, rušení požadavků a ignorování starých odpovědí.
-  Formulář se zpřístupní po hydrataci, aby neztratil první vstup uživatele.
+  Formulář se zpřístupní po hydrataci a ověření schopností tenantu přes
+  `/api/transport/coverage/` → php-core `/transport/v1/coverage`.
+  `CountryTabs` zpřístupní zemi pouze s primárním našeptávačem a plánovačem;
+  nepřipravené země zůstávají označené a neklikatelné. Výpadek načtení pokrytí
+  nabízí opakování. Záložky se zalamují i na mobilu a ovládají se šipkami.
+  Seznam měst se načítá jen při deklarované podpoře této operace. Přepnutí země
+  vymaže město i obě zastávky předchozí země. Primární zdroje se nezastupují
+  lokálním OTP jen kvůli chybějící integraci. SK/AT/PL záložka není tvrzení,
+  že je pro zemi již nasazený online plánovač; AU znamená Austrálii, AT Rakousko.
 - `useJourneySearch` vlastní online hledání, chyby a opakování dotazu;
   `useTrip` načítá detail pouze pro otevřený pohled. Výsledky se neukládají do
   browser storage. Klientské limity, středy map a BFF endpointy jsou v

@@ -12,6 +12,16 @@ const plain = (v: unknown): Record<string, unknown> =>
   v !== null && typeof v === "object" && !Array.isArray(v)
     ? (v as Record<string, unknown>)
     : fail();
+export const coverage: APIRoute = async ({ locals }) => {
+  try {
+    return Response.json({
+      success: true,
+      data: await locals.providers.transport.coverage(),
+    });
+  } catch (error) {
+    return errorResponse(error);
+  }
+};
 export function validateSearch(body: Record<string, unknown>) {
   const allowed = [
     "from-dest",

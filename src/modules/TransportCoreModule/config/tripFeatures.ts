@@ -7,6 +7,7 @@ export const tripFeatures = {
   TOILETS: { icon: "info", label: "featureToilets" },
   REFRESHMENTS: { icon: "cup", label: "featureRefreshments" },
   INFOTAINMENT: { icon: "info", label: "featureInfotainment" },
+  AIR_CONDITIONING: { icon: "info", label: "featureAirConditioning" },
 } as const;
 export type TripFeature = keyof typeof tripFeatures;
 export const reservationLabels = {

@@ -41,6 +41,10 @@ export async function request<T>(
   return body.data;
 }
 export const transportClient = {
+  coverage: (signal: AbortSignal) =>
+    request<import("../types").CountryCoverage[]>(config.endpoints.coverage, {
+      signal,
+    }),
   tracking: (id: string, signal: AbortSignal) =>
     request<import("../types").TrackingSession>(config.endpoints.tracking, {
       method: "POST",

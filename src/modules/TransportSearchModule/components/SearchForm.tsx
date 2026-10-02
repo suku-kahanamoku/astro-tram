@@ -4,6 +4,8 @@ import { useUrlNavigation } from "../../UIModule/hooks/useUrlNavigation";
 import Icon from "../../UIModule/components/TransitIcon";
 import PlaceField from "./PlaceField";
 import CityPicker from "./CityPicker";
+import CountryTabs from "./CountryTabs";
+import { useCountryCoverage } from "../hooks/useCountryCoverage";
 import {
   readState,
   writeState,
@@ -26,6 +28,10 @@ export default function SearchForm({
   const [fields, setFields] = useState({ day: "", time: "" });
   const [error, setError] = useState("");
   const ready = useHydrated();
+  const coverage = useCountryCoverage();
+  const country = coverage.countries.find((c) => c.state === draft.country);
+  const searchAvailable =
+    !coverage.loading && !coverage.error && country?.searchAvailable === true;
   const persistentSearch = writeState(readState(url.searchParams)).toString();
   useEffect(() => {
     const state = readState(url.searchParams);
@@ -35,33 +41,36 @@ export default function SearchForm({
   }, [persistentSearch]);
   const read = () => ({ ...draft, at: formInstant(fields.day, fields.time) });
   const changeScope = (patch: Partial<SearchState>) =>
-    setDraft((s) => ({ ...s, ...patch, from: undefined, to: undefined }));
+    setDraft((s) => ({
+      ...s,
+      ...patch,
+      ...(patch.country !== undefined && patch.country !== s.country
+        ? { city: undefined }
+        : {}),
+      from: undefined,
+      to: undefined,
+    }));
   const scope = `${draft.country}:${draft.city ?? ""}`;
-  const countries = [
-    { code: "CZ", flag: "🇨🇿", label: t.cz },
-    { code: "SK", flag: "🇸🇰", label: t.sk },
-    { code: "AT", flag: "🇦🇹", label: t.at },
-    { code: "PL", flag: "🇵🇱", label: t.pl },
-  ];
   const countryId = draft.country.toLowerCase();
   return (
     <>
-      <div className="country-tabs" role="tablist" aria-label={t.country}>
-        {countries.map(({ code, flag, label }) => (
-          <button
-            key={code}
-            type="button"
-            role="tab"
-            id={`country-${code.toLowerCase()}`}
-            aria-selected={draft.country === code}
-            aria-controls={`country-search-${code.toLowerCase()}`}
-            tabIndex={draft.country === code ? 0 : -1}
-            onClick={() => changeScope({ country: code })}
-          >
-            <span aria-hidden="true">{flag}</span> {label}
+      <CountryTabs
+        value={draft.country}
+        countries={coverage.countries}
+        loading={coverage.loading || coverage.error}
+        t={t}
+        onChange={(country) => changeScope({ country })}
+      />
+      {coverage.error ? (
+        <p className="notice">
+          {t.coverageError}{" "}
+          <button type="button" onClick={coverage.retry}>
+            {t.retry}
           </button>
-        ))}
-      </div>
+        </p>
+      ) : !coverage.loading && !searchAvailable ? (
+        <p className="notice">{t.countryUnavailable}</p>
+      ) : null}
       <div
         role="tabpanel"
         id={`country-search-${countryId}`}
@@ -75,6 +84,7 @@ export default function SearchForm({
           autoComplete="off"
           onSubmit={(e) => {
             e.preventDefault();
+            if (!searchAvailable) return;
             try {
               const state = read();
               if (!state.from || !state.to) {
@@ -90,14 +100,19 @@ export default function SearchForm({
             }
           }}
         >
-          <fieldset disabled={!ready} style={{ display: "contents" }}>
+          <fieldset
+            disabled={!ready || !searchAvailable}
+            style={{ display: "contents" }}
+          >
             <input type="hidden" id="travel-country" value={draft.country} />
-            <CityPicker
-              value={draft.city ?? ""}
-              country={draft.country}
-              t={t}
-              onChange={(city) => changeScope({ city })}
-            />
+            {country?.citiesAvailable && (
+              <CityPicker
+                value={draft.city ?? ""}
+                country={draft.country}
+                t={t}
+                onChange={(city) => changeScope({ city })}
+              />
+            )}
             <div className="place-fields">
               {(["from", "to"] as const).map((side) => (
                 <PlaceField

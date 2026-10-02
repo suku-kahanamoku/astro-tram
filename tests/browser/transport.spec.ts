@@ -343,6 +343,71 @@ test("country and city scope reaches autocomplete and persists in journey URLs",
   await expect(page.locator(".journey-card").first()).toBeVisible();
 });
 
+test("switching a supported country clears the old city and places before autocomplete", async ({
+  page,
+}) => {
+  await page.route("**/api/transport/coverage/", (route) =>
+    route.fulfill({
+      json: {
+        success: true,
+        data: [
+          {
+            state: "CZ",
+            capabilities: ["places", "journeys", "cities"],
+            searchAvailable: true,
+            citiesAvailable: true,
+          },
+          {
+            state: "SK",
+            capabilities: ["places", "journeys", "cities"],
+            searchAvailable: true,
+            citiesAvailable: true,
+          },
+        ],
+      },
+    }),
+  );
+  await page.goto(
+    "/?country=CZ&city=Brno&fromKind=stop&from=" +
+      id("S4") +
+      "&fromLabel=Brno%2C%20Grohova",
+  );
+  await expect(page.locator("#place-from")).toBeEnabled();
+  await page.locator("#country-sk").click();
+  await expect(page.locator("#travel-country")).toHaveValue("SK");
+  await expect(page.locator("#travel-city")).toHaveValue("Všechny jízdní řády");
+  await expect(page.locator("#place-from")).toHaveValue("");
+  const request = page.waitForRequest((r) =>
+    r.url().includes("/api/transport/places/"),
+  );
+  await page.locator("#place-from").fill("Hlavna");
+  expect(
+    JSON.parse(new URL((await request).url()).searchParams.get("q")!),
+  ).toEqual({ name: { $regex: "Hlavna" }, state: "SK" });
+});
+
+test("an unsupported country URL does not load catalogues or allow a search and offers a supported tab", async ({
+  page,
+}) => {
+  const lookups: string[] = [];
+  page.on("request", (r) => {
+    if (/\/api\/transport\/(places|cities|search)\//.test(r.url()))
+      lookups.push(r.url());
+  });
+  await page.goto("/?country=AT&city=Brno");
+  await expect(
+    page.locator(".notice").filter({
+      hasText: "Vyhledávání spojení pro tuto zemi zatím není dostupné.",
+    }),
+  ).toBeVisible();
+  await expect(page.locator("#place-from")).toBeDisabled();
+  await expect(page.locator("#country-cz")).toHaveAttribute("tabindex", "0");
+  expect(lookups).toEqual([]);
+  await page.locator("#country-cz").click();
+  await expect(page.locator("#place-from")).toBeEnabled();
+  await expect(page.locator("#travel-city")).toHaveValue("Všechny jízdní řády");
+});
+
 test("autocomplete uses fresh GPS automatically in POST only and explicit city takes priority", async ({
   page,
   context,
@@ -385,7 +450,10 @@ test("city picker defaults to all and offers online municipalities", async ({
   page,
 }) => {
   await page.goto("/");
-  await expect(page.getByRole("tab")).toHaveCount(1);
+  await expect(page.getByRole("tab")).toHaveCount(4);
+  await expect(page.locator("#country-cz")).toBeEnabled();
+  for (const country of ["sk", "at", "pl"])
+    await expect(page.locator(`#country-${country}`)).toBeDisabled();
   await expect(page.locator("#travel-city")).toHaveValue("Všechny jízdní řády");
   await page.locator("#travel-city").click();
   await expect(

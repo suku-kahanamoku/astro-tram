@@ -755,6 +755,8 @@
 
 .country-tabs {
   display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
   margin-bottom: -1px;
   padding-left: 18px;
   position: relative;
@@ -773,6 +775,11 @@
   border-bottom-color: var(--paper);
   border-top: 3px solid var(--red);
   border-radius: 12px 12px 0 0;
+}
+.country-tabs [role="tab"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-top-color: var(--line);
 }
 .city-picker {
   position: relative;

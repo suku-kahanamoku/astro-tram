@@ -167,5 +167,8 @@
   "vehicleTimelineUnavailable": "Live GPS cannot be matched unambiguously to a segment between stops. See the position on the map.",
   "delayOnTime": "On time",
   "delayUnknown": "Delay unknown",
-  "delayLastKnown": "Last known status; waiting for an update."
+  "delayLastKnown": "Last known status; waiting for an update.",
+  "countryUnavailable": "Journey search is not available for this country yet.",
+  "coverageError": "Available areas could not be loaded.",
+  "featureAirConditioning": "Air conditioning"
 }

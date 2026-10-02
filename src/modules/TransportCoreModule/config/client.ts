@@ -22,6 +22,7 @@ export const transportClientConfig = {
     PL: [19.1451, 51.9194],
   } as Record<string, [number, number]>,
   endpoints: {
+    coverage: "/api/transport/coverage/",
     tracking: "/api/transport/tracking/",
     cities: "/api/transport/cities/",
     places: "/api/transport/places/",

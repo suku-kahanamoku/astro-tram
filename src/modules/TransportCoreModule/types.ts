@@ -122,6 +122,13 @@ export interface CityOption {
   sourceMode: string;
 }
 
+export interface CountryCoverage {
+  state: string;
+  capabilities: string[];
+  searchAvailable: boolean;
+  citiesAvailable: boolean;
+}
+
 export interface TrackingSession {
   status: string;
   url?: string;

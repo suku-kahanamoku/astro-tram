@@ -167,5 +167,8 @@
   "vehicleTimelineUnavailable": "Die Live-GPS-Position lässt sich keinem Abschnitt eindeutig zuordnen. Die Position ist auf der Karte sichtbar.",
   "delayOnTime": "Pünktlich",
   "delayUnknown": "Verspätung unbekannt",
-  "delayLastKnown": "Letzter bekannter Stand; Aktualisierung ausstehend."
+  "delayLastKnown": "Letzter bekannter Stand; Aktualisierung ausstehend.",
+  "countryUnavailable": "Die Verbindungssuche für dieses Land ist noch nicht verfügbar.",
+  "coverageError": "Verfügbare Gebiete konnten nicht geladen werden.",
+  "featureAirConditioning": "Klimaanlage"
 }

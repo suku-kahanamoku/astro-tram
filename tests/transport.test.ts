@@ -196,6 +196,58 @@ test("legacy GPS scope links do not request device location or survive URL seria
   assert.equal(searchBody(restored).location, undefined);
 });
 
+test("coverage BFF exposes only validated tenant country capabilities", async () => {
+  const provider = (countries: unknown) =>
+    createTransportProvider(
+      createCoreClient(
+        {
+          baseUrl: "https://core.test/api",
+          apiKey: "secret",
+          tenantHost: "tram.test",
+        },
+        async (url, options) => {
+          assert.equal(
+            new URL(String(url)).pathname,
+            "/api/transport/v1/coverage",
+          );
+          assert.equal(
+            new Headers(options?.headers).get("X-Forwarded-Host"),
+            "tram.test",
+          );
+          return Response.json({
+            success: true,
+            data: { countries, providers: [{ secret: "PRIVATE" }] },
+          });
+        },
+      ),
+    );
+  const country = {
+    state: "AT",
+    capabilities: ["stop", "departures"],
+    search_available: false,
+    cities_available: false,
+    secret: "PRIVATE",
+  };
+  assert.deepEqual(await provider([country]).coverage(), [
+    {
+      state: "AT",
+      capabilities: ["stop", "departures"],
+      searchAvailable: false,
+      citiesAvailable: false,
+    },
+  ]);
+  for (const malformed of [
+    null,
+    [country, country],
+    [{ ...country, state: "Austria" }],
+    [{ ...country, capabilities: [7] }],
+    [{ ...country, search_available: "yes" }],
+  ])
+    await assert.rejects(() => provider(malformed).coverage(), {
+      code: "invalid_backend_response",
+    });
+});
+
 test("trip BFF maps allowed equipment and technical notes without exposing unknown provider fields", async () => {
   const provider = createTransportProvider(
     createCoreClient(

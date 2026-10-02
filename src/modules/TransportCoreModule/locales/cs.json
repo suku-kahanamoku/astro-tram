@@ -167,5 +167,8 @@
   "vehicleTimelineUnavailable": "Živou GPS nelze jednoznačně přiřadit k úseku mezi zastávkami. Polohu najdeš na mapě.",
   "delayOnTime": "Bez zpoždění",
   "delayUnknown": "Zpoždění neznámé",
-  "delayLastKnown": "Poslední známý údaj; čekáme na aktualizaci."
+  "delayLastKnown": "Poslední známý údaj; čekáme na aktualizaci.",
+  "countryUnavailable": "Vyhledávání spojení pro tuto zemi zatím není dostupné.",
+  "coverageError": "Dostupné oblasti se nepodařilo načíst.",
+  "featureAirConditioning": "Klimatizace"
 }

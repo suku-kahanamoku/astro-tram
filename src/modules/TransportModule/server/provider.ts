@@ -175,6 +175,33 @@ function leg(value: unknown): Leg {
 }
 export function createTransportProvider(core: CoreClient) {
   return {
+    async coverage() {
+      const raw = object(await core.request("/transport/v1/coverage"));
+      if (!Array.isArray(raw.countries) || raw.countries.length > 250)
+        throw new HttpError(502, "invalid_backend_response");
+      const countries = raw.countries.map((value) => {
+        const row = object(value);
+        if (
+          typeof row.state !== "string" ||
+          !/^[A-Z]{2}$/.test(row.state) ||
+          !Array.isArray(row.capabilities) ||
+          row.capabilities.length > 20 ||
+          row.capabilities.some((v) => typeof v !== "string") ||
+          typeof row.search_available !== "boolean" ||
+          typeof row.cities_available !== "boolean"
+        )
+          throw new HttpError(502, "invalid_backend_response");
+        return {
+          state: row.state,
+          capabilities: row.capabilities as string[],
+          searchAvailable: row.search_available,
+          citiesAvailable: row.cities_available,
+        };
+      });
+      if (new Set(countries.map((c) => c.state)).size !== countries.length)
+        throw new HttpError(502, "invalid_backend_response");
+      return countries;
+    },
     async tracking(id: string) {
       const r = object(
         await core.request(`/transport/v1/trips/${id}/tracking`, {

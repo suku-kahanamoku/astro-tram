@@ -46,6 +46,24 @@ http
       return send(403, null);
     let body = "";
     for await (const chunk of req) body += chunk;
+    if (url.pathname === "/transport/v1/coverage")
+      return send(200, {
+        providers: [],
+        countries: [
+          {
+            state: "CZ",
+            capabilities: ["places", "journeys", "cities"],
+            search_available: true,
+            cities_available: true,
+          },
+          {
+            state: "AT",
+            capabilities: ["stop", "departures"],
+            search_available: false,
+            cities_available: false,
+          },
+        ],
+      });
     if (url.pathname === "/transport/v1/cities/search") {
       const query = JSON.parse(body);
       const names =
