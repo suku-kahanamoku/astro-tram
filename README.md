@@ -16,7 +16,7 @@ Bez nastaveného backendu funguje landing a formulář; vyhledávání přizná 
 
 Serverové proměnné:
 
-- `PUBLIC_SITE_URL`: skutečný origin webu (shodný s originem POST požadavků).
+- `PUBLIC_SITE_URL`: kanonická adresa webu; v produkci musí být shodná s originem POST požadavků. Při `npm run dev` kontrolujeme skutečný origin běžícího serveru, takže změna portu (např. na 4322 při obsazeném 4321) neblokuje našeptávání s GPS ani vyhledávání. Cizí či chybějící origin se nadále odmítá.
 - `PHP_CORE_URL`: kořen php-core API včetně `/api`, bez `/transport/v1`.
 - `PHP_CORE_API_KEY`: interní klíč backendu, pouze na serveru.
 - `PHP_CORE_TENANT_HOST`: pevný host mapovaný v php-core na `tram`, např. `tram.localhost`.

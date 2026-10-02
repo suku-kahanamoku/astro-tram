@@ -194,6 +194,37 @@ test("GPS denial is recoverable and never falls back to a historical point", asy
   ).toBeVisible();
   await expect(page.locator(".journey-card")).toHaveCount(0);
 });
+test("dev POST autocomplete and GPS work when canonical URL uses another port", async ({
+  request,
+}) => {
+  const headers = { Origin: "http://localhost:4328" };
+  const location = {
+    latitude: 50.075,
+    longitude: 14.43,
+    observed_at: new Date().toISOString().replace(/\.\d{3}Z$/, "Z"),
+    state: "CZ",
+  };
+  for (const q of [location, { ...location, name: { $regex: "Muzeum" } }]) {
+    const response = await request.post("/api/transport/places/", {
+      headers,
+      data: { q },
+    });
+    expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body.success).toBe(true);
+    expect(body.data.length).toBeGreaterThan(0);
+    expect(body.data[0].name).toBe("Praha, Muzeum");
+  }
+  const missingOrigin = await request.post("/api/transport/places/", {
+    data: { q: { state: "CZ", name: { $regex: "Muzeum" } } },
+  });
+  expect(missingOrigin.status()).toBe(403);
+  const foreignPort = await request.post("/api/transport/places/", {
+    headers: { Origin: "http://localhost:4321" },
+    data: { q: { state: "CZ", name: { $regex: "Muzeum" } } },
+  });
+  expect(foreignPort.status()).toBe(403);
+});
 test("public boundary rejects foreign origins and exposes no upstream secrets", async ({
   request,
 }) => {

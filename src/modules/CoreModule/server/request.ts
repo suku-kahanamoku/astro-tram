@@ -1,5 +1,14 @@
 import { HttpError } from "./errors";
 
+/** Dev server může změnit port; produkce vždy používá nakonfigurovaný origin. */
+export function requestOrigin(
+  requestUrl: URL,
+  site: URL | undefined,
+  development: boolean,
+): string {
+  return development ? requestUrl.origin : (site?.origin ?? requestUrl.origin);
+}
+
 /**
  * Ověří, že zápisový požadavek přišel ze stejného originu jako web.
  *
@@ -8,7 +17,7 @@ import { HttpError } from "./errors";
  * pod `/api/`, které se volají z prohlížeče.
  *
  * @param request Původní `Request`, u něhož se kontrolují hlavičky originu.
- * @param expectedOrigin Origin, s nímž musí `Origin` souhlasit; u `astro:config` jde o `site`, jinak o origin z URL.
+ * @param expectedOrigin Origin, s nímž musí `Origin` souhlasit; v produkci jde o `site`, ve vývoji o origin běžícího serveru.
  * @returns Nic, pokud je požadavek důvěryhodný.
  * @throws HttpError se stavem 403 a kódem `invalid_origin`, pokud origin neodpovídá.
  */

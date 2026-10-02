@@ -21,7 +21,8 @@ export default defineConfig({
       reuseExistingServer: false,
       env: {
         TRAM_BROWSER_TEST: "1",
-        PUBLIC_SITE_URL: "http://localhost:4328",
+        // A canonical URL with a different port must not block dev POST requests.
+        PUBLIC_SITE_URL: "http://localhost:4321",
         PHP_CORE_URL: "http://127.0.0.1:4399",
         PHP_CORE_API_KEY: "test-only-secret",
         PHP_CORE_TENANT_HOST: "tram.test",

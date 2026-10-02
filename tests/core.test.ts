@@ -8,6 +8,7 @@ import {
 import { createAuthProvider } from "../src/modules/AuthModule/server/provider";
 import {
   assertSameOrigin,
+  requestOrigin,
   readFields,
 } from "../src/modules/CoreModule/server/request";
 
@@ -120,6 +121,39 @@ test("network timeout and unauthorized are distinguishable", async () => {
       async () => new Response(null, { status: 401 }),
     ).request("/auth/me"),
     { status: 401 },
+  );
+});
+test("development uses the running port while production keeps its configured origin", () => {
+  const requestUrl = new URL("http://localhost:4322/api/transport/places/");
+  const site = new URL("https://tram.example.test");
+  assert.equal(requestOrigin(requestUrl, site, true), "http://localhost:4322");
+  assert.equal(
+    requestOrigin(requestUrl, site, false),
+    "https://tram.example.test",
+  );
+  assert.equal(
+    requestOrigin(requestUrl, undefined, false),
+    "http://localhost:4322",
+  );
+  assert.doesNotThrow(() =>
+    assertSameOrigin(
+      new Request(requestUrl, {
+        method: "POST",
+        headers: { Origin: "http://localhost:4322" },
+      }),
+      requestOrigin(requestUrl, site, true),
+    ),
+  );
+  assert.throws(
+    () =>
+      assertSameOrigin(
+        new Request(requestUrl, {
+          method: "POST",
+          headers: { Origin: "http://localhost:4322" },
+        }),
+        requestOrigin(requestUrl, site, false),
+      ),
+    { status: 403 },
   );
 });
 test("state changes reject missing and foreign origins including cross-site metadata", () => {
