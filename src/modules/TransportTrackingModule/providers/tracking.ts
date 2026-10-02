@@ -8,6 +8,7 @@ import {
   validCoordinates,
   validInstant,
 } from "../../TransportCoreModule/providers/state";
+import { transportClientConfig as config } from "../../TransportCoreModule/config/client";
 const trackingInstant = (value: unknown): value is string =>
   typeof value === "string" &&
   validInstant(value.replace(/\.\d{1,3}(?=Z|[+-])/, ""));
@@ -25,7 +26,7 @@ export const unavailableObservation = (
 export function observation(value: unknown, now = Date.now()): TripObservation {
   if (!value || typeof value !== "object") return unavailableObservation();
   const r = value as Record<string, unknown>;
-  if (r.status !== "live")
+  if (r.status !== "live" && r.status !== "last_known")
     return unavailableObservation(
       ["unsupported", "disabled", "busy", "connecting", "stale"].includes(
         String(r.status),
@@ -34,13 +35,17 @@ export function observation(value: unknown, now = Date.now()): TripObservation {
         : "unavailable",
     );
   const p = r.position as { lat?: unknown; lon?: unknown } | null;
+  const maxAge =
+    r.status === "last_known"
+      ? config.lastKnownGpsMaxAgeMs
+      : config.gpsMaxAgeMs;
   if (
     !trackingInstant(r.observed_at) ||
     !trackingInstant(r.valid_until) ||
     Date.parse(r.observed_at) > now + 5000 ||
-    Date.parse(r.observed_at) + 30000 <= now ||
+    Date.parse(r.observed_at) + maxAge <= now ||
     Date.parse(r.valid_until) <= now ||
-    Date.parse(r.valid_until) > Date.parse(r.observed_at) + 30000 ||
+    Date.parse(r.valid_until) > Date.parse(r.observed_at) + maxAge ||
     !p ||
     typeof p.lat !== "number" ||
     typeof p.lon !== "number" ||
@@ -48,17 +53,21 @@ export function observation(value: unknown, now = Date.now()): TripObservation {
   )
     return unavailableObservation("stale");
   return {
-    status: "live",
+    status: r.status,
     position: { lat: p.lat, lon: p.lon },
     observedAt: r.observed_at,
     validUntil: r.valid_until,
     delaySeconds:
+      r.status === "live" &&
       typeof r.delay_seconds === "number" &&
       Number.isFinite(r.delay_seconds) &&
       Math.abs(r.delay_seconds) <= 86400
         ? r.delay_seconds
         : null,
-    cancelled: typeof r.cancelled === "boolean" ? r.cancelled : null,
+    cancelled:
+      r.status === "live" && typeof r.cancelled === "boolean"
+        ? r.cancelled
+        : null,
   };
 }
 export function knownDelayMinutes(

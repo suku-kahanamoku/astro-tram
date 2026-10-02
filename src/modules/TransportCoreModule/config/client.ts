@@ -3,6 +3,7 @@ export const transportClientConfig = {
   autocompleteDelayMs: 250,
   minimumQueryLength: 2,
   gpsMaxAgeMs: 30_000,
+  lastKnownGpsMaxAgeMs: 90_000,
   gpsFutureToleranceMs: 5_000,
   gpsTimeoutMs: 12_000,
   autocompleteGpsTimeoutMs: 1_500,

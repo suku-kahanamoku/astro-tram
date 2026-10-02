@@ -13,6 +13,7 @@ function TripStops({
   leg,
   current,
   stopOffset = 0,
+  totalStops = trip.stops.length,
   timeline = false,
 }: {
   trip: Trip;
@@ -22,6 +23,7 @@ function TripStops({
   leg?: Leg;
   current?: URL;
   stopOffset?: number;
+  totalStops?: number;
   timeline?: boolean;
 }) {
   const segment = leg ? tripSegment(trip, leg) : null,
@@ -67,7 +69,12 @@ function TripStops({
                 aria-hidden="true"
               />
             )}
-            <TripCallTime call={c} tripId={tripId} locale={locale} />
+            <TripCallTime
+              call={c}
+              tripId={tripId}
+              locale={locale}
+              event={index === totalStops - 1 ? "arrival" : "departure"}
+            />
             <span className="trip-stop-name">
               {href ? (
                 <NavLink

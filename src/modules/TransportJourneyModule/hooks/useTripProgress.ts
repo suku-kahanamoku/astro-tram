@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import { tripProgress, type TripProgress } from "../providers/tripProgress";
+import {
+  tripProgress,
+  lastKnownTripProgress,
+  type TripProgress,
+} from "../providers/tripProgress";
 import type { Trip, TripObservation } from "../../TransportCoreModule/types";
 
 /** Hold the last resolved point of this trip while the dialog remains mounted. */
@@ -10,9 +14,11 @@ export function useTripProgress(trip: Trip, live?: TripObservation) {
   } | null>(null);
   const [, refresh] = useState(0);
   const current = tripProgress(trip, live);
+  const known = lastKnownTripProgress(trip, live);
   const remembered = last?.trip === trip ? last.progress : null;
   useEffect(() => {
-    const progress = tripProgress(trip, live);
+    const progress =
+      tripProgress(trip, live) ?? lastKnownTripProgress(trip, live);
     if (progress) setLast({ trip, progress });
     else setLast((previous) => (previous?.trip === trip ? previous : null));
   }, [trip, live]);
@@ -24,7 +30,7 @@ export function useTripProgress(trip: Trip, live?: TripObservation) {
     return () => clearTimeout(timer);
   }, [live]);
   return {
-    progress: current ?? remembered,
-    retained: !current && !!remembered,
+    progress: current ?? known ?? remembered,
+    retained: !current && !!(known ?? remembered),
   };
 }

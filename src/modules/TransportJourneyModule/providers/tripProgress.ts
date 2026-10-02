@@ -48,6 +48,42 @@ export function tripProgress(
   now = Date.now(),
 ): TripProgress | null {
   if (!freshTripPosition(live, now)) return null;
+  return projectPosition(trip, live.position);
+}
+
+/** Previously measured GPS is explicitly last-known, never a live observation. */
+export function lastKnownTripProgress(
+  trip: Trip,
+  live?: TripObservation,
+  now = Date.now(),
+): TripProgress | null {
+  if (
+    live?.status !== "last_known" ||
+    !live.position ||
+    !live.observedAt ||
+    !live.validUntil ||
+    live.cancelled === true
+  )
+    return null;
+  const observed = Date.parse(live.observedAt),
+    until = Date.parse(live.validUntil);
+  if (
+    !Number.isFinite(observed) ||
+    !Number.isFinite(until) ||
+    observed > now + config.gpsFutureToleranceMs ||
+    now - observed >= config.lastKnownGpsMaxAgeMs ||
+    until <= now ||
+    until > observed + config.lastKnownGpsMaxAgeMs ||
+    !validCoordinates(live.position.lat, live.position.lon)
+  )
+    return null;
+  return projectPosition(trip, live.position);
+}
+
+function projectPosition(
+  trip: Trip,
+  position: { lat: number; lon: number },
+): TripProgress | null {
   const policy = config.timeline;
   // Local tangent plane centred on the measured point; wrap longitude at the date line.
   const points = trip.stops.map(({ stop }) => {
@@ -57,10 +93,10 @@ export function tripProgress(
       !validCoordinates(stop.lat, stop.lon)
     )
       return null;
-    const longitude = ((stop.lon - live.position!.lon + 540) % 360) - 180;
+    const longitude = ((stop.lon - position.lon + 540) % 360) - 180;
     return {
-      x: 6371000 * longitude * radians * Math.cos(live.position!.lat * radians),
-      y: 6371000 * (stop.lat - live.position!.lat) * radians,
+      x: 6371000 * longitude * radians * Math.cos(position.lat * radians),
+      y: 6371000 * (stop.lat - position.lat) * radians,
     };
   });
   const nearby = points.flatMap((point, index) =>

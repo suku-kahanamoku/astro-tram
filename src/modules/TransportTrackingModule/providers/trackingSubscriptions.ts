@@ -14,6 +14,7 @@ type Watch = {
   expiry?: ReturnType<typeof setTimeout>;
   renewal?: ReturnType<typeof setTimeout>;
   ping?: ReturnType<typeof setInterval>;
+  retries?: number;
 };
 /** Incremental subscriptions and a shared ticket queue, scoped to one mounted search. */
 export function createTrackingSubscriptions(
@@ -36,8 +37,9 @@ export function createTrackingSubscriptions(
     clearTimeout(watch.expiry);
     clearTimeout(watch.renewal);
     clearInterval(watch.ping);
-    watch.socket?.close();
+    const socket = watch.socket;
     watch.socket = undefined;
+    socket?.close();
   };
   const connect = (id: string, watch: Watch, session: TrackingSession) => {
     if (!active(id, watch)) return;
@@ -53,18 +55,35 @@ export function createTrackingSubscriptions(
     disconnect(watch);
     const socket = dependencies.socket({
       url: session.url,
+      maxRetries: 0,
       onState(status) {
-        if (!active(id, watch)) return;
+        if (!active(id, watch) || watch.socket !== socket) return;
         if (status === "open")
           watch.socket?.send({ type: "subscribe", ticket: session.ticket });
-        else if (status !== "connecting")
+        else if (status !== "connecting") {
           store.set(id, unavailableObservation());
+          disconnect(watch);
+          const retries = watch.retries ?? 0;
+          if (retries < 8) {
+            watch.retries = retries + 1;
+            watch.renewal = setTimeout(
+              () => {
+                if (active(id, watch)) {
+                  queue.set(id, watch);
+                  pump();
+                }
+              },
+              Math.min(30000, 1000 * 2 ** retries),
+            );
+          }
+        }
       },
       onMessage(message) {
         if (!active(id, watch) || !message || typeof message !== "object")
           return;
         const m = message as { type?: string; trip?: string; data?: unknown };
         if (m.type !== "observation" || m.trip !== id) return;
+        watch.retries = 0;
         const value = observation(m.data);
         store.set(id, value);
         clearTimeout(watch.expiry);
@@ -114,7 +133,8 @@ export function createTrackingSubscriptions(
       .then((session) => {
         if (!active(id, watch)) return;
         if (tickets.size >= 100) tickets.delete(tickets.keys().next().value!);
-        tickets.set(id, session);
+        // A successful ticket is single-use, even if the WS session lasts 15 minutes.
+        if (session.status !== "available") tickets.set(id, session);
         connect(id, watch, session);
       })
       .catch((error: unknown) => {

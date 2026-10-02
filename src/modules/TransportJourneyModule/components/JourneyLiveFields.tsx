@@ -65,17 +65,15 @@ export function TripCallTime({
   call,
   tripId,
   locale,
+  event = "departure",
 }: {
   call: TripStop;
   tripId?: string | null;
   locale: string;
+  event?: "arrival" | "departure";
 }) {
   const live = useTripObservation(tripId);
   usePredictionExpiry([call.predictionValidUntil]);
-  const display = callTime(
-    call,
-    call.departure ? "departure" : "arrival",
-    live,
-  );
+  const display = callTime(call, event, live);
   return <time>{display.value ? time(display.value, locale) : "—"}</time>;
 }

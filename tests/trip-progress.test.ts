@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { tripProgress } from "../src/modules/TransportJourneyModule/providers/tripProgress";
+import {
+  tripProgress,
+  lastKnownTripProgress,
+} from "../src/modules/TransportJourneyModule/providers/tripProgress";
 import {
   delayMinutes,
   unavailableObservation,
@@ -105,5 +108,33 @@ test("badges preserve independent arrival-only and numeric delays even without G
   assert.equal(
     delayMinutes({ ...leg, realtime: false }, live(), now + 30000),
     0,
+  );
+});
+
+test("a dated last-known measurement can initialise the dot without being treated as live GPS", () => {
+  const known = {
+    ...live(),
+    status: "last_known",
+    observedAt: new Date(now - 45000).toISOString(),
+    validUntil: new Date(now + 45000).toISOString(),
+  };
+  assert.equal(tripProgress(trip, known, now), null);
+  assert.equal(lastKnownTripProgress(trip, known, now)?.from, 0);
+  assert.equal(lastKnownTripProgress(trip, known, now + 45000), null);
+  assert.equal(
+    lastKnownTripProgress(
+      trip,
+      { ...known, position: { lat: 95, lon: 14 } },
+      now,
+    ),
+    null,
+  );
+  assert.equal(
+    lastKnownTripProgress(
+      trip,
+      { ...known, validUntil: new Date(now + 46000).toISOString() },
+      now,
+    ),
+    null,
   );
 });

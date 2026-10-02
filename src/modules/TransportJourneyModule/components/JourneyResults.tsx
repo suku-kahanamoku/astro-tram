@@ -29,30 +29,6 @@ import type {
   Trip,
 } from "../../TransportCoreModule/types";
 import type { Dictionary } from "../../TransportCoreModule/providers/translations";
-export function ResolvedPlaces({
-  result,
-  t,
-}: {
-  result: SearchResult;
-  t: Dictionary;
-}) {
-  return (
-    <>
-      {(["from", "to"] as const).map((side) => {
-        const p = result.resolvedPlaces?.[side];
-        return p ? (
-          <p key={side} className="notice" data-nearest-stop={side}>
-            {side === "from" ? t.nearestFrom : t.nearestTo}{" "}
-            <strong>{p.name}</strong>
-            {p.sourceMode === "fallback" ? ` · ${t.fallback}` : ""}
-            <br />
-            <small>{t.nearestStopHint}</small>
-          </p>
-        ) : null;
-      })}
-    </>
-  );
-}
 function Badge({ leg, t }: { leg: Leg; t: Dictionary }) {
   return (
     <>
@@ -229,6 +205,7 @@ function JourneyDetail({
                           locale={locale}
                           current={url}
                           stopOffset={segment.from + 1}
+                          totalStops={trip.stops.length}
                         />
                       )}
                     </ul>
@@ -270,7 +247,6 @@ export default function JourneyResults({
   const selected = url.searchParams.get("journey");
   return (
     <>
-      <ResolvedPlaces result={result} t={t} />
       {result.partial && <p className="notice">{t.partial}</p>}
       {selected && !result.journeys.some((j) => j.key === selected) && (
         <p className="notice">{t.missingJourney}</p>

@@ -16,14 +16,22 @@ Bez nastaveného backendu funguje landing a formulář; vyhledávání přizná 
 
 Serverové proměnné:
 
-- `PUBLIC_SITE_URL`: kanonická adresa webu; v produkci musí být shodná s originem POST požadavků. Při `npm run dev` kontrolujeme skutečný origin běžícího serveru, takže změna portu (např. na 4322 při obsazeném 4321) neblokuje našeptávání s GPS ani vyhledávání. Cizí či chybějící origin se nadále odmítá.
+- `PUBLIC_SITE_URL`: kanonická adresa webu; v produkci musí být shodná s originem zápisových POST požadavků. Při `npm run dev` kontrolujeme skutečný origin běžícího serveru. Veřejné čtecí POST `/api/transport/places/` a `/api/transport/search/` origin nevyžadují; vstupy, velikost těla a backendové limity se stále ověřují. Přihlášení, změny účtu a vytváření tracking ticketu nadále vyžadují shodný origin.
 - `PHP_CORE_URL`: kořen php-core API včetně `/api`, bez `/transport/v1`.
 - `PHP_CORE_API_KEY`: interní klíč backendu, pouze na serveru.
 - `PHP_CORE_TENANT_HOST`: pevný host mapovaný v php-core na `tram`, např. `tram.localhost`.
 
+Interní API klíč ověřuje serverové volání Astro → php-core. Pevný tenant host vybírá datový tenant; nepřebírá se z hostu prohlížeče. Klíč se do prohlížeče neposílá.
+
 Backend musí mít aplikované `schema.sql`, `tram_schema.sql`, `tram_seed.sql`, host ve `FRANCHISE_CODES` a nakonfigurované skutečné providery přes `transport-configure.php`. Samotná DB migrace poskytovatele nezapíná. Pokud backend nemá žádný zdroj pro zvolenou oblast (`sources: []`), našeptávač zobrazí chybějící připojení dat; nejde o úspěšné hledání bez nalezených zastávek. PID vyžaduje Golemio token; OTP fallback vyžaduje hotový graf. Entur pokrývá Norsko. Dosavadní PID online plánování umí jen přímé spojení nebo jeden přestup mezi přesnými zastávkami; GPS a ruční mapový bod mohou u tohoto zdroje vrátit nepodporovanou schopnost. Frontend toto omezení zobrazuje.
 
 ## Struktura
+
+Výsledky GPS hledání již nevykreslují zvláštní upozornění o nástupní/cílové
+zastávce ani nezapočítané pěší cestě. Vybrané zastávky zůstávají v datech
+výsledku a trase. Lokální Java backend má vlastní IDS JMK realtime adaptér
+a WebSocket; dialog dostane statické zastávky hned a živá měření upravují
+časovou osu a zpoždění. Historický nebo budoucí spoj nemusí mít živé měření.
 
 - `src/config/site.ts`, `routes.ts`: brand, aktivní moduly a jazykové URL.
 - `LandingModule`: intro, vysvětlení, ilustrace, FAQ.
@@ -244,11 +252,11 @@ Mapy mají vyhrazenou výšku během načítání; zoom nastavuje `config/client
 
 ### Živé sledování a zpoždění
 
-Otevřený detail spojení odebírá aktuální pozorování přes `useTripTracking` a společný `RealtimeModule`. BFF `POST /api/transport/tracking/` vydává pouze krátkodobý ticket; klíče poskytovatelů zůstávají v php-core. Je potřeba samostatně nakonfigurovat a spustit backendovou gateway podle [provozní dokumentace](../../php/php-core/docs/tram-realtime-tracking.md). Bez dostupného živého odběru zůstává statický detail; první umístění červeného bodu vyžaduje čerstvou ověřenou GPS.
+Otevřený detail spojení odebírá aktuální pozorování přes `useTripTracking` a společný `RealtimeModule`. BFF `POST /api/transport/tracking/` vydává pouze krátkodobý ticket; klíče poskytovatelů zůstávají v php-core. Je potřeba samostatně nakonfigurovat a spustit backendovou gateway podle [provozní dokumentace](../../php/php-core/docs/tram-realtime-tracking.md). Bez dostupného živého odběru zůstává statický detail; první umístění červeného bodu vyžaduje ověřenou GPS. Vedle živého měření (do 30 sekund) umí přijmout explicitní `last_known` (do 90 sekund), s původním časem a označením poslední známé polohy. Taková poloha neovlivňuje časy, zpoždění ani návaznosti.
 
 `trackedJourney` společně přepočítává časy, délku cesty, chůzi a návaznosti. Badge je vedle označení spoje: kladné zpoždění červeně, nulové i dosud neznámé zpoždění zeleně „Bez zpoždění“ podle požadovaného UI. Neznámá hodnota zůstává ve výpočtech `null`, není potvrzením včasného příjezdu. `useDelayStatus` ponechá poslední potvrzenou hodnotu po dobu zobrazení komponenty i mezi aktualizacemi; tooltip a přístupný popisek označí neaktuální údaj. Tato paměť slouží pouze badge, ne výpočtu trasy. GPS a časové predikce nadále expirují původním timerem. Časy zastávek se zobrazují bez pomocné značky odhadu. Zavření detailu/skrytí stránky odpojí odběry, žádná poloha se neukládá do storage ani URL. Současný pohyb vozidla automaticky nevytváří náhradní trasu: při ohroženém přestupu UI vyzve k novému vyhledání.
 
-Detail spoje používá `TripTimeline` s osou vlevo od časů a bodem u každé zastávky. `tripProgress` promítá pouze čerstvou GPS na jednoznačný úsek mezi sousedními zastávkami; bod mezi nimi vyjadřuje přibližný postup na schematické ose, nikoli odhad polohy podle hodin. Chybějící souřadnice, nejednoznačné smyčky nebo bod mimo trasu se nepřemosťují. Limity projekce jsou v `TransportModule/config/client.ts`. `useTripTimeline` měří skutečné výšky řádků i po změně šířky a při zalomení názvů. Před prvním ověřeným měřením zůstává osa bez červeného bodu. Živá mapa ani hláška o nedostupné poloze nejsou součástí dialogu; mapy zastávek a trasy zůstávají dostupné.
+Detail spoje používá `TripTimeline` s osou vlevo od časů a bodem u každé zastávky. `tripProgress` promítá čerstvou GPS a `lastKnownTripProgress` odděleně poslední známé měření na jednoznačný úsek mezi sousedními zastávkami; bod mezi nimi vyjadřuje přibližný postup na schematické ose, nikoli odhad polohy podle hodin. Chybějící souřadnice, nejednoznačné smyčky nebo bod mimo trasu se nepřemosťují. Limity projekce jsou v `TransportModule/config/client.ts`. `useTripTimeline` měří skutečné výšky řádků i po změně šířky a při zalomení názvů. Před prvním ověřeným měřením zůstává osa bez červeného bodu. Poslední známá poloha je viditelně označená a po dobu otevřeného dialogu zůstane na posledním jednoznačném místě. Živá mapa ani hláška o nedostupné poloze nejsou součástí dialogu; mapy zastávek a trasy zůstávají dostupné.
 
 Badge zpoždění každého úseku umí využít samostatnou čerstvou zastávkovou predikci nebo číselné zpoždění i tehdy, když GPS poskytovatel nemá. Neznámé zpoždění se pro výpočty nikdy nepřevádí na potvrzenou nulu. Brněnské Spojenka/CIS spoje mohou využít backendový adaptér IDS JMK, pokud je zapnutý pro tenant. Aktuální preset pokrývá CIS linky 737001–737099 a 738001–738099 a ověřuje konkrétní dnešní jízdu. Původní trip ID i frontendový kontrakt zůstávají stejné; React nezná konkrétního poskytovatele. Bez čerstvého měření se dříve zobrazený bod ponechá jako poslední známá poloha; potvrzené nulové zpoždění zobrazí zelený badge. Konfigurace a omezení jsou v provozní dokumentaci výše.
 
@@ -274,7 +282,7 @@ Lokální stav uchovává otevřené karty a kontext zvoleného dialogu nebo map
 Staré odkazy s detailem obnoví pouze vyhledání, nikoliv otevřené karty.
 Datum a badge linek jsou první částí viditelné hlavičky accordionu i při sbalení. Tlačítka badge a odkaz pro rozbalení jsou sourozenci uvnitř `.journey-summary`; kliknutí na badge otevře pouze dialog a zachová stav rozbalení. Dialog má přichycenou hlavičku s titulkem, badge zpoždění a zavíracím tlačítkem; opakované štítky plánovaných/online časů se nezobrazují.
 `TripResources` sdílí načtené statické detaily a probíhající požadavky uvnitř
-otevřeného vyhledávače. Opětovné otevření je bez dalšího HTTP požadavku; první
+otevřeného vyhledávače. Opětovné otevření statického detailu je bez dalšího HTTP požadavku; první
 otevření dosud nenačteného spoje zobrazí hlavičku a stav načítání zastávek.
 WebSocket běží nezávisle a aktualizuje pouze malé živé komponenty.
 
@@ -293,8 +301,13 @@ nadále vlastní dohledání polohy. Rychlé zobrazení vyžaduje také odpovíd
 verzi php-core s podporou `stop_coordinates`.
 
 `trackingSubscriptions` zachovává odběry při změně otevřených karet; zavřený
-accordion s otevřeným dialogem sleduje pouze konkrétní spoj. Tikety uchovává
-pouze v paměti zobrazení do expirace, nikdy v URL/storage. Nové tikety vydává
+accordion s otevřeným dialogem sleduje pouze konkrétní spoj. Úspěšný ticket
+je jednorázový: nové připojení i opětovné otevření po odpojení žádá nový.
+Obnova socketu používá omezené prodlevy 1–30 sekund, nikoli opakované
+použití ticketu. V paměti se uchovávají pouze nedostupné stavy, nikdy
+ticket v URL/storage. Nové tikety vydává
 postupně (nejvýše jeden začátek požadavku za sekundu); 429 pozastaví celou
 frontu podle `Retry-After`, nebo na 60 sekund při chybějící hlavičce.
 BFF tuto hlavičku přenáší z php-core. Limity backendu se nezvyšují.
+
+Čas poslední zastávky plného detailu je příjezd, i když zdroj uvádí také pozdější odjezd (například po pobytu na konečné). Mezilehlé zastávky zobrazují odjezd; výřez mezilehlých zastávek zachovává jejich místo v celém spoji. Pobyt na konečné se nepřičítá k jízdě předchozího úseku.

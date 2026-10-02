@@ -1,6 +1,7 @@
 import { legacyRedirect } from "./config/routes";
 import { defineMiddleware, sequence } from "astro:middleware";
-import { requestHook } from "./modules/CoreModule/server/requestHook";
+import { createRequestHook } from "./modules/CoreModule/server/requestHook";
+import { isPublicTransportRead } from "./modules/TransportModule/server/requestPolicy";
 import { sessionHook } from "./modules/AuthModule/server/sessionHook";
 import { createProviders } from "./server/providers";
 
@@ -21,7 +22,7 @@ export const onRequest = sequence(
     }
     return next();
   }),
-  requestHook,
+  createRequestHook(isPublicTransportRead),
   defineMiddleware(async (context, next) => {
     context.locals.providers = createProviders();
     return next();

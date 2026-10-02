@@ -1,5 +1,5 @@
 import { useState, type RefObject } from "react";
-import JourneyResults, { ResolvedPlaces } from "./JourneyResults";
+import JourneyResults from "./JourneyResults";
 import type { Dictionary } from "../../TransportCoreModule/providers/translations";
 import {
   requiresLocation,
@@ -104,7 +104,6 @@ export default function TransportResults({
           />
         ) : search.data ? (
           <>
-            <ResolvedPlaces result={search.data} t={t} />
             <div className="status-card">
               <h2>{t.empty}</h2>
               <p>{t.emptyHelp}</p>

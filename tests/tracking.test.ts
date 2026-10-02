@@ -72,6 +72,33 @@ test("delay presentation distinguishes confirmed zero, positive delay and unknow
   assert.equal(delayMinutes(leg, { ...live, delaySeconds: -20 }), 0);
   assert.equal(delayMinutes(leg, unavailableObservation("stale")), 0);
 });
+
+test("last-known GPS preserves its source age and never moves times or confirms delay", () => {
+  const now = Date.parse("2026-10-01T08:00:00Z");
+  const raw = {
+    status: "last_known",
+    position: { lat: 50, lon: 14 },
+    observed_at: new Date(now - 45000).toISOString(),
+    valid_until: new Date(now + 45000).toISOString(),
+    delay_seconds: 480,
+  };
+  const known = observation(raw, now);
+  assert.equal(known.status, "last_known");
+  assert.equal(known.observedAt, raw.observed_at);
+  assert.equal(known.delaySeconds, null);
+  assert.equal(knownDelayMinutes(leg, known, now), null);
+  assert.equal(trackedLeg(leg, known, now).expectedArrival, null);
+  assert.equal(
+    callTime(
+      { arrival: null, departure: leg.scheduledArrival } as TripStop,
+      "departure",
+      known,
+      now,
+    ).value,
+    leg.scheduledArrival,
+  );
+  assert.equal(observation(raw, now + 45000).position, null);
+});
 test("live feeder delay causes a transfer warning without postponing the connecting service", () => {
   const live = {
     ...unavailableObservation(),

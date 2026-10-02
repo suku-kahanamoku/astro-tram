@@ -161,18 +161,17 @@ test("GPS is fresh on every refresh and never stored in the URL", async ({
   await page.goto("/spojeni/?" + params);
   await expect(page.locator(".journey-card")).toHaveCount(2);
   expect(body["from-dest"].lat).toBe(50.08);
-  await expect(page.locator("[data-nearest-stop=from]")).toContainText(
-    "Praha, Muzeum",
-  );
+  await expect(page.locator("[data-nearest-stop]")).toHaveCount(0);
+  await expect(
+    page.getByText("Pěší cesta mezi polohou a zastávkou není započítaná."),
+  ).toHaveCount(0);
   expect(page.url()).not.toContain("50.08");
   expect(page.url()).not.toContain("observed");
   await context.setGeolocation({ latitude: 50.09, longitude: 14.42 });
   await page.reload();
   await expect(page.locator(".journey-card")).toHaveCount(2);
   expect(body["from-dest"].lat).toBe(50.09);
-  await expect(page.locator("[data-nearest-stop=from]")).toContainText(
-    "Praha, Vltavská",
-  );
+  await expect(page.locator("[data-nearest-stop]")).toHaveCount(0);
   expect(await page.evaluate(() => localStorage.length)).toBe(0);
 });
 test("GPS denial is recoverable and never falls back to a historical point", async ({
@@ -194,7 +193,7 @@ test("GPS denial is recoverable and never falls back to a historical point", asy
   ).toBeVisible();
   await expect(page.locator(".journey-card")).toHaveCount(0);
 });
-test("dev POST autocomplete and GPS work when canonical URL uses another port", async ({
+test("public read-only POST autocomplete and GPS do not require a site origin", async ({
   request,
 }) => {
   const headers = { Origin: "http://localhost:4328" };
@@ -218,21 +217,26 @@ test("dev POST autocomplete and GPS work when canonical URL uses another port", 
   const missingOrigin = await request.post("/api/transport/places/", {
     data: { q: { state: "CZ", name: { $regex: "Muzeum" } } },
   });
-  expect(missingOrigin.status()).toBe(403);
+  expect(missingOrigin.status()).toBe(200);
   const foreignPort = await request.post("/api/transport/places/", {
     headers: { Origin: "http://localhost:4321" },
     data: { q: { state: "CZ", name: { $regex: "Muzeum" } } },
   });
-  expect(foreignPort.status()).toBe(403);
+  expect(foreignPort.status()).toBe(200);
 });
-test("public boundary rejects foreign origins and exposes no upstream secrets", async ({
+test("mutations reject foreign origins and public reads validate input without exposing secrets", async ({
   request,
 }) => {
-  const response = await request.post("/api/transport/search/", {
+  const response = await request.post("/api/transport/tracking/", {
     headers: { Origin: "https://evil.test" },
     data: {},
   });
   expect(response.status()).toBe(403);
+  const read = await request.post("/api/transport/search/", {
+    headers: { Origin: "https://evil.test" },
+    data: {},
+  });
+  expect(read.status()).toBe(422);
   const invalid = await request.get(
     "/api/transport/places/?q=" +
       encodeURIComponent(JSON.stringify({ url: "https://evil.test" })),
@@ -1630,4 +1634,114 @@ test("multiple expanded journeys use local state and dialogs reuse static detail
   expect(await page.evaluate(() => history.length)).toBe(historyLength);
   await page.reload();
   await expect(page.locator(".journey-card.is-open")).toHaveCount(0);
+});
+
+test("terminal stop displays arrival while intermediate stops display departure", async ({
+  page,
+}) => {
+  await page.route("**/api/transport/search/**", async (route) => {
+    const response = await route.fetch();
+    const json = await response.json();
+    const leg = json.data.journeys[0].legs[0];
+    leg.to = { ...leg.to, id: id("S3"), name: "Praha, Národní třída" };
+    leg.scheduledArrival = "2026-10-06T10:10:00+02:00";
+    leg.expectedDeparture = null;
+    leg.expectedArrival = null;
+    leg.realtime = false;
+    await route.fulfill({ json });
+  });
+  await page.route("**/api/transport/trip/**", async (route) => {
+    const response = await route.fetch();
+    const json = await response.json();
+    const calls = json.data.stops;
+    calls[1].arrival = "2026-10-06T10:05:00+02:00";
+    calls[1].departure = "2026-10-06T10:06:00+02:00";
+    calls[2].arrival = "2026-10-06T10:10:00+02:00";
+    calls[2].departure = "2026-10-06T10:22:00+02:00";
+    await route.fulfill({ json });
+  });
+  await page.goto(`/spojeni/?${query()}`);
+  await page.locator("[data-summary-trip]").first().click();
+  const rows = page.locator("[data-trip-dialog] .trip-call");
+  await expect(rows).toHaveCount(3);
+  await expect(rows.nth(1).locator("time")).toHaveText("10:06");
+  await expect(rows.last().locator("time")).toHaveText("10:10");
+  await page.locator("[data-close-trip]").click();
+  await page.locator(".journey-summary").first().click();
+  await page.locator(".intermediate-toggle").first().click();
+  await expect(page.locator("[data-intermediate-stops] time")).toHaveText(
+    "10:06",
+  );
+});
+
+test("last-known GPS initialises the timeline and reopening redeems a new single-use ticket", async ({
+  page,
+}) => {
+  const issued = new Map<string, string>();
+  const redeemed = new Set<string>();
+  let requests = 0;
+  await page.route("**/api/transport/tracking/", async (route) => {
+    const trip = route.request().postDataJSON().id;
+    const ticket = `one-use-${++requests}`;
+    issued.set(ticket, trip);
+    await route.fulfill({
+      json: {
+        success: true,
+        data: {
+          status: "available",
+          url: "ws://localhost:4328/last-known-test",
+          ticket,
+          expiresAt: new Date(Date.now() + 900000).toISOString(),
+        },
+      },
+    });
+  });
+  await page.routeWebSocket("ws://localhost:4328/last-known-test", (socket) => {
+    socket.onMessage((message) => {
+      const request = JSON.parse(String(message));
+      if (request.type !== "subscribe") return;
+      expect(redeemed.has(request.ticket)).toBe(false);
+      redeemed.add(request.ticket);
+      const now = Date.now();
+      socket.send(
+        JSON.stringify({
+          type: "observation",
+          trip: issued.get(request.ticket),
+          data: {
+            status: "last_known",
+            position: { lat: 50.0775, lon: 14.4255 },
+            observed_at: new Date(now - 45000).toISOString(),
+            valid_until: new Date(now + 45000).toISOString(),
+            delay_seconds: null,
+            cancelled: null,
+          },
+        }),
+      );
+    });
+  });
+  let details = 0;
+  page.on("request", (request) => {
+    if (request.url().includes("/api/transport/trip/")) details++;
+  });
+  await page.goto(`/spojeni/?${query()}`);
+  await page.locator("[data-summary-trip]").first().click();
+  const dialog = page.locator("[data-trip-dialog]");
+  const dot = dialog.locator("[data-trip-vehicle-dot]");
+  await expect(dot).toBeVisible();
+  await expect(dot).toHaveAttribute("data-retained", "true");
+  await expect(dot).toHaveAttribute(
+    "aria-label",
+    /Poslední jednoznačná poloha/,
+  );
+  await expect(dialog.locator(".trip-call")).toHaveCount(3);
+  await expect(dialog.locator("[data-delay-badge]")).toHaveText("Bez zpoždění");
+  const loaded = details;
+  await page.locator("[data-close-trip]").click();
+  await expect(dialog).not.toBeVisible();
+  await page.locator("[data-summary-trip]").first().click();
+  await expect.poll(() => requests).toBe(2);
+  await expect.poll(() => redeemed.size).toBe(2);
+  await expect(dot).toBeVisible();
+  await expect(dot).toHaveAttribute("data-retained", "true");
+  expect(details).toBe(loaded);
 });

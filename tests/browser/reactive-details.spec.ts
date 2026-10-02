@@ -137,7 +137,7 @@ test("static stop rows appear before optional coordinates and never remount when
   }
 });
 
-test("429 waits for Retry-After and closing/reopening uses the recovered ticket", async ({
+test("429 waits for Retry-After and closing/reopening obtains a fresh ticket", async ({
   page,
 }) => {
   let requests = 0,
@@ -179,5 +179,5 @@ test("429 waits for Retry-After and closing/reopening uses the recovered ticket"
   await expect(page.locator("[data-trip-dialog]")).not.toBeVisible();
   await badge.click();
   await expect.poll(() => connections).toBe(2);
-  expect(requests).toBe(2);
+  expect(requests).toBe(3);
 });
