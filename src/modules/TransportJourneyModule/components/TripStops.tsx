@@ -7,7 +7,6 @@ import type { Trip, Leg } from "../../TransportCoreModule/types";
 import type { Dictionary } from "../../TransportCoreModule/providers/translations";
 function TripStops({
   trip,
-  tripId,
   t,
   locale,
   leg,
@@ -17,7 +16,6 @@ function TripStops({
   timeline = false,
 }: {
   trip: Trip;
-  tripId?: string | null;
   t: Dictionary;
   locale: string;
   leg?: Leg;
@@ -71,7 +69,6 @@ function TripStops({
             )}
             <TripCallTime
               call={c}
-              tripId={tripId}
               locale={locale}
               event={index === totalStops - 1 ? "arrival" : "departure"}
             />

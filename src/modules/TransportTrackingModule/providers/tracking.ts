@@ -45,29 +45,38 @@ export function observation(value: unknown, now = Date.now()): TripObservation {
     Date.parse(r.observed_at) > now + 5000 ||
     Date.parse(r.observed_at) + maxAge <= now ||
     Date.parse(r.valid_until) <= now ||
-    Date.parse(r.valid_until) > Date.parse(r.observed_at) + maxAge ||
-    !p ||
-    typeof p.lat !== "number" ||
-    typeof p.lon !== "number" ||
-    !validCoordinates(p.lat, p.lon)
+    Date.parse(r.valid_until) < Date.parse(r.observed_at) ||
+    Date.parse(r.valid_until) > Date.parse(r.observed_at) + maxAge
   )
     return unavailableObservation("stale");
+  const position =
+    p &&
+    typeof p.lat === "number" &&
+    typeof p.lon === "number" &&
+    validCoordinates(p.lat, p.lon)
+      ? { lat: p.lat, lon: p.lon }
+      : null;
+  const delaySeconds =
+    r.status === "live" &&
+    typeof r.delay_seconds === "number" &&
+    Number.isFinite(r.delay_seconds) &&
+    Math.abs(r.delay_seconds) <= 86400
+      ? r.delay_seconds
+      : null;
+  const cancelled =
+    r.status === "live" && typeof r.cancelled === "boolean"
+      ? r.cancelled
+      : null;
+  // A verified delay does not depend on a vehicle publishing its GPS.
+  if (!position && delaySeconds === null && cancelled === null)
+    return unavailableObservation("unavailable");
   return {
     status: r.status,
-    position: { lat: p.lat, lon: p.lon },
+    position,
     observedAt: r.observed_at,
     validUntil: r.valid_until,
-    delaySeconds:
-      r.status === "live" &&
-      typeof r.delay_seconds === "number" &&
-      Number.isFinite(r.delay_seconds) &&
-      Math.abs(r.delay_seconds) <= 86400
-        ? r.delay_seconds
-        : null,
-    cancelled:
-      r.status === "live" && typeof r.cancelled === "boolean"
-        ? r.cancelled
-        : null,
+    delaySeconds,
+    cancelled,
   };
 }
 export function knownDelayMinutes(
@@ -155,16 +164,17 @@ export function trackedLeg(
   };
   return result;
 }
-/** One calculation feeds summary, accordion, trip dialog and map selection. */
+/** Internal predictions assess transfers; UI timetable fields never consume them. */
 export function trackedJourney(
   journey: Journey,
   observations: Record<string, TripObservation>,
   now = Date.now(),
-): Journey {
+): Journey & { transferRiskLegs: number[] } {
   let ready: number | undefined,
     previousTransit = false,
     risk = false;
-  const legs = journey.legs.map((original) => {
+  const transferRiskLegs: number[] = [];
+  const legs = journey.legs.map((original, index) => {
     let leg = trackedLeg(
       original,
       original.tripId ? observations[original.tripId] : undefined,
@@ -190,8 +200,10 @@ export function trackedJourney(
       ready !== undefined &&
       dep <
         ready + (leg.minTransferSeconds ?? (previousTransit ? 60 : 0)) * 1000
-    )
+    ) {
       risk = true;
+      transferRiskLegs.push(index);
+    }
     ready = arr;
     previousTransit = leg.mode !== "walk";
     return leg;
@@ -207,7 +219,7 @@ export function trackedJourney(
             1000,
         )
       : journey.duration;
-  return { ...journey, legs, duration, transferAtRisk: risk };
+  return { ...journey, legs, duration, transferAtRisk: risk, transferRiskLegs };
 }
 export function transferAtRisk(legs: Leg[]): boolean {
   return (

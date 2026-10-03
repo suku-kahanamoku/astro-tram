@@ -2,6 +2,7 @@
 import SeoHead from "../modules/SiteModule/components/SeoHead.astro";
 import Header from "../modules/SiteModule/components/Header.astro";
 import Footer from "../modules/SiteModule/components/Footer.astro";
+import TransportAttributions from "../modules/TransportModule/components/TransportAttributions";
 import { dictionary } from "../modules/SiteModule/providers/translations";
 import { site } from "../config/site";
 import type { Locale, PageId } from "../config/routes";
@@ -35,6 +36,8 @@ const { locale, page, title, description, noindex = false } = Astro.props;
     <main id="main-content" tabindex="-1">
       <slot />
     </main>
-    <Footer {locale} />
+    <Footer {locale}>
+      <TransportAttributions client:load {locale} />
+    </Footer>
   </body>
 </html>

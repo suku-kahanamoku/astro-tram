@@ -6,6 +6,7 @@ import {
 import { createHash } from "node:crypto";
 import type { CoreClient } from "../../CoreModule/server/php-core";
 import { HttpError } from "../../CoreModule/server/errors";
+import { projectAttributions } from "../../TransportCoreModule/providers/attributions";
 import type {
   Geometry,
   Journey,
@@ -175,6 +176,14 @@ function leg(value: unknown): Leg {
 }
 export function createTransportProvider(core: CoreClient) {
   return {
+    async attributions() {
+      const raw = await core.request("/transport/v1/attributions");
+      try {
+        return projectAttributions(raw);
+      } catch {
+        throw new HttpError(502, "invalid_backend_response");
+      }
+    },
     async coverage() {
       const raw = object(await core.request("/transport/v1/coverage"));
       if (!Array.isArray(raw.countries) || raw.countries.length > 250)

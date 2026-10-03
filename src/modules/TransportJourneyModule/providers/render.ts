@@ -1,5 +1,5 @@
 import type { Dictionary } from "../../TransportCoreModule/providers/translations";
-import type { Trip } from "../../TransportCoreModule/types";
+import type { Journey, Trip, TripStop } from "../../TransportCoreModule/types";
 export const escapeHtml = (value: unknown) =>
   String(value ?? "").replace(
     /[&<>"']/g,
@@ -23,6 +23,25 @@ export function duration(seconds: number, t: Dictionary) {
   return mins >= 60
     ? `${Math.floor(mins / 60)} ${t.hours} ${mins % 60 ? `${mins % 60} ${t.minutes}` : ""}`
     : `${mins} ${t.minutes}`;
+}
+/** The displayed itinerary is the timetable, independent of live predictions. */
+export function scheduledDuration(journey: Journey) {
+  const first = journey.legs[0],
+    last = journey.legs.at(-1);
+  return first && last
+    ? Math.max(
+        0,
+        (Date.parse(last.scheduledArrival) -
+          Date.parse(first.scheduledDeparture)) /
+          1000,
+      )
+    : journey.duration;
+}
+export function scheduledCallTime(
+  call: TripStop,
+  event: "arrival" | "departure",
+) {
+  return call[event] ?? call[event === "arrival" ? "departure" : "arrival"];
 }
 export function navHref(current: URL, params: Record<string, string | null>) {
   const u = new URL(current);

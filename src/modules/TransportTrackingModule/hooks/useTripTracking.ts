@@ -30,7 +30,7 @@ export function useTripTracking(ids: string[], focusedId?: string | null) {
     };
     refresh();
     // Other effects may reorder visibility listeners as accordion subscriptions change.
-    // Resume the watch first, then request the dialog's initial point.
+    // Resume the watch first, then request the dialog's initial GPS and delay.
     const onVisibility = () => queueMicrotask(refresh);
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);

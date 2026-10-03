@@ -5,6 +5,7 @@ import type {
   SearchResult,
   PlaceOption,
   CityOption,
+  DataAttribution,
 } from "../types";
 export class TransportRequestError extends Error {
   constructor(
@@ -41,6 +42,8 @@ export async function request<T>(
   return body.data;
 }
 export const transportClient = {
+  attributions: (signal: AbortSignal) =>
+    request<DataAttribution[]>(config.endpoints.attributions, { signal }),
   coverage: (signal: AbortSignal) =>
     request<import("../types").CountryCoverage[]>(config.endpoints.coverage, {
       signal,

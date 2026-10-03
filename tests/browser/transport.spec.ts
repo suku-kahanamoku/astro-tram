@@ -1097,14 +1097,9 @@ test("live vehicle tracking shares the selected journey, shows delay and removes
   await expect(page.locator(".journey-detail [data-delay-badge]")).toHaveText(
     "Zpoždění 8 min",
   );
-  const [hours, minutes] = scheduledTime.trim().split(":").map(Number);
-  const delayed = (hours * 60 + minutes + 8) % (24 * 60);
-  const delayedLabel = `${Math.floor(delayed / 60)
-    .toString()
-    .padStart(2, "0")}:${(delayed % 60).toString().padStart(2, "0")}`;
   await expect(
     page.locator(".journey-summary .journey-time").first(),
-  ).toHaveText(delayedLabel);
+  ).toHaveText(scheduledTime);
   await expect(page.locator(".journey-duration").first()).toHaveText(
     originalDuration,
   );
@@ -1115,7 +1110,7 @@ test("live vehicle tracking shares the selected journey, shows delay and removes
   expect(sessions).toBe(1);
   await expect(
     page.locator("[data-trip-dialog] .trip-stops time").first(),
-  ).toHaveText(delayedLabel);
+  ).toHaveText("10:00");
   await expect(
     page.locator("[data-trip-dialog] [data-delay-badge]"),
   ).toHaveAttribute("data-stale", "true", { timeout: 8000 });
@@ -1133,10 +1128,10 @@ test("live vehicle tracking shares the selected journey, shows delay and removes
     ),
   ).toBe(true);
   pushDelay(0);
-  await expect(badge).toHaveText("Bez zpoždění");
-  await expect(badge).toHaveAttribute("data-status", "on-time");
-  await expect(badge).not.toHaveAttribute("data-stale", "true");
-  await expect(badge).toHaveCSS("color", "rgb(18, 104, 50)");
+  await expect(badge).toHaveCount(0);
+  await expect(
+    page.locator("[data-trip-dialog] [data-delay-badge]"),
+  ).toHaveCount(0);
   pushDelay(120);
   await expect(badge).toHaveText("Zpoždění 2 min");
   await expect(badge).toHaveAttribute("data-status", "delayed");
@@ -1266,7 +1261,7 @@ for (const width of [390, 1280]) {
   });
 }
 
-test("unsupported tracking keeps static stops and displays the requested default badge without inventing GPS", async ({
+test("unsupported tracking keeps static stops without inventing GPS or an on-time badge", async ({
   page,
 }) => {
   await page.route("**/api/transport/search/", async (route) => {
@@ -1291,11 +1286,7 @@ test("unsupported tracking keeps static stops and displays the requested default
   const dialog = page.locator("[data-trip-dialog]");
   await expect(dialog.locator("[data-trip-point]")).toHaveCount(3);
   await expect(dialog.locator("[data-trip-vehicle-dot]")).toHaveCount(0);
-  await expect(dialog.locator("[data-delay-badge]")).toHaveText("Bez zpoždění");
-  await expect(dialog.locator("[data-delay-badge]")).toHaveAttribute(
-    "data-status",
-    "on-time",
-  );
+  await expect(dialog.locator("[data-delay-badge]")).toHaveCount(0);
   await expect(
     dialog.getByText(
       "Poskytovatel pro tento spoj neposkytuje ověřenou živou polohu.",
@@ -1475,9 +1466,7 @@ for (const width of [390, 1280]) {
     await expect(
       first.locator("[data-intermediate-stops] .trip-call"),
     ).toHaveCount(1);
-    await expect(first.locator("[data-delay-badge]")).toHaveText(
-      "Bez zpoždění",
-    );
+    await expect(first.locator(".leg-title [data-delay-badge]")).toHaveCount(0);
     await page.waitForTimeout(300);
     const order = await cards.evaluateAll((nodes) =>
       nodes.map((node) => node.getAttribute("data-journey")),
@@ -1499,13 +1488,14 @@ for (const width of [390, 1280]) {
     const scroll = await page.evaluate(() => window.scrollY);
     for (const delay of [480, null, 120, 0]) {
       push(delay);
-      await expect(first.locator("[data-delay-badge]")).toHaveText(
-        delay === null
-          ? "Zpoždění 8 min"
-          : delay === 0
-            ? "Bez zpoždění"
-            : `Zpoždění ${delay / 60} min`,
-      );
+      if (delay === 0)
+        await expect(
+          first.locator(".leg-title [data-delay-badge]"),
+        ).toHaveCount(0);
+      else
+        await expect(first.locator(".leg-title [data-delay-badge]")).toHaveText(
+          delay === null ? "Zpoždění 8 min" : `Zpoždění ${delay / 60} min`,
+        );
       await page.waitForTimeout(250);
       expect(
         await cards.evaluateAll((nodes) =>
@@ -1554,9 +1544,11 @@ for (const width of [390, 1280]) {
     });
     for (const delay of [null, 180, 0]) {
       push(delay);
-      await expect(dialog.locator("[data-delay-badge]")).toHaveText(
-        delay === 180 ? "Zpoždění 3 min" : "Bez zpoždění",
-      );
+      if (delay === 180)
+        await expect(dialog.locator("[data-delay-badge]")).toHaveText(
+          "Zpoždění 3 min",
+        );
+      else await expect(dialog.locator("[data-delay-badge]")).toHaveCount(0);
       if (delay === null)
         await expect(dialog.locator("[data-vehicle-map]")).toHaveCount(0);
       await page.waitForTimeout(250);
@@ -1611,7 +1603,7 @@ test("multiple expanded journeys use local state and dialogs reuse static detail
   await expect(dialog.locator(".trip-call")).toHaveCount(3);
   await expect(
     dialog.locator(".trip-sticky-header [data-delay-badge]"),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await expect(
     dialog.locator(".vehicle-map, .vehicle-tracking, .trip-timeline-hint"),
   ).toHaveCount(0);
@@ -1734,7 +1726,7 @@ test("last-known GPS initialises the timeline and reopening redeems a new single
     /Poslední jednoznačná poloha/,
   );
   await expect(dialog.locator(".trip-call")).toHaveCount(3);
-  await expect(dialog.locator("[data-delay-badge]")).toHaveText("Bez zpoždění");
+  await expect(dialog.locator("[data-delay-badge]")).toHaveCount(0);
   const loaded = details;
   await page.locator("[data-close-trip]").click();
   await expect(dialog).not.toBeVisible();

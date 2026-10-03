@@ -154,7 +154,7 @@
   "trackingUnsupported": "Der Anbieter liefert keine verifizierte Live-Position für diese Fahrt.",
   "trackingConnecting": "Aktuelle Position wird ermittelt…",
   "trackingUnavailable": "Aktuelle Position ist nicht verfügbar.",
-  "transferAtRisk": "Laut aktuellen Zeiten ist der Anschluss gefährdet. Bitte erneut suchen.",
+  "transferAtRisk": "Wegen der aktuellen Verspätung erreichst du diesen Anschluss wahrscheinlich nicht.",
   "arrivalEstimated": "Ankunft anhand der aktuellen Verspätung geschätzt.",
   "connectionAtRisk": "Anschluss gefährdet",
   "vehicleAtStop": "Fahrzeug bei {stop}",
@@ -167,5 +167,11 @@
   "delayLastKnown": "Letzter bekannter Stand; Aktualisierung ausstehend.",
   "countryUnavailable": "Die Verbindungssuche für dieses Land ist noch nicht verfügbar.",
   "coverageError": "Verfügbare Gebiete konnten nicht geladen werden.",
-  "featureAirConditioning": "Klimaanlage"
+  "featureAirConditioning": "Klimaanlage",
+  "dataAttributionsTitle": "Quellen der Verkehrs- und Kartendaten",
+  "dataProcessed": "Die Daten wurden für die Reiseplanung und Darstellung in TRAM verarbeitet.",
+  "dataLicense": "Lizenz",
+  "dataSource": "Datenquelle",
+  "dataPublished": "Veröffentlicht",
+  "dataUpdated": "Aktualisiert"
 }

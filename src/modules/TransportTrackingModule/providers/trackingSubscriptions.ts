@@ -55,14 +55,26 @@ export function createTrackingSubscriptions(
       : undefined;
   };
   const apply = (id: string, watch: Watch, value: TripObservation) => {
-    watch.revision = (watch.revision ?? 0) + 1;
+    const current = currentObservation(id);
+    // Temporary missing frames and older HTTP/WS samples cannot erase a fresh
+    // delay or GPS sample. Its original source expiry stays unchanged.
+    if (
+      current &&
+      (!value.validUntil ||
+        (current.observedAt &&
+          value.observedAt &&
+          Date.parse(value.observedAt) < Date.parse(current.observedAt)))
+    )
+      return;
+    // An unavailable frame is not a newer measurement and must not cancel the
+    // dialog's pending initial HTTP read of delay and position.
+    if (value.validUntil) watch.revision = (watch.revision ?? 0) + 1;
     store.set(id, value);
     clearTimeout(watch.expiry);
     if (value.validUntil)
       watch.expiry = setTimeout(
         () => {
           if (active(id, watch)) {
-            watch.revision = (watch.revision ?? 0) + 1;
             store.set(id, unavailableObservation("stale"));
           }
         },
@@ -252,20 +264,7 @@ export function createTrackingSubscriptions(
             watch.snapshot === controller &&
             (watch.revision ?? 0) === revision
           ) {
-            const value = observation(raw);
-            const current = currentObservation(id);
-            // A missing or older HTTP sample cannot erase a still-valid socket sample.
-            // Keep its original expiry; a refresh never extends measured GPS age.
-            if (
-              current &&
-              (!value.validUntil ||
-                (current.observedAt &&
-                  value.observedAt &&
-                  Date.parse(value.observedAt) <
-                    Date.parse(current.observedAt)))
-            )
-              return;
-            apply(id, watch, value);
+            apply(id, watch, observation(raw));
           }
         })
         // A failed initial read must not tear down the socket or erase a received point.

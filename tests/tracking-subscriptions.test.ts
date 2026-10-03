@@ -88,6 +88,84 @@ test("a late initial HTTP response cannot replace a newer socket observation", a
   manager.dispose();
 });
 
+test("an unavailable socket frame cannot block the dialog's initial delay-only read", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout", "setInterval", "Date"] });
+  let finish!: (value: unknown) => void;
+  let push!: (data: unknown) => void;
+  let sockets = 0;
+  const store = createTrackingStore();
+  const manager = createTrackingSubscriptions(store, {
+    tracking: async () => ({
+      status: "available",
+      url: "ws://localhost",
+      ticket: "one",
+      expiresAt: new Date(Date.now() + 900000).toISOString(),
+    }),
+    observation: () => new Promise((resolve) => (finish = resolve)),
+    socket: (options) => {
+      sockets++;
+      push = (data) =>
+        options.onMessage?.({ type: "observation", trip: "dialog", data });
+      return {
+        connect() {
+          options.onState?.("open");
+        },
+        send: () => true,
+        close() {},
+      };
+    },
+  });
+  manager.setIds(["dialog"]);
+  manager.refresh("dialog");
+  await setImmediate();
+  push({ status: "unavailable" });
+  finish({ ...point(480), position: null });
+  await setImmediate();
+  assert.equal(store.getSnapshot().dialog.delaySeconds, 480);
+  assert.equal(store.getSnapshot().dialog.position, null);
+  assert.equal(store.getSnapshot().dialog.status, "live");
+  assert.equal(sockets, 1, "an initial delay read shares the existing socket");
+  push({ ...point(0), position: null });
+  assert.equal(store.getSnapshot().dialog.delaySeconds, 0);
+  manager.dispose();
+});
+
+test("temporary missing and older socket samples preserve fresh delay until its original expiry", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout", "setInterval", "Date"] });
+  let push!: (data: unknown) => void;
+  const store = createTrackingStore();
+  const manager = createTrackingSubscriptions(store, {
+    tracking: async () => ({
+      status: "available",
+      url: "ws://localhost",
+      ticket: "one",
+      expiresAt: new Date(Date.now() + 900000).toISOString(),
+    }),
+    socket: (options) => {
+      push = (data) =>
+        options.onMessage?.({ type: "observation", trip: "dialog", data });
+      return { connect() {}, send: () => true, close() {} };
+    },
+  });
+  manager.setIds(["dialog"]);
+  await setImmediate();
+  push(point(240));
+  const received = store.getSnapshot().dialog;
+  t.mock.timers.tick(10000);
+  push({ status: "unavailable" });
+  assert.equal(store.getSnapshot().dialog, received);
+  push({
+    ...point(120),
+    observed_at: new Date(Date.now() - 11000).toISOString(),
+    valid_until: new Date(Date.now() + 19000).toISOString(),
+  });
+  assert.equal(store.getSnapshot().dialog, received);
+  t.mock.timers.tick(20000);
+  assert.equal(store.getSnapshot().dialog.status, "stale");
+  assert.equal(store.getSnapshot().dialog.delaySeconds, null);
+  manager.dispose();
+});
+
 test("a missing HTTP sample preserves an earlier socket point until its original expiry", async (t) => {
   t.mock.timers.enable({ apis: ["setTimeout", "setInterval", "Date"] });
   let push!: (data: unknown) => void;

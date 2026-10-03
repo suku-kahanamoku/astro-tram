@@ -23,7 +23,14 @@ Serverové proměnné:
 
 Interní API klíč ověřuje serverové volání Astro → php-core. Pevný tenant host vybírá datový tenant; nepřebírá se z hostu prohlížeče. Klíč se do prohlížeče neposílá.
 
-Backend musí mít aplikované `schema.sql`, `tram_schema.sql`, `tram_seed.sql`, host ve `FRANCHISE_CODES` a nakonfigurované skutečné providery přes `transport-configure.php`. Samotná DB migrace poskytovatele nezapíná. Pokud backend nemá žádný zdroj pro zvolenou oblast (`sources: []`), našeptávač zobrazí chybějící připojení dat; nejde o úspěšné hledání bez nalezených zastávek. PID vyžaduje Golemio token; OTP fallback vyžaduje hotový graf. Entur pokrývá Norsko. Dosavadní PID online plánování umí jen přímé spojení nebo jeden přestup mezi přesnými zastávkami; GPS a ruční mapový bod mohou u tohoto zdroje vrátit nepodporovanou schopnost. Frontend toto omezení zobrazuje.
+Backend používá společné `schema.sql` pro zabezpečení/limity, host ve `FRANCHISE_CODES`
+a Java gateway: `TRANSPORT_JAVA_ENABLED=1`, `TRANSPORT_JAVA_TENANT=tram`, soukromé
+`TRANSPORT_JAVA_URL` a `TRANSPORT_JAVA_TOKEN`. Dopravní adaptéry/importy/plánování
+v PHP byly odstraněny 3. 10. 2026; `tram_schema.sql`, `tram_seed.sql` ani PHP
+transportové configure/cron skripty nejsou závislostí frontendové gateway.
+Katalog, plánování a realtime zajišťují aktivní Java grafy/zdroje. Skutečný rozsah
+je v [lokálním zapojení zemí](../../java/OTP/INTERNATIONAL-LOCAL.md).
+Bez dostupné Java služby gateway vrací chybu, ne původní PHP fallback.
 
 ## Struktura
 
@@ -113,8 +120,16 @@ Datum a čas formuláře i výsledků se zobrazují v časovém pásmu zařízen
 - `POST /api/transport/search/`: doménový příkaz nad existujícím kontraktem TRAM (`from-dest`, `to-dest`, právě jeden `from-date`/`to-date`, `state`, `city`, `location`, `max-transfers`, `limit`). Není generické prohledávání tabulky. Validace vstupu, originu a limit těla 16 KiB.
 - `GET /api/transport/trip/?id=...`: konkrétní provozní jízda a její zastávky.
 - `GET /api/transport/stop/?id=...`: veřejný detail zastávky z php-core; pro mapu doplní souřadnice chybějící ve výsledku hledání.
+- `GET /api/transport/attributions/`: veřejná licenční metadata skutečných GTFS a OSM vstupů aktivního Java grafu, přes php-core `/transport/v1/attributions`. Nejde o seznam všech nakonfigurovaných zdrojů; endpoint nepřijímá filtry ani stránkování.
 
-Vyhledávání má serverový HTTP limit 25 sekund, aby php-core mohlo dokončit rozlišení zastávek i přechod na záložní zdroj; ostatní požadavky mají limit 10 sekund. Provider whitelistuje odpovědi, nepředává surové chyby ani interní metadata. HTTP odpovědi API a výsledkové stránky mají `Cache-Control: private, no-store`; výsledky se neindexují. Backend nadále kontroluje tenant a limity.
+`TransportAttributions` načítá tento dokument do patičky. Zobrazuje atribuce,
+licenční odkazy, povinné poznámky a dostupná data publikace/aktualizace.
+Serverová i klientská projekce propouští pouze veřejná pole a veřejné odkazy;
+interní API adresy a credentials se nezobrazují. Starší backend nebo chybějící
+aktivní graf vrátí chybu a patička nevymýšlí náhradní zdroje. Aby atribuce
+odpovídaly novým free profilům, musí být nejprve jejich graf sestavený a aktivovaný.
+
+Vyhledávání má serverový HTTP limit 25 sekund, aby Java API mohlo dokončit plánování přes PHP gateway; ostatní požadavky mají limit 10 sekund. Provider whitelistuje odpovědi, nepředává surové chyby ani interní metadata. HTTP odpovědi API a výsledkové stránky mají `Cache-Control: private, no-store`; výsledky se neindexují. Backend nadále kontroluje tenant a limity.
 
 ## Mapa a realtime
 
@@ -141,7 +156,14 @@ Produkční frontend, host TRAM a dopravní providery musí být nakonfigurován
 
 ## Oblast online hledání
 
-Formulář je pod záložkou **Česká republika** (`country=CZ`). Nad Odkud/Kam je
+Formulář nabízí záložky Česko, Slovensko, Rakousko a Polsko. Povolí se pouze
+země, pro které běžící backend v `/api/transport/coverage/` potvrzuje hledání.
+Samotný příklad zdroje nebo katalog měst nestačí. Lokální Java zapojení a
+skutečný rozsah zahraničních feedů popisuje
+[konfigurace zemí](../../java/OTP/INTERNATIONAL-LOCAL.md): slovenská železnice
+a Bratislava, rakouská železnice ÖBB, polské sítě Poznań a Gdańsk. Nejde o
+úplné pokrytí všech měst těchto zemí. PHP předává požadavky Java API, které používá vlastní aktivní grafy.
+Nad Odkud/Kam je
 vyhledávatelný výběr **Město / jízdní řády**, výchozí **Všechny jízdní řády**.
 Po připojení formuláře se předem načte online katalog měst z php-core, bez pevného seznamu
 Praha/Brno a bez limitu prvních dvaceti zastávek. Psaní filtruje všechny načtené
@@ -158,14 +180,8 @@ textové shody podle vzdálenosti, pak textové relevance. GPS nezúží nabídk
 na aktuální město; pro zvolený stát zůstávají zapojené všechny dostupné zdroje.
 Při odmítnutí nebo nedostupnosti GPS (limit 1,5 sekundy) funguje textové hledání
 bez polohy. Výslovné město má přednost a automatickou GPS nepoužívá. GPS našeptávání používá `POST /api/transport/places/` s `q` v těle,
-nikdy souřadnice v URL. Backend vybírá všechny relevantní schopné poskytovatele
-podle jejich nakonfigurovaného pokrytí; GPS obdélníky nenahrazují přesné hranice
-obcí ani globální reverse geocoder.
-
-Lokální český zdroj Spojenka byl ověřen pro `Lazar`, `Grohova`, `Vaclav`,
-městské filtry a skutečné spojení v Brně včetně detailu. Používá veřejně popsaný
-vývojový server; pro produkci ještě ověřit podmínky, kvóty a dostupnost.
-Změna neaktivuje celostátní offline zálohu ani živé polohy pro Spojenku.
+nikdy souřadnice v URL. Java router vybere nakonfigurovaný country worker; jeho katalogové filtry
+respektují zemi/město a GPS slouží pro řazení. Nejde o globální reverse geocoder.
 
 Volba „Moje aktuální poloha“ nyní nejprve vybere přes backend nejbližší veřejnou
 zastávku (geografická vzdálenost, do 2 km) a plánuje od/k jejímu ID. Nad výsledky
@@ -264,22 +280,45 @@ podporovat více `subscribe` na jednom spojení; aktualizujte ji spolu s fronten
 
 Otevřený detail spojení odebírá aktuální pozorování přes `useTripTracking` a společný `RealtimeModule`. BFF `POST /api/transport/tracking/` vydává pouze krátkodobý ticket; klíče poskytovatelů zůstávají v php-core. Je potřeba samostatně nakonfigurovat a spustit backendovou gateway podle [provozní dokumentace](../../php/php-core/docs/tram-realtime-tracking.md). Bez dostupného živého odběru zůstává statický detail; první umístění červeného bodu vyžaduje ověřenou GPS. Vedle živého měření (do 30 sekund) umí přijmout explicitní `last_known` (do 90 sekund), s původním časem a označením poslední známé polohy. Taková poloha neovlivňuje časy, zpoždění ani návaznosti.
 
-`trackedJourney` společně přepočítává časy, délku cesty, chůzi a návaznosti. Badge je vedle označení spoje: kladné zpoždění červeně, nulové i dosud neznámé zpoždění zeleně „Bez zpoždění“ podle požadovaného UI. Neznámá hodnota zůstává ve výpočtech `null`, není potvrzením včasného příjezdu. `useDelayStatus` ponechá poslední potvrzenou hodnotu po dobu zobrazení komponenty i mezi aktualizacemi; tooltip a přístupný popisek označí neaktuální údaj. Tato paměť slouží pouze badge, ne výpočtu trasy. GPS a časové predikce nadále expirují původním timerem. Časy zastávek se zobrazují bez pomocné značky odhadu. Zavření detailu/skrytí stránky odpojí odběry, žádná poloha se neukládá do storage ani URL. Současný pohyb vozidla automaticky nevytváří náhradní trasu: při ohroženém přestupu UI vyzve k novému vyhledání.
+Všechny zobrazené časy jsou statické podle jízdního řádu: hlavička výsledku,
+úseky, mezizastávky i celý seznam v dialogu používají pouze scheduled časy.
+Datum a zobrazená délka cesty se také odvozují z jízdního řádu, nikoli z
+predikcí vrácených vyhledáváním nebo WebSocketem. `trackedJourney` používá
+aktuální predikce pouze interně pro posouzení návaznosti včetně pěšího
+přestupu a minimální rezervy. Upozornění se vykreslí přímo před konkrétním
+navazujícím spojem, který podle dostupných údajů pravděpodobně nestihneš;
+nemění seznam vybraných spojů ani jejich časy. Zpoždění navazujícího spoje
+může tuto návaznost znovu umožnit.
+
+Badge je vedle označení spoje v souhrnu, accordionu i dialogu pouze při
+kladném zpoždění. Při nulovém nebo dosud neznámém zpoždění se nevykresluje.
+Všechny odebírají stejné pozorování podle trip ID. Neznámá
+hodnota zůstává ve výpočtech `null`, není potvrzením včasného příjezdu.
+`useDelayStatus` ponechá poslední potvrzenou hodnotu mezi aktualizacemi;
+tooltip a přístupný popisek označí neaktuální údaj. Tato paměť slouží pouze
+badge, ne výpočtu trasy. GPS a predikce pro návaznosti expirují původním
+timerem. Zavření detailu/skrytí stránky odpojí odběry, žádná poloha se
+neukládá do storage ani URL.
 
 Detail spoje používá `TripTimeline` s osou vlevo od časů a bodem u každé zastávky. `tripProgress` promítá čerstvou GPS a `lastKnownTripProgress` odděleně poslední známé měření na jednoznačný úsek mezi sousedními zastávkami; bod mezi nimi vyjadřuje přibližný postup na schematické ose, nikoli odhad polohy podle hodin. Chybějící souřadnice, nejednoznačné smyčky nebo bod mimo trasu se nepřemosťují. Limity projekce jsou v `TransportModule/config/client.ts`. `useTripTimeline` měří skutečné výšky řádků i po změně šířky a při zalomení názvů. Před prvním ověřeným měřením zůstává osa bez červeného bodu. Poslední známá poloha je viditelně označená a po dobu otevřeného dialogu zůstane na posledním jednoznačném místě. Živá mapa ani hláška o nedostupné poloze nejsou součástí dialogu; mapy zastávek a trasy zůstávají dostupné.
 
-Badge zpoždění každého úseku umí využít samostatnou čerstvou zastávkovou predikci nebo číselné zpoždění i tehdy, když GPS poskytovatel nemá. Neznámé zpoždění se pro výpočty nikdy nepřevádí na potvrzenou nulu. Brněnské Spojenka/CIS spoje mohou využít backendový adaptér IDS JMK, pokud je zapnutý pro tenant. Aktuální preset pokrývá CIS linky 737001–737099 a 738001–738099 a ověřuje konkrétní dnešní jízdu. Původní trip ID i frontendový kontrakt zůstávají stejné; React nezná konkrétního poskytovatele. Bez čerstvého měření se dříve zobrazený bod ponechá jako poslední známá poloha; potvrzené nulové zpoždění zobrazí zelený badge. Konfigurace a omezení jsou v provozní dokumentaci výše.
+Badge zpoždění každého úseku umí využít samostatnou čerstvou zastávkovou predikci nebo číselné zpoždění i tehdy, když GPS poskytovatel nemá. Neznámé zpoždění se pro výpočty nikdy nepřevádí na potvrzenou nulu. Java realtime adaptér IDS JMK musí mít nakonfigurované zdroje a doložené
+mapování identity spoje aktivního grafu. React nezná konkrétního poskytovatele.
+Bez čerstvého měření se dříve zobrazený bod ponechá jako poslední známá poloha; potvrzené nulové zpoždění odstraní badge. Konfigurace a omezení jsou v provozní dokumentaci výše.
 
-Při nejednoznačném přiřazení, načítání, výpadku nebo expiraci GPS ponechá `useTripProgress` poslední jednoznačně určený bod stejného spoje. Tooltip a přístupný popisek jej označí jako poslední známou polohu; nová platná GPS jej znovu aktualizuje. Uchovává se pouze index úseku a poměr na ose v paměti otevřeného dialogu, nikoliv GPS v databázi či storage. Při změně spoje nebo zavření dialogu se tato paměť uvolní. Časy a výpočty nadále využívají jen platné predikce. Bez jediného ověřeného bodu nelze polohu na ose zobrazit.
+Při nejednoznačném přiřazení, načítání, výpadku nebo expiraci GPS ponechá `useTripProgress` poslední jednoznačně určený bod stejného spoje. Tooltip a přístupný popisek jej označí jako poslední známou polohu; nová platná GPS jej znovu aktualizuje. Uchovává se pouze index úseku a poměr na ose v paměti otevřeného dialogu, nikoliv GPS v databázi či storage. Při změně spoje nebo zavření dialogu se tato paměť uvolní. Posouzení návaznosti využívá jen platné predikce, zobrazované časy jsou vždy plánované. Bez jediného ověřeného bodu nelze polohu na ose zobrazit.
 
 Při každém otevření dialogu zavolá `useTripTracking` také
 `GET /api/transport/observation/?id=…` přes serverový provider a existující
-php-core endpoint `/transport/v1/trips/:id/observation`. První poloha se tedy
-načítá souběžně se statickým detailem a socketem, bez čekání na jeho zprávu
+php-core endpoint `/transport/v1/trips/:id/observation`. První poloha i
+zpoždění se tedy načítají souběžně se statickým detailem a socketem, bez čekání na jeho zprávu
 nebo frontu ticketů. Otevření již sledovaného spoje obnoví pozorování bez
 odpojení socketu. Odpověď má `no-store`; původní časy měření a expirace se
 nemění. Pomalejší HTTP odpověď nesmí přepsat novější zprávu ze socketu a
-zavření neodebíraného spoje probíhající načtení zruší. Data zůstávají jen v RAM.
+zavření neodebíraného spoje probíhající načtení zruší. Platné čerstvé
+zpoždění lze přijmout i bez GPS. Dočasný unavailable frame ani starší
+měření nezablokují úvodní HTTP odpověď a nesmažou dosud platný vzorek;
+původní expirace se neprodlužuje. Data zůstávají jen v RAM.
 
 ### Stabilní výsledky při živých aktualizacích
 
@@ -287,10 +326,11 @@ Výsledky hledání jsou po načtení neměnný podklad. `TransportView` neposou
 nepřerovnává ani neodstraňuje karty podle WebSocketu a nemá sekundový timer
 překreslující celý strom. Accordiony a dialogy ovládá lokální React stav.
 `useTripTracking` zapisuje jen pozorování do paměťového `trackingStore`.
-`useSyncExternalStore` odebírají malé komponenty: časy úseků a zastávek,
-badge, délka cesty, upozornění na návaznost a ukazatele GPS. Přepočet
-`trackedJourney` je pouze projekce časů pro tyto komponenty; seznam zastávek,
-legendy, názvy i načtené detaily nemění a nic znovu nestahuje.
+`useSyncExternalStore` odebírají pouze malé živé komponenty: badge,
+upozornění na konkrétní návaznost a ukazatele GPS. Časy, datum a délka
+cesty realtime store neodebírají. Přepočet `trackedJourney` je interní
+projekce pro riziko přestupu; seznam zastávek, legendy, názvy i načtené
+detaily nemění a nic znovu nestahuje.
 
 Ztráta čerstvé GPS ponechá poslední známý marker na místě. Časy používají stejně široké číslice a badge mají stálou minimální šířku. Nepotřebné hlášky, prázdné legendy, zavřené nabídky a uzavřené accordiony se nevykreslují. Dialog ponechá obsah jen během zavírací animace.
 Test v prohlížeči posílá opakované změny zpoždění i výpadek dat a kontroluje
@@ -311,13 +351,12 @@ Statické detaily se načítají na vyžádání, nikoliv hromadně pro všechny
 `tripResources` slučuje stejné požadavky a omezuje síť na dva souběžné požadavky.
 Detail se sdílí mezi dialogem a mezilehlými zastávkami po celou dobu otevřeného
 vyhledávače; nové otevření už načteného spoje nevolá další HTTP požadavek.
-BFF načítá základní detail s `stop_coordinates=0`: Spojenka tak nečeká na
-jednotlivé dotazy pro souřadnice. Teprve otevřená časová osa s chybějícími
+BFF načítá základní detail s `stop_coordinates=0`; gateway tuto volbu předá
+Java API. Teprve otevřená časová osa s chybějícími
 souřadnicemi spustí oddělené `GET /api/transport/trip/?id=...&coordinates=1`.
 `useTripCoordinates` převezme pouze souřadnice shodných zastávkových výskytů;
 původní statické řádky, názvy, časy a legendy nenahradí. Mapa zastávky má
-nadále vlastní dohledání polohy. Rychlé zobrazení vyžaduje také odpovídající
-verzi php-core s podporou `stop_coordinates`.
+nadále vlastní dohledání polohy. Gateway zachovává `stop_coordinates`; jeho obsah řídí Java API.
 
 `trackingSubscriptions` zachovává odběry při změně otevřených karet; zavřený
 accordion s otevřeným dialogem sleduje pouze konkrétní spoj. Úspěšný ticket

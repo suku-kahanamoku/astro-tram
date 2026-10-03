@@ -65,3 +65,35 @@ test("invalid trip IDs are rejected before calling the backend", async () => {
   } as any);
   assert.equal(response.status, 422);
 });
+
+test("the initial observation gateway returns verified delay even when GPS is unavailable", async () => {
+  const sample = {
+    status: "live",
+    position: null,
+    observed_at: "2026-10-03T10:00:00Z",
+    valid_until: "2026-10-03T10:00:30Z",
+    delay_seconds: 480,
+    cancelled: false,
+  };
+  const provider = createTransportProvider(
+    createCoreClient(
+      {
+        baseUrl: "https://core.test",
+        apiKey: "secret",
+        tenantHost: "tram.test",
+      },
+      async () =>
+        Response.json({
+          success: true,
+          data: { ...sample, private_key: "secret" },
+        }),
+    ),
+  );
+  const response = await observation({
+    url: new URL("https://tram.test/api/transport/observation/?id=trip_id"),
+    locals: { providers: { transport: provider } },
+  } as any);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("Cache-Control"), "no-store");
+  assert.deepEqual((await response.json()).data, sample);
+});

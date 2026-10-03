@@ -22,6 +22,17 @@ export const coverage: APIRoute = async ({ locals }) => {
     return errorResponse(error);
   }
 };
+/** Only credits for data actually active in this tenant, selected by the backend. */
+export const attributions: APIRoute = async ({ locals }) => {
+  try {
+    return Response.json(
+      { success: true, data: await locals.providers.transport.attributions() },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (error) {
+    return errorResponse(error);
+  }
+};
 export function validateSearch(body: Record<string, unknown>) {
   const allowed = [
     "from-dest",

@@ -73,6 +73,72 @@ test("delay presentation distinguishes confirmed zero, positive delay and unknow
   assert.equal(delayMinutes(leg, unavailableObservation("stale")), 0);
 });
 
+test("fresh delay-only observations do not require GPS and keep the same expiry rules", () => {
+  const now = Date.parse("2026-10-01T08:00:00Z");
+  const raw = {
+    status: "live",
+    position: null,
+    observed_at: new Date(now).toISOString(),
+    valid_until: new Date(now + 30000).toISOString(),
+    delay_seconds: 480,
+  };
+  const live = observation(raw, now);
+  assert.equal(live.status, "live");
+  assert.equal(live.position, null);
+  assert.equal(knownDelayMinutes(leg, live, now), 8);
+  assert.equal(
+    knownDelayMinutes(leg, observation({ ...raw, delay_seconds: 0 }, now), now),
+    0,
+  );
+  assert.equal(observation(raw, now + 30000).delaySeconds, null);
+  assert.equal(
+    observation({ ...raw, delay_seconds: 86401 }, now).delaySeconds,
+    null,
+  );
+  assert.equal(
+    observation({ ...raw, status: "last_known" }, now).status,
+    "unavailable",
+  );
+});
+
+test("transfer warnings identify only the connecting leg and account for walking and its delay", () => {
+  const first = { ...leg, tripId: "a" };
+  const walk = {
+    ...leg,
+    mode: "walk",
+    tripId: null,
+    scheduledDeparture: "2026-10-01T08:20:00Z",
+    scheduledArrival: "2026-10-01T08:23:00Z",
+  };
+  const next = {
+    ...leg,
+    tripId: "b",
+    minTransferSeconds: 60,
+    scheduledDeparture: "2026-10-01T08:25:00Z",
+    scheduledArrival: "2026-10-01T09:00:00Z",
+  };
+  const journey = { legs: [first, walk, next], duration: 3600 } as Journey;
+  const live = {
+    ...unavailableObservation(),
+    status: "live",
+    delaySeconds: 480,
+  };
+  assert.deepEqual(trackedJourney(journey, {}).transferRiskLegs, []);
+  assert.deepEqual(trackedJourney(journey, { a: live }).transferRiskLegs, [2]);
+  assert.deepEqual(
+    trackedJourney(journey, { a: live, b: { ...live, delaySeconds: 480 } })
+      .transferRiskLegs,
+    [],
+  );
+  assert.deepEqual(
+    trackedJourney(journey, { a: { ...live, delaySeconds: 0 } })
+      .transferRiskLegs,
+    [],
+  );
+  assert.equal(journey.legs[1].scheduledArrival, walk.scheduledArrival);
+  assert.equal(journey.legs[2].expectedDeparture, null);
+});
+
 test("last-known GPS preserves its source age and never moves times or confirms delay", () => {
   const now = Date.parse("2026-10-01T08:00:00Z");
   const raw = {

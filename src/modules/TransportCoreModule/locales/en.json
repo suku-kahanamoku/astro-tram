@@ -154,7 +154,7 @@
   "trackingUnsupported": "The provider does not supply a verified live position for this service.",
   "trackingConnecting": "Getting current position…",
   "trackingUnavailable": "Current position is unavailable.",
-  "transferAtRisk": "Current times put your transfer at risk. Search for connections again.",
+  "transferAtRisk": "Due to the current delay, you may miss this connection.",
   "arrivalEstimated": "Arrival is estimated from the current delay.",
   "connectionAtRisk": "Connection at risk",
   "vehicleAtStop": "Vehicle near {stop}",
@@ -167,5 +167,11 @@
   "delayLastKnown": "Last known status; waiting for an update.",
   "countryUnavailable": "Journey search is not available for this country yet.",
   "coverageError": "Available areas could not be loaded.",
-  "featureAirConditioning": "Air conditioning"
+  "featureAirConditioning": "Air conditioning",
+  "dataAttributionsTitle": "Transport and map data sources",
+  "dataProcessed": "Data has been processed for journey planning and display in TRAM.",
+  "dataLicense": "Licence",
+  "dataSource": "Data source",
+  "dataPublished": "Published",
+  "dataUpdated": "Updated"
 }

@@ -143,3 +143,16 @@ export interface TripObservation {
   delaySeconds: number | null;
   cancelled: boolean | null;
 }
+
+/** Public credits for sources belonging to the currently active backend data. */
+export interface DataAttribution {
+  id: string;
+  feed_id: string | null;
+  name: string;
+  attribution: string;
+  license_url: string;
+  source_url: string | null;
+  published_at: string | null;
+  updated_at: string | null;
+  requirements: string[];
+}

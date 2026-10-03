@@ -46,6 +46,32 @@ http
       return send(403, null);
     let body = "";
     for await (const chunk of req) body += chunk;
+    if (url.pathname === "/transport/v1/attributions")
+      return send(200, [
+        {
+          id: "fixture-timetable",
+          feed_id: "fixture",
+          name: "Testovací jízdní řád",
+          attribution: "Syntetická data pro testování TRAM.",
+          license_url: "https://example.test/timetable-license",
+          source_url: "https://example.test/timetable",
+          published_at: "2026-10-01T12:00:00Z",
+          updated_at: "2026-10-03T08:00:00Z",
+          requirements: ["Tato data nejsou skutečný jízdní řád."],
+          private_token: "DO_NOT_EXPOSE",
+        },
+        {
+          id: "fixture-osm",
+          feed_id: null,
+          name: "OpenStreetMap",
+          attribution: "© OpenStreetMap contributors",
+          license_url: "https://opendatacommons.org/licenses/odbl/1-0/",
+          source_url: "https://www.openstreetmap.org/copyright",
+          published_at: null,
+          updated_at: null,
+          requirements: [],
+        },
+      ]);
     if (url.pathname === "/transport/v1/coverage")
       return send(200, {
         providers: [],

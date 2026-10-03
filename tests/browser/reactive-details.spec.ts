@@ -24,6 +24,31 @@ test("opening and reopening a trip draws an HTTP position before any websocket m
   let reads = 0,
     messages = 0,
     subscribed = 0;
+  await page.route("**/api/transport/search/**", async (route) => {
+    const json = await (await route.fetch()).json();
+    const first = json.data.journeys[0];
+    first.duration = 1020;
+    first.legs[0].expectedDeparture = "2026-10-06T08:01:00Z";
+    first.legs[0].expectedArrival = "2026-10-06T08:18:00Z";
+    first.legs[0].delaySeconds = 60;
+    first.legs[0].predictionValidUntil = new Date(
+      Date.now() + 30000,
+    ).toISOString();
+    await route.fulfill({ json });
+  });
+  await page.route("**/api/transport/trip/**", async (route) => {
+    const json = await (await route.fetch()).json();
+    json.data.stops.forEach((call: Trip["stops"][number]) => {
+      call.expectedArrival = new Date(
+        Date.parse(call.arrival!) + 9 * 60000,
+      ).toISOString();
+      call.expectedDeparture = new Date(
+        Date.parse(call.departure!) + 9 * 60000,
+      ).toISOString();
+      call.predictionValidUntil = new Date(Date.now() + 30000).toISOString();
+    });
+    await route.fulfill({ json });
+  });
   await page.route("**/api/transport/observation/**", async (route) => {
     reads++;
     const now = Date.now();
@@ -82,6 +107,12 @@ test("opening and reopening a trip draws an HTTP position before any websocket m
   );
   await page.goto(path);
   await expect(page.locator(".journey-card")).toHaveCount(2);
+  const card = page.locator(".journey-card").first();
+  await expect(card.locator(".journey-summary .journey-time")).toHaveText([
+    "10:00",
+    "10:15",
+  ]);
+  await expect(card.locator(".journey-duration")).toContainText("15 min");
   expect(reads).toBe(0);
   await page.locator(".journey-summary-toggle").first().click();
   await expect.poll(() => subscribed).toBe(1);
@@ -93,9 +124,25 @@ test("opening and reopening a trip draws an HTTP position before any websocket m
   expect(reads).toBe(1);
   expect(messages).toBe(0);
   await expect(dialog.locator(".delay-badge")).toContainText("2 min");
+  await expect(card.locator(".journey-summary .delay-badge")).toContainText(
+    "2 min",
+  );
+  await expect(card.locator(".leg .delay-badge")).toContainText("2 min");
+  const tripTimes = ["10:00", "10:05", "10:10"];
+  await expect(dialog.locator(".trip-call time")).toHaveText(tripTimes);
   const row = await dialog.locator(".trip-call").first().elementHandle();
   push();
   await expect(dialog.locator(".delay-badge")).toContainText("3 min");
+  await expect(card.locator(".journey-summary .delay-badge")).toContainText(
+    "3 min",
+  );
+  await expect(card.locator(".leg .delay-badge")).toContainText("3 min");
+  await expect(card.locator(".journey-summary .journey-time")).toHaveText([
+    "10:00",
+    "10:15",
+  ]);
+  await expect(card.locator(".journey-duration")).toContainText("15 min");
+  await expect(dialog.locator(".trip-call time")).toHaveText(tripTimes);
   expect(
     await dialog
       .locator(".trip-call")
@@ -110,6 +157,156 @@ test("opening and reopening a trip draws an HTTP position before any websocket m
   expect(subscribed, "opening an already watched trip keeps its socket").toBe(
     1,
   );
+});
+
+test("fresh delay warns before the affected transfer while all timetable times stay static", async ({
+  page,
+}) => {
+  let firstTrip = "",
+    reads = 0;
+  const pushes = new Map<string, (delay: number) => void>();
+  await page.route("**/api/transport/search/**", async (route) => {
+    const json = await (await route.fetch()).json();
+    const journey = json.data.journeys[1];
+    const [first, next] = journey.legs;
+    firstTrip = first.tripId;
+    Object.assign(first, {
+      scheduledDeparture: "2026-10-06T08:00:00Z",
+      scheduledArrival: "2026-10-06T08:10:00Z",
+      expectedDeparture: null,
+      expectedArrival: null,
+      realtime: false,
+    });
+    Object.assign(next, {
+      scheduledDeparture: "2026-10-06T08:15:00Z",
+      scheduledArrival: "2026-10-06T08:30:00Z",
+      expectedDeparture: null,
+      expectedArrival: null,
+      realtime: false,
+      minTransferSeconds: 60,
+    });
+    journey.legs = [
+      first,
+      {
+        ...first,
+        mode: "walk",
+        from: first.to,
+        to: next.from,
+        scheduledDeparture: "2026-10-06T08:10:00Z",
+        scheduledArrival: "2026-10-06T08:13:00Z",
+        tripId: null,
+        line: "",
+        operator: "",
+        geometry: null,
+      },
+      next,
+    ];
+    journey.duration = 1800;
+    json.data.journeys = [journey];
+    await route.fulfill({ json });
+  });
+  await page.route("**/api/transport/observation/**", async (route) => {
+    reads++;
+    const now = Date.now();
+    await route.fulfill({
+      json: {
+        success: true,
+        data: {
+          status: "live",
+          position: { lat: 50.076, lon: 14.4282 },
+          observed_at: new Date(now).toISOString(),
+          valid_until: new Date(now + 30000).toISOString(),
+          delay_seconds: 480,
+          cancelled: false,
+        },
+      },
+    });
+  });
+  await page.route("**/api/transport/tracking/", async (route) =>
+    route.fulfill({
+      json: {
+        success: true,
+        data: {
+          status: "available",
+          url: "ws://localhost:4328/static-timetable",
+          ticket: route.request().postDataJSON().id,
+          expiresAt: new Date(Date.now() + 900000).toISOString(),
+        },
+      },
+    }),
+  );
+  await page.routeWebSocket("ws://localhost:4328/static-timetable", (ws) => {
+    ws.onMessage((message) => {
+      const m = JSON.parse(String(message));
+      if (m.type !== "subscribe") return;
+      pushes.set(m.ticket, (delay) => {
+        const now = Date.now();
+        ws.send(
+          JSON.stringify({
+            type: "observation",
+            trip: m.ticket,
+            data: {
+              status: "live",
+              position: { lat: 50.077, lon: 14.4264 },
+              observed_at: new Date(now).toISOString(),
+              valid_until: new Date(now + 30000).toISOString(),
+              delay_seconds: delay,
+              cancelled: false,
+            },
+          }),
+        );
+      });
+    });
+  });
+  await page.goto(path);
+  const card = page.locator(".journey-card");
+  await expect(card).toHaveCount(1);
+  await card.locator(".journey-summary-toggle").click();
+  const legTimes = card.locator(".leg-stops > time");
+  const scheduledTimes = ["10:00", "10:10", "10:10", "10:13", "10:15", "10:30"];
+  await expect(legTimes).toHaveText(scheduledTimes);
+  await expect(card.locator(".transfer-risk-notice")).toHaveCount(0);
+  await expect.poll(() => pushes.size).toBe(2);
+  await card.locator("[data-summary-trip]").first().click();
+  const dialog = page.locator("[data-trip-dialog]");
+  await expect(dialog.locator(".delay-badge")).toContainText("8 min");
+  expect(reads).toBe(1);
+  await expect(
+    card.locator(".journey-summary .delay-badge").first(),
+  ).toContainText("8 min");
+  const warning = card.locator(".transfer-risk-notice");
+  await expect(warning).toHaveCount(1);
+  expect(
+    await warning.evaluate((element) => {
+      const next = element.nextElementSibling;
+      const legs = element.parentElement!.querySelectorAll(".leg");
+      return next === legs[2];
+    }),
+  ).toBe(true);
+  await expect(legTimes).toHaveText(scheduledTimes);
+  await expect(card.locator(".journey-summary .journey-time")).toHaveText([
+    "10:00",
+    "10:30",
+  ]);
+  await expect(card.locator(".journey-duration")).toContainText("30 min");
+  await expect(dialog.locator(".trip-call time")).toHaveText([
+    "10:00",
+    "10:05",
+    "10:10",
+  ]);
+  const firstRow = await dialog.locator(".trip-call").first().elementHandle();
+  pushes.get(firstTrip)!(0);
+  await expect(dialog.locator(".delay-badge")).toHaveCount(0);
+  await expect(card.locator(".journey-summary .delay-badge")).toHaveCount(0);
+  await expect(warning).toHaveCount(0);
+  await expect(legTimes).toHaveText(scheduledTimes);
+  await expect(card.locator(".journey-duration")).toContainText("30 min");
+  expect(
+    await dialog
+      .locator(".trip-call")
+      .first()
+      .evaluate((node, previous) => node === previous, firstRow),
+  ).toBe(true);
 });
 
 test("several accordions and dialogs multiplex all trips over one socket", async ({

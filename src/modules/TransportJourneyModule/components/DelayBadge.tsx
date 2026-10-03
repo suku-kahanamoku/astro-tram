@@ -13,20 +13,14 @@ export default function DelayBadge({
 }) {
   const observation = useTripObservation(leg.tripId);
   const { minutes, retained } = useDelayStatus(leg, live ?? observation);
-  if (leg.mode === "walk") return null;
-  const status = minutes !== null && minutes > 0 ? "delayed" : "on-time";
-  const label =
-    minutes === null
-      ? t.delayOnTime
-      : minutes > 0
-        ? t.delayBadge.replace("{minutes}", String(minutes))
-        : t.delayOnTime;
+  if (leg.mode === "walk" || minutes === null || minutes <= 0) return null;
+  const label = t.delayBadge.replace("{minutes}", String(minutes));
   return (
     <span
       className="delay-badge"
       data-delay-badge
-      data-status={status}
-      data-delay-known={minutes !== null}
+      data-status="delayed"
+      data-delay-known={true}
       data-stale={retained ? true : undefined}
       role="status"
       title={retained ? t.delayLastKnown : undefined}

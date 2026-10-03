@@ -1,0 +1,74 @@
+.transport-attributions {
+  flex: 1 0 100%;
+  min-width: 0;
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.transport-attributions h2 {
+  color: var(--ink);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+.attribution-processing {
+  margin: 0 0 16px;
+  line-height: 1.6;
+}
+.attribution-sources {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(270px, 100%), 1fr));
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.attribution-sources > li {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.attribution-sources strong {
+  color: var(--ink);
+}
+.transport-attributions .attribution-text {
+  white-space: pre-line;
+  line-height: 1.6;
+  margin: 8px 0;
+}
+.attribution-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.attribution-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.attribution-links a:hover {
+  color: var(--red);
+}
+.attribution-dates {
+  margin: 10px 0 0;
+  font-size: 11px;
+}
+.attribution-dates > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.attribution-dates dt::after {
+  content: ":";
+}
+.attribution-dates dd {
+  margin: 0;
+}
+.attribution-requirements {
+  margin: 10px 0 0;
+  padding-left: 16px;
+  line-height: 1.6;
+  white-space: pre-line;
+}

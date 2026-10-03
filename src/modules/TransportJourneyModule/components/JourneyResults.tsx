@@ -120,109 +120,120 @@ function JourneyDetail({
           {t.routeMap} <Icon name="map" size={16} />
         </NavLink>
       </div>
-      <JourneyRisk journey={journey} t={t} />
       {journey.legs.map((l, i) => {
         const expanded = focused && url.searchParams.get("stops") === String(i);
         const segment = expanded && trip ? tripSegment(trip, l) : null;
         return (
-          <article className="leg" key={i}>
-            <div className="leg-title">
-              {l.tripId ? (
-                <NavLink
-                  className="route-badge trip-open"
-                  data-mode={l.mode}
-                  data-trip-open={i}
-                  data-nav
-                  aria-haspopup="dialog"
-                  aria-label={`${t.tripStops} ${l.line || modeLabel(l.mode, t)}`}
-                  href={navHref(url, {
-                    leg: String(i),
-                    map: null,
-                    stopLeg: null,
-                    stopSide: null,
-                    tripStop: null,
-                  })}
-                >
-                  <Badge leg={l} t={t} />
-                </NavLink>
-              ) : (
-                <span className="route-badge" data-mode={l.mode}>
-                  <Badge leg={l} t={t} />
-                </span>
-              )}
-              <DelayBadge leg={l} t={t} />
-              <strong>{l.operator}</strong>
-              {l.cancelled && <span className="fallback">{t.cancelled}</span>}
-            </div>
-            <div className="leg-stops">
-              <JourneyTime
-                journey={journey}
-                index={i}
-                event="departure"
-                locale={locale}
-              />
-              <div>
-                <StopLink stop={l.from} index={i} side="from" url={url} t={t} />
-              </div>
-              {l.tripId && (
-                <div className="intermediate-stops">
+          <Fragment key={i}>
+            <JourneyRisk journey={journey} index={i} t={t} />
+            <article className="leg">
+              <div className="leg-title" data-mode={l.mode}>
+                {l.tripId ? (
                   <NavLink
+                    className="route-badge trip-open"
+                    data-mode={l.mode}
+                    data-trip-open={i}
                     data-nav
-                    className="intermediate-toggle"
-                    href={navHref(url, { stops: expanded ? null : String(i) })}
-                    aria-expanded={expanded}
-                    aria-controls={`intermediate-${journey.key}-${i}`}
+                    aria-haspopup="dialog"
+                    aria-label={`${t.tripStops} ${l.line || modeLabel(l.mode, t)}`}
+                    href={navHref(url, {
+                      leg: String(i),
+                      map: null,
+                      stopLeg: null,
+                      stopSide: null,
+                      tripStop: null,
+                    })}
                   >
-                    {t.intermediateStops}{" "}
-                    <span className="disclosure-mark" aria-hidden="true" />
+                    <Badge leg={l} t={t} />
                   </NavLink>
-                  <Collapse open={expanded}>
-                    <ul
-                      id={`intermediate-${journey.key}-${i}`}
-                      className="trip-stops"
-                      data-intermediate-stops={i}
-                      aria-live="polite"
-                    >
-                      {tripError ? (
-                        <li>{t.tripError}</li>
-                      ) : !trip ? (
-                        <li>{t.loadingTrip}</li>
-                      ) : !segment ? (
-                        <li>{t.segmentUnavailable}</li>
-                      ) : segment.to - segment.from === 1 ? (
-                        <li>{t.noIntermediateStops}</li>
-                      ) : (
-                        <TripStops
-                          trip={{
-                            ...trip,
-                            stops: trip.stops.slice(
-                              segment.from + 1,
-                              segment.to,
-                            ),
-                          }}
-                          tripId={l.tripId}
-                          t={t}
-                          locale={locale}
-                          current={url}
-                          stopOffset={segment.from + 1}
-                          totalStops={trip.stops.length}
-                        />
-                      )}
-                    </ul>
-                  </Collapse>
-                </div>
-              )}
-              <JourneyTime
-                journey={journey}
-                index={i}
-                event="arrival"
-                locale={locale}
-              />
-              <div>
-                <StopLink stop={l.to} index={i} side="to" url={url} t={t} />
+                ) : (
+                  <span className="route-badge" data-mode={l.mode}>
+                    <Badge leg={l} t={t} />
+                  </span>
+                )}
+                <DelayBadge leg={l} t={t} />
+                {l.operator && (
+                  <strong className="leg-operator">{l.operator}</strong>
+                )}
+                {l.cancelled && <span className="fallback">{t.cancelled}</span>}
               </div>
-            </div>
-          </article>
+              <div className="leg-stops">
+                <JourneyTime
+                  journey={journey}
+                  index={i}
+                  event="departure"
+                  locale={locale}
+                />
+                <div>
+                  <StopLink
+                    stop={l.from}
+                    index={i}
+                    side="from"
+                    url={url}
+                    t={t}
+                  />
+                </div>
+                {l.tripId && (
+                  <div className="intermediate-stops">
+                    <NavLink
+                      data-nav
+                      className="intermediate-toggle"
+                      href={navHref(url, {
+                        stops: expanded ? null : String(i),
+                      })}
+                      aria-expanded={expanded}
+                      aria-controls={`intermediate-${journey.key}-${i}`}
+                    >
+                      {t.intermediateStops}{" "}
+                      <span className="disclosure-mark" aria-hidden="true" />
+                    </NavLink>
+                    <Collapse open={expanded}>
+                      <ul
+                        id={`intermediate-${journey.key}-${i}`}
+                        className="trip-stops"
+                        data-intermediate-stops={i}
+                        aria-live="polite"
+                      >
+                        {tripError ? (
+                          <li>{t.tripError}</li>
+                        ) : !trip ? (
+                          <li>{t.loadingTrip}</li>
+                        ) : !segment ? (
+                          <li>{t.segmentUnavailable}</li>
+                        ) : segment.to - segment.from === 1 ? (
+                          <li>{t.noIntermediateStops}</li>
+                        ) : (
+                          <TripStops
+                            trip={{
+                              ...trip,
+                              stops: trip.stops.slice(
+                                segment.from + 1,
+                                segment.to,
+                              ),
+                            }}
+                            t={t}
+                            locale={locale}
+                            current={url}
+                            stopOffset={segment.from + 1}
+                            totalStops={trip.stops.length}
+                          />
+                        )}
+                      </ul>
+                    </Collapse>
+                  </div>
+                )}
+                <JourneyTime
+                  journey={journey}
+                  index={i}
+                  event="arrival"
+                  locale={locale}
+                />
+                <div>
+                  <StopLink stop={l.to} index={i} side="to" url={url} t={t} />
+                </div>
+              </div>
+            </article>
+          </Fragment>
         );
       })}
     </section>
@@ -271,39 +282,44 @@ export default function JourneyResults({
                   {j.legs.map((l, i) => (
                     <Fragment key={i}>
                       {i > 0 && <span aria-hidden="true">›</span>}
-                      {l.tripId ? (
-                        <button
-                          className="route-badge trip-open"
-                          data-mode={l.mode}
-                          data-summary-trip={i}
-                          aria-haspopup="dialog"
-                          aria-label={`${modeLabel(l.mode, t)}: ${t.tripStops} ${l.line || ""}`}
-                          type="button"
-                          onClick={() =>
-                            navigate(
-                              navHref(url, {
-                                journey: j.key,
-                                expanded: [...expandedJourneys(url)].join(","),
-                                leg: String(i),
-                                stops:
-                                  selected === j.key
-                                    ? url.searchParams.get("stops")
-                                    : null,
-                                map: null,
-                                stopLeg: null,
-                                stopSide: null,
-                                tripStop: null,
-                              }),
-                            )
-                          }
-                        >
-                          <Badge leg={l} t={t} />
-                        </button>
-                      ) : (
-                        <span className="route-badge" data-mode={l.mode}>
-                          <Badge leg={l} t={t} />
-                        </span>
-                      )}
+                      <span className="summary-leg-badges" data-mode={l.mode}>
+                        {l.tripId ? (
+                          <button
+                            className="route-badge trip-open"
+                            data-mode={l.mode}
+                            data-summary-trip={i}
+                            aria-haspopup="dialog"
+                            aria-label={`${modeLabel(l.mode, t)}: ${t.tripStops} ${l.line || ""}`}
+                            type="button"
+                            onClick={() =>
+                              navigate(
+                                navHref(url, {
+                                  journey: j.key,
+                                  expanded: [...expandedJourneys(url)].join(
+                                    ",",
+                                  ),
+                                  leg: String(i),
+                                  stops:
+                                    selected === j.key
+                                      ? url.searchParams.get("stops")
+                                      : null,
+                                  map: null,
+                                  stopLeg: null,
+                                  stopSide: null,
+                                  tripStop: null,
+                                }),
+                              )
+                            }
+                          >
+                            <Badge leg={l} t={t} />
+                          </button>
+                        ) : (
+                          <span className="route-badge" data-mode={l.mode}>
+                            <Badge leg={l} t={t} />
+                          </span>
+                        )}
+                        <DelayBadge leg={l} t={t} />
+                      </span>
                     </Fragment>
                   ))}
                 </div>

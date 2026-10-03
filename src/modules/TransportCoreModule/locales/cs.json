@@ -154,7 +154,7 @@
   "trackingUnsupported": "Poskytovatel pro tento spoj neposkytuje ověřenou živou polohu.",
   "trackingConnecting": "Zjišťujeme aktuální polohu…",
   "trackingUnavailable": "Aktuální poloha není dostupná.",
-  "transferAtRisk": "Podle aktuálních časů nemusíš stihnout přestup. Vyhledej spojení znovu.",
+  "transferAtRisk": "Kvůli aktuálnímu zpoždění tento přestup pravděpodobně nestihneš.",
   "arrivalEstimated": "Příjezd je odhadnut podle aktuálního zpoždění.",
   "connectionAtRisk": "Přestup nevychází",
   "vehicleAtStop": "Vozidlo u zastávky {stop}",
@@ -167,5 +167,11 @@
   "delayLastKnown": "Poslední známý údaj; čekáme na aktualizaci.",
   "countryUnavailable": "Vyhledávání spojení pro tuto zemi zatím není dostupné.",
   "coverageError": "Dostupné oblasti se nepodařilo načíst.",
-  "featureAirConditioning": "Klimatizace"
+  "featureAirConditioning": "Klimatizace",
+  "dataAttributionsTitle": "Zdroje dopravních a mapových dat",
+  "dataProcessed": "Data byla zpracována pro vyhledávání a zobrazení v aplikaci TRAM.",
+  "dataLicense": "Licence",
+  "dataSource": "Zdroj dat",
+  "dataPublished": "Zveřejněno",
+  "dataUpdated": "Aktualizováno"
 }

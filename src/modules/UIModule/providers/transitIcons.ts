@@ -1,6 +1,7 @@
 export const transitPaths: Record<string, string> = {
   tram: "M5 16V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v11a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3ZM5 11h14M8 3v8m8-8v8M8 15h.01M16 15h.01M8 19l-2 3m10-3 2 3M9 1h6",
   arrow: "M4 12h16m-6-6 6 6-6 6",
+  external: "M14 3h7v7m0-7L10 14M10 3H3v18h18v-7",
   swap: "M4 7h15l-4-4m5 14H5l4 4",
   pin: "M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0ZM15 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z",
   locate:

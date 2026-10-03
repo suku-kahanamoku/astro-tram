@@ -47,7 +47,6 @@ export default function TripTimeline({
       <ul className="trip-stops" data-trip-dialog-stops>
         <TripStops
           trip={trip}
-          tripId={leg?.tripId}
           leg={leg}
           t={t}
           locale={locale}

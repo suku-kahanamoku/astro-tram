@@ -289,7 +289,7 @@ test("new results scroll once and the summary starts with date and service butto
   expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 });
 
-test("summary badge loads only its own stops into a dialog and a sticky title, delay and close button", async ({
+test("summary badge loads only its own stops into a dialog with a sticky title and close button", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -329,7 +329,7 @@ test("summary badge loads only its own stops into a dialog and a sticky title, d
   await expect(dialog.locator(".trip-loading")).toHaveCount(0);
   await expect(
     dialog.locator(".trip-sticky-header [data-delay-badge]"),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await dialog.evaluate(async (el) => {
     await Promise.allSettled(el.getAnimations().map((a) => a.finished));
   });
