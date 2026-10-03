@@ -25,6 +25,7 @@ export const transportClientConfig = {
   endpoints: {
     coverage: "/api/transport/coverage/",
     tracking: "/api/transport/tracking/",
+    observation: "/api/transport/observation/",
     cities: "/api/transport/cities/",
     places: "/api/transport/places/",
     search: "/api/transport/search/",

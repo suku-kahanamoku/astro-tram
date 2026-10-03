@@ -51,6 +51,11 @@ export const transportClient = {
       body: JSON.stringify({ id }),
       signal,
     }),
+  observation: (id: string, signal: AbortSignal) =>
+    request<unknown>(
+      `${config.endpoints.observation}?id=${encodeURIComponent(id)}`,
+      { signal },
+    ),
   cities: (country: string, signal: AbortSignal) =>
     request<CityOption[]>(
       `${config.endpoints.cities}?q=${encodeURIComponent(JSON.stringify({ state: country }))}`,

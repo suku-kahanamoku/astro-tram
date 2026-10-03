@@ -5,23 +5,32 @@ import {
 } from "../../TransportCoreModule/providers/client";
 import { observation, unavailableObservation } from "./tracking";
 import { createTrackingStore } from "./trackingStore";
-import type { TrackingSession } from "../../TransportCoreModule/types";
+import type {
+  TrackingSession,
+  TripObservation,
+} from "../../TransportCoreModule/types";
 
 type Socket = ReturnType<typeof createRealtimeClient>;
 type Watch = {
   controller: AbortController;
-  socket?: Socket;
+  session?: TrackingSession;
+  subscribed?: boolean;
   expiry?: ReturnType<typeof setTimeout>;
   renewal?: ReturnType<typeof setTimeout>;
-  ping?: ReturnType<typeof setInterval>;
-  retries?: number;
+  snapshot?: AbortController;
+  revision?: number;
 };
 /** Incremental subscriptions and a shared ticket queue, scoped to one mounted search. */
 export function createTrackingSubscriptions(
   store: ReturnType<typeof createTrackingStore>,
-  dependencies = {
+  dependencies: {
+    tracking: typeof transportClient.tracking;
+    socket: typeof createRealtimeClient;
+    observation?: typeof transportClient.observation;
+  } = {
     tracking: transportClient.tracking,
     socket: createRealtimeClient,
+    observation: transportClient.observation,
   },
 ) {
   const watches = new Map<string, Watch>();
@@ -31,15 +40,60 @@ export function createTrackingSubscriptions(
     disposed = false,
     nextRequestAt = 0;
   let wake: ReturnType<typeof setTimeout> | undefined;
+  let socket: Socket | undefined;
+  let socketUrl: string | undefined;
+  let ready = false;
+  let ping: ReturnType<typeof setInterval> | undefined;
+  let reconnect: ReturnType<typeof setTimeout> | undefined;
+  let retries = 0;
   const active = (id: string, watch: Watch) =>
     !disposed && watches.get(id) === watch;
-  const disconnect = (watch: Watch) => {
+  const currentObservation = (id: string) => {
+    const value = store.getSnapshot()[id];
+    return value?.validUntil && Date.parse(value.validUntil) > Date.now()
+      ? value
+      : undefined;
+  };
+  const apply = (id: string, watch: Watch, value: TripObservation) => {
+    watch.revision = (watch.revision ?? 0) + 1;
+    store.set(id, value);
     clearTimeout(watch.expiry);
+    if (value.validUntil)
+      watch.expiry = setTimeout(
+        () => {
+          if (active(id, watch)) {
+            watch.revision = (watch.revision ?? 0) + 1;
+            store.set(id, unavailableObservation("stale"));
+          }
+        },
+        Math.max(0, Date.parse(value.validUntil) - Date.now()),
+      );
+  };
+  const disconnect = () => {
+    clearInterval(ping);
+    ready = false;
+    const previous = socket;
+    socket = undefined;
+    socketUrl = undefined;
+    previous?.close();
+  };
+  const subscribe = (id: string, watch: Watch) => {
+    const session = watch.session;
+    if (!ready || !session || !socket) return;
+    if (!socket.send({ type: "subscribe", ticket: session.ticket })) return;
+    // Each ticket is redeemed once; renew this subscription over the same connection.
+    watch.session = undefined;
+    watch.subscribed = true;
     clearTimeout(watch.renewal);
-    clearInterval(watch.ping);
-    const socket = watch.socket;
-    watch.socket = undefined;
-    socket?.close();
+    watch.renewal = setTimeout(
+      () => {
+        if (active(id, watch)) {
+          queue.set(id, watch);
+          pump();
+        }
+      },
+      Math.max(1000, Date.parse(session.expiresAt!) - Date.now() - 30000),
+    );
   };
   const connect = (id: string, watch: Watch, session: TrackingSession) => {
     if (!active(id, watch)) return;
@@ -49,69 +103,85 @@ export function createTrackingSubscriptions(
       !session.ticket ||
       !session.expiresAt
     ) {
-      store.set(id, unavailableObservation(session.status));
+      clearTimeout(watch.renewal);
+      if (watch.subscribed && ready)
+        socket?.send({ type: "unsubscribe", trip: id });
+      watch.session = undefined;
+      watch.subscribed = false;
+      if (!currentObservation(id))
+        store.set(id, unavailableObservation(session.status));
       return;
     }
-    disconnect(watch);
-    const socket = dependencies.socket({
+    if (socketUrl && socketUrl !== session.url) {
+      // A search uses one configured gateway. Never silently create a second socket.
+      if (!currentObservation(id))
+        store.set(id, unavailableObservation("unsupported"));
+      return;
+    }
+    queue.delete(id);
+    watch.session = session;
+    if (socket) {
+      subscribe(id, watch);
+      return;
+    }
+    socketUrl = session.url;
+    const connection = dependencies.socket({
       url: session.url,
       maxRetries: 0,
       onState(status) {
-        if (!active(id, watch) || watch.socket !== socket) return;
-        if (status === "open")
-          watch.socket?.send({ type: "subscribe", ticket: session.ticket });
-        else if (status !== "connecting") {
-          store.set(id, unavailableObservation());
-          disconnect(watch);
-          const retries = watch.retries ?? 0;
-          if (retries < 8) {
-            watch.retries = retries + 1;
-            watch.renewal = setTimeout(
-              () => {
-                if (active(id, watch)) {
-                  queue.set(id, watch);
-                  pump();
-                }
-              },
-              Math.min(30000, 1000 * 2 ** retries),
-            );
+        if (disposed || socket !== connection) return;
+        if (status === "open") {
+          ready = true;
+          for (const [trip, item] of watches) subscribe(trip, item);
+          ping = setInterval(() => connection.send({ type: "ping" }), 20000);
+        } else if (status !== "connecting") {
+          disconnect();
+          for (const [trip, item] of watches) {
+            clearTimeout(item.renewal);
+            item.session = undefined;
+            item.subscribed = false;
+            if (!currentObservation(trip))
+              store.set(trip, unavailableObservation());
+            if (!tickets.has(trip)) queue.set(trip, item);
           }
+          if (retries < 8 && queue.size) {
+            reconnect = setTimeout(
+              () => {
+                reconnect = undefined;
+                pump();
+              },
+              Math.min(30000, 1000 * 2 ** retries++),
+            );
+          } else queue.clear();
         }
       },
       onMessage(message) {
-        if (!active(id, watch) || !message || typeof message !== "object")
+        if (
+          disposed ||
+          socket !== connection ||
+          !message ||
+          typeof message !== "object"
+        )
           return;
         const m = message as { type?: string; trip?: string; data?: unknown };
-        if (m.type !== "observation" || m.trip !== id) return;
-        watch.retries = 0;
-        const value = observation(m.data);
-        store.set(id, value);
-        clearTimeout(watch.expiry);
-        if (value.validUntil)
-          watch.expiry = setTimeout(
-            () => {
-              if (active(id, watch))
-                store.set(id, unavailableObservation("stale"));
-            },
-            Math.max(0, Date.parse(value.validUntil) - Date.now()),
-          );
+        const item = m.trip ? watches.get(m.trip) : undefined;
+        if (!item || !m.trip) return;
+        if (m.type === "subscription_expired") {
+          item.subscribed = false;
+          clearTimeout(item.renewal);
+          queue.set(m.trip, item);
+          pump();
+        } else if (m.type === "observation") {
+          retries = 0;
+          apply(m.trip, item, observation(m.data));
+        }
       },
     });
-    watch.socket = socket;
-    socket.connect();
-    watch.ping = setInterval(() => socket.send({ type: "ping" }), 20000);
-    watch.renewal = setTimeout(
-      () => {
-        if (!active(id, watch)) return;
-        tickets.delete(id);
-        queue.set(id, watch);
-        pump();
-      },
-      Math.max(1000, Date.parse(session.expiresAt) - Date.now() - 30000),
-    );
+    socket = connection;
+    connection.connect();
   };
   const pump = () => {
-    if (disposed || pending) return;
+    if (disposed || pending || reconnect) return;
     clearTimeout(wake);
     if (!queue.size) return;
     const remaining = nextRequestAt - Date.now();
@@ -132,6 +202,10 @@ export function createTrackingSubscriptions(
       .tracking(id, watch.controller.signal)
       .then((session) => {
         if (!active(id, watch)) return;
+        if (session.status === "available" && reconnect) {
+          queue.set(id, watch);
+          return;
+        }
         if (tickets.size >= 100) tickets.delete(tickets.keys().next().value!);
         // A successful ticket is single-use, even if the WS session lasts 15 minutes.
         if (session.status !== "available") tickets.set(id, session);
@@ -139,7 +213,7 @@ export function createTrackingSubscriptions(
       })
       .catch((error: unknown) => {
         if (!active(id, watch)) return;
-        store.set(id, unavailableObservation());
+        if (!currentObservation(id)) store.set(id, unavailableObservation());
         if (error instanceof TransportRequestError && error.status === 429) {
           // One cooldown for all pending tickets, not independent retries per vehicle.
           nextRequestAt = Math.max(
@@ -162,6 +236,44 @@ export function createTrackingSubscriptions(
       });
   };
   return {
+    refresh(id: string) {
+      const watch = watches.get(id);
+      if (!watch || !active(id, watch) || !dependencies.observation) return;
+      watch.snapshot?.abort();
+      const controller = new AbortController();
+      watch.snapshot = controller;
+      const revision = watch.revision ?? 0;
+      void dependencies
+        .observation(id, controller.signal)
+        .then((raw) => {
+          if (
+            active(id, watch) &&
+            !controller.signal.aborted &&
+            watch.snapshot === controller &&
+            (watch.revision ?? 0) === revision
+          ) {
+            const value = observation(raw);
+            const current = currentObservation(id);
+            // A missing or older HTTP sample cannot erase a still-valid socket sample.
+            // Keep its original expiry; a refresh never extends measured GPS age.
+            if (
+              current &&
+              (!value.validUntil ||
+                (current.observedAt &&
+                  value.observedAt &&
+                  Date.parse(value.observedAt) <
+                    Date.parse(current.observedAt)))
+            )
+              return;
+            apply(id, watch, value);
+          }
+        })
+        // A failed initial read must not tear down the socket or erase a received point.
+        .catch(() => {})
+        .finally(() => {
+          if (watch.snapshot === controller) watch.snapshot = undefined;
+        });
+    },
     setIds(ids: readonly string[]) {
       if (disposed) return;
       const desired = new Set(ids);
@@ -170,7 +282,11 @@ export function createTrackingSubscriptions(
           watches.delete(id);
           queue.delete(id);
           watch.controller.abort();
-          disconnect(watch);
+          watch.snapshot?.abort();
+          clearTimeout(watch.expiry);
+          clearTimeout(watch.renewal);
+          if (watch.subscribed && ready)
+            socket?.send({ type: "unsubscribe", trip: id });
           store.remove(id);
         }
       for (const id of desired) {
@@ -189,14 +305,25 @@ export function createTrackingSubscriptions(
           queue.set(id, watch);
         }
       }
+      if (!watches.size) {
+        clearTimeout(wake);
+        clearTimeout(reconnect);
+        reconnect = undefined;
+        retries = 0;
+        disconnect();
+      }
       pump();
     },
     dispose() {
       disposed = true;
       clearTimeout(wake);
+      clearTimeout(reconnect);
+      disconnect();
       for (const watch of watches.values()) {
         watch.controller.abort();
-        disconnect(watch);
+        watch.snapshot?.abort();
+        clearTimeout(watch.expiry);
+        clearTimeout(watch.renewal);
       }
       watches.clear();
       queue.clear();

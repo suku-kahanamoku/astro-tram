@@ -17,17 +17,20 @@ export function useTransportViewState(results: boolean) {
   };
   const modalLeg = selected?.legs[index("leg")];
   const middleLeg = selected?.legs[index("stops")];
-  const tracking = useTripTracking([
-    ...(search.data?.journeys
-      .filter((journey) => expandedJourneys(url).has(journey.key))
-      .flatMap((journey) =>
-        journey.legs.flatMap((leg) => (leg.tripId ? [leg.tripId] : [])),
-      ) ?? []),
-    ...(modalLeg?.tripId ? [modalLeg.tripId] : []),
-  ]);
   const mode = parameters.get("map");
   const isTripMap = mode === "stop" && parameters.has("tripStop");
   const modalOpen = !!modalLeg?.tripId && (!mode || isTripMap);
+  const tracking = useTripTracking(
+    [
+      ...(search.data?.journeys
+        .filter((journey) => expandedJourneys(url).has(journey.key))
+        .flatMap((journey) =>
+          journey.legs.flatMap((leg) => (leg.tripId ? [leg.tripId] : [])),
+        ) ?? []),
+      ...(modalLeg?.tripId ? [modalLeg.tripId] : []),
+    ],
+    modalOpen ? modalLeg?.tripId : undefined,
+  );
   const mapLeg =
     selected?.legs[
       isTripMap && parameters.has("leg") ? index("leg") : index("stopLeg")

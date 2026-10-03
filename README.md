@@ -252,6 +252,16 @@ Mapy mají vyhrazenou výšku během načítání; zoom nastavuje `config/client
 
 ### Živé sledování a zpoždění
 
+Jedna zobrazená stránka používá **jeden společný WebSocket** pro všechny
+jedinečné spoje v otevřených accordionech a dialogu. Každý spoj získá vlastní
+jednorázový ticket přes `POST /api/transport/tracking/`, ale `subscribe`
+přidá nebo obnoví odběr na stejném spojení; `unsubscribe` s `trip` jej odebere.
+Obnova oprávnění po 14,5 minutách nepřipojuje další socket. Fronta ticketů
+zachovává společný odstup a cooldown při 429. Výpadek obnoví jednu transportní
+relaci a vydá nové tickety pro požadované spoje. Zavření posledního odběru,
+skrytí stránky nebo odchod ze stránky socket odpojí. Java gateway musí
+podporovat více `subscribe` na jednom spojení; aktualizujte ji spolu s frontendem.
+
 Otevřený detail spojení odebírá aktuální pozorování přes `useTripTracking` a společný `RealtimeModule`. BFF `POST /api/transport/tracking/` vydává pouze krátkodobý ticket; klíče poskytovatelů zůstávají v php-core. Je potřeba samostatně nakonfigurovat a spustit backendovou gateway podle [provozní dokumentace](../../php/php-core/docs/tram-realtime-tracking.md). Bez dostupného živého odběru zůstává statický detail; první umístění červeného bodu vyžaduje ověřenou GPS. Vedle živého měření (do 30 sekund) umí přijmout explicitní `last_known` (do 90 sekund), s původním časem a označením poslední známé polohy. Taková poloha neovlivňuje časy, zpoždění ani návaznosti.
 
 `trackedJourney` společně přepočítává časy, délku cesty, chůzi a návaznosti. Badge je vedle označení spoje: kladné zpoždění červeně, nulové i dosud neznámé zpoždění zeleně „Bez zpoždění“ podle požadovaného UI. Neznámá hodnota zůstává ve výpočtech `null`, není potvrzením včasného příjezdu. `useDelayStatus` ponechá poslední potvrzenou hodnotu po dobu zobrazení komponenty i mezi aktualizacemi; tooltip a přístupný popisek označí neaktuální údaj. Tato paměť slouží pouze badge, ne výpočtu trasy. GPS a časové predikce nadále expirují původním timerem. Časy zastávek se zobrazují bez pomocné značky odhadu. Zavření detailu/skrytí stránky odpojí odběry, žádná poloha se neukládá do storage ani URL. Současný pohyb vozidla automaticky nevytváří náhradní trasu: při ohroženém přestupu UI vyzve k novému vyhledání.
@@ -261,6 +271,15 @@ Detail spoje používá `TripTimeline` s osou vlevo od časů a bodem u každé 
 Badge zpoždění každého úseku umí využít samostatnou čerstvou zastávkovou predikci nebo číselné zpoždění i tehdy, když GPS poskytovatel nemá. Neznámé zpoždění se pro výpočty nikdy nepřevádí na potvrzenou nulu. Brněnské Spojenka/CIS spoje mohou využít backendový adaptér IDS JMK, pokud je zapnutý pro tenant. Aktuální preset pokrývá CIS linky 737001–737099 a 738001–738099 a ověřuje konkrétní dnešní jízdu. Původní trip ID i frontendový kontrakt zůstávají stejné; React nezná konkrétního poskytovatele. Bez čerstvého měření se dříve zobrazený bod ponechá jako poslední známá poloha; potvrzené nulové zpoždění zobrazí zelený badge. Konfigurace a omezení jsou v provozní dokumentaci výše.
 
 Při nejednoznačném přiřazení, načítání, výpadku nebo expiraci GPS ponechá `useTripProgress` poslední jednoznačně určený bod stejného spoje. Tooltip a přístupný popisek jej označí jako poslední známou polohu; nová platná GPS jej znovu aktualizuje. Uchovává se pouze index úseku a poměr na ose v paměti otevřeného dialogu, nikoliv GPS v databázi či storage. Při změně spoje nebo zavření dialogu se tato paměť uvolní. Časy a výpočty nadále využívají jen platné predikce. Bez jediného ověřeného bodu nelze polohu na ose zobrazit.
+
+Při každém otevření dialogu zavolá `useTripTracking` také
+`GET /api/transport/observation/?id=…` přes serverový provider a existující
+php-core endpoint `/transport/v1/trips/:id/observation`. První poloha se tedy
+načítá souběžně se statickým detailem a socketem, bez čekání na jeho zprávu
+nebo frontu ticketů. Otevření již sledovaného spoje obnoví pozorování bez
+odpojení socketu. Odpověď má `no-store`; původní časy měření a expirace se
+nemění. Pomalejší HTTP odpověď nesmí přepsat novější zprávu ze socketu a
+zavření neodebíraného spoje probíhající načtení zruší. Data zůstávají jen v RAM.
 
 ### Stabilní výsledky při živých aktualizacích
 

@@ -202,6 +202,39 @@ export function createTransportProvider(core: CoreClient) {
         throw new HttpError(502, "invalid_backend_response");
       return countries;
     },
+    async observation(id: string) {
+      const raw = object(
+        await core.request(`/transport/v1/trips/${id}/observation`),
+      );
+      const position = object(raw.position);
+      return {
+        status: [
+          "live",
+          "last_known",
+          "unsupported",
+          "disabled",
+          "busy",
+          "stale",
+        ].includes(String(raw.status))
+          ? String(raw.status)
+          : "unavailable",
+        position:
+          typeof position.lat === "number" &&
+          typeof position.lon === "number" &&
+          validCoordinates(position.lat, position.lon)
+            ? { lat: position.lat, lon: position.lon }
+            : null,
+        observed_at: instant(raw.observed_at),
+        valid_until: instant(raw.valid_until),
+        delay_seconds:
+          typeof raw.delay_seconds === "number" &&
+          Number.isFinite(raw.delay_seconds) &&
+          Math.abs(raw.delay_seconds) <= 86400
+            ? raw.delay_seconds
+            : null,
+        cancelled: typeof raw.cancelled === "boolean" ? raw.cancelled : null,
+      };
+    },
     async tracking(id: string) {
       const r = object(
         await core.request(`/transport/v1/trips/${id}/tracking`, {

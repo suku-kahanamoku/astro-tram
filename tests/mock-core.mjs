@@ -215,6 +215,15 @@ http
           })
         : send(404, null);
     }
+    if (url.pathname.endsWith("/observation"))
+      return send(200, {
+        status: "unavailable",
+        position: null,
+        observed_at: null,
+        valid_until: null,
+        delay_seconds: null,
+        cancelled: null,
+      });
     if (url.pathname.startsWith("/transport/v1/trips/"))
       return send(200, {
         result: {

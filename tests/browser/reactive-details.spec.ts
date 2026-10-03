@@ -18,6 +18,184 @@ const path =
     city: "Praha",
   });
 
+test("opening and reopening a trip draws an HTTP position before any websocket message", async ({
+  page,
+}) => {
+  let reads = 0,
+    messages = 0,
+    subscribed = 0;
+  await page.route("**/api/transport/observation/**", async (route) => {
+    reads++;
+    const now = Date.now();
+    await route.fulfill({
+      json: {
+        success: true,
+        data: {
+          status: "live",
+          position: { lat: 50.076, lon: 14.4282 },
+          observed_at: new Date(now).toISOString(),
+          valid_until: new Date(now + 30000).toISOString(),
+          delay_seconds: 120,
+          cancelled: false,
+        },
+      },
+    });
+  });
+  await page.route("**/api/transport/tracking/", async (route) =>
+    route.fulfill({
+      json: {
+        success: true,
+        data: {
+          status: "available",
+          url: "ws://localhost:4328/initial-position",
+          ticket: route.request().postDataJSON().id,
+          expiresAt: new Date(Date.now() + 900000).toISOString(),
+        },
+      },
+    }),
+  );
+  let push = () => {};
+  await page.routeWebSocket("ws://localhost:4328/initial-position", (ws) =>
+    ws.onMessage((message) => {
+      const m = JSON.parse(String(message));
+      if (m.type !== "subscribe") return;
+      subscribed++;
+      push = () => {
+        messages++;
+        const now = Date.now();
+        ws.send(
+          JSON.stringify({
+            type: "observation",
+            trip: m.ticket,
+            data: {
+              status: "live",
+              position: { lat: 50.077, lon: 14.4264 },
+              observed_at: new Date(now).toISOString(),
+              valid_until: new Date(now + 30000).toISOString(),
+              delay_seconds: 180,
+              cancelled: false,
+            },
+          }),
+        );
+      };
+    }),
+  );
+  await page.goto(path);
+  await expect(page.locator(".journey-card")).toHaveCount(2);
+  expect(reads).toBe(0);
+  await page.locator(".journey-summary-toggle").first().click();
+  await expect.poll(() => subscribed).toBe(1);
+  const badge = page.locator("[data-summary-trip]").first();
+  await badge.click();
+  const dialog = page.locator("[data-trip-dialog]");
+  const dot = dialog.locator("[data-trip-vehicle-dot]");
+  await expect(dot).toBeVisible();
+  expect(reads).toBe(1);
+  expect(messages).toBe(0);
+  await expect(dialog.locator(".delay-badge")).toContainText("2 min");
+  const row = await dialog.locator(".trip-call").first().elementHandle();
+  push();
+  await expect(dialog.locator(".delay-badge")).toContainText("3 min");
+  expect(
+    await dialog
+      .locator(".trip-call")
+      .first()
+      .evaluate((el, previous) => el === previous, row),
+  ).toBe(true);
+  await page.keyboard.press("Escape");
+  await expect(dialog).not.toBeVisible();
+  await badge.click();
+  await expect.poll(() => reads).toBe(2);
+  await expect(dot).toBeVisible();
+  expect(subscribed, "opening an already watched trip keeps its socket").toBe(
+    1,
+  );
+});
+
+test("several accordions and dialogs multiplex all trips over one socket", async ({
+  page,
+}) => {
+  let connections = 0;
+  const subscriptions = new Set<string>();
+  const events: { type: string; trip: string }[] = [];
+  await page.route("**/api/transport/search/**", async (route) => {
+    const response = await route.fetch();
+    const json = await response.json();
+    const first = json.data.journeys[0];
+    const second = structuredClone(first);
+    second.key = "another-journey";
+    second.legs[0].tripId = "another-trip";
+    json.data.journeys = [first, second];
+    await route.fulfill({ json });
+  });
+  await page.route("**/api/transport/tracking/", async (route) =>
+    route.fulfill({
+      json: {
+        success: true,
+        data: {
+          status: "available",
+          url: "ws://localhost:4328/multiplex",
+          ticket: route.request().postDataJSON().id,
+          expiresAt: new Date(Date.now() + 900000).toISOString(),
+        },
+      },
+    }),
+  );
+  await page.routeWebSocket("ws://localhost:4328/multiplex", (ws) => {
+    connections++;
+    ws.onMessage((message) => {
+      const value = JSON.parse(String(message));
+      if (value.type === "subscribe") {
+        subscriptions.add(value.ticket);
+        events.push({ type: value.type, trip: value.ticket });
+        const now = Date.now();
+        ws.send(
+          JSON.stringify({
+            type: "observation",
+            trip: value.ticket,
+            data: {
+              status: "live",
+              position: { lat: 50.076, lon: 14.4282 },
+              observed_at: new Date(now).toISOString(),
+              valid_until: new Date(now + 30000).toISOString(),
+              delay_seconds: value.ticket === "another-trip" ? 180 : 60,
+              cancelled: false,
+            },
+          }),
+        );
+      } else if (value.type === "unsubscribe") {
+        subscriptions.delete(value.trip);
+        events.push(value);
+      }
+    });
+  });
+  await page.goto(path);
+  const cards = page.locator(".journey-card");
+  await expect(cards).toHaveCount(2);
+  await cards.nth(0).locator(".journey-summary-toggle").click();
+  await cards.nth(1).locator(".journey-summary-toggle").click();
+  await expect.poll(() => subscriptions.size).toBe(2);
+  expect(connections).toBe(1);
+  await expect(cards.nth(0).locator(".leg .delay-badge").first()).toContainText(
+    "1 min",
+  );
+  await expect(cards.nth(1).locator(".leg .delay-badge").first()).toContainText(
+    "3 min",
+  );
+  await cards.nth(0).locator("[data-summary-trip]").first().click();
+  await expect(
+    page.locator("[data-trip-dialog] [data-trip-vehicle-dot]"),
+  ).toBeVisible();
+  expect(connections).toBe(1);
+  await page.keyboard.press("Escape");
+  await cards.nth(0).locator(".journey-summary-toggle").click();
+  await expect.poll(() => subscriptions.size).toBe(1);
+  expect(events.at(-1)?.type).toBe("unsubscribe");
+  await cards.nth(0).locator(".journey-summary-toggle").click();
+  await expect.poll(() => subscriptions.size).toBe(2);
+  expect(connections).toBe(1);
+});
+
 test("legacy detail parameters do not reopen cards; interactions leave URL and history unchanged", async ({
   page,
 }) => {

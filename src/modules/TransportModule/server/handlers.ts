@@ -241,6 +241,20 @@ export const cities: APIRoute = async ({ url, locals }) => {
   }
 };
 
+/** Current trip observation, independent of the static detail and socket ticket queue. */
+export const observation: APIRoute = async ({ url, locals }) => {
+  try {
+    const id = url.searchParams.get("id") ?? "";
+    if (!/^[A-Za-z0-9_-]{1,2048}$/.test(id)) return fail();
+    return Response.json(
+      { success: true, data: await locals.providers.transport.observation(id) },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (error) {
+    return errorResponse(error);
+  }
+};
+
 /** Trip-bound ephemeral ticket; same-origin POST, no coordinates or credentials in URLs. */
 export const tracking: APIRoute = async ({ request, locals }) => {
   try {
