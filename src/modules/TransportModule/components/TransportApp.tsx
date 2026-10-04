@@ -89,6 +89,7 @@ function TransportView({
         <TransportOverlays
           modalOpen={modalOpen}
           modalLeg={modalLeg}
+          journeyStart={selected?.legs[0]?.scheduledDeparture}
           modalResource={modalResource}
           locale={locale}
           t={t}

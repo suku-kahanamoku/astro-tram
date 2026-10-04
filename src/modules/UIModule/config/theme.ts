@@ -4,3 +4,4 @@ export const themeConfig = {
   dark: { name: "tram", color: "#fff8ee" },
 } as const;
 export const defaultTheme = themeConfig.light;
+export type ThemeMode = "light" | "dark";

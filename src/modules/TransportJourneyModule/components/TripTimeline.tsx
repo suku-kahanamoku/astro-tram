@@ -19,6 +19,7 @@ export default function TripTimeline({
   t,
   locale,
   url,
+  referenceTime,
 }: {
   trip: Trip;
   live?: TripObservation;
@@ -26,6 +27,7 @@ export default function TripTimeline({
   t: Dictionary;
   locale: string;
   url: URL;
+  referenceTime?: string | null;
 }) {
   const root = useRef<HTMLDivElement>(null);
   const observation = useTripObservation(leg?.tripId);
@@ -48,6 +50,7 @@ export default function TripTimeline({
           t={t}
           locale={locale}
           current={url}
+          referenceTime={referenceTime}
           timeline
         />
       </ul>

@@ -1,8 +1,12 @@
 import { TripCallTime } from "./JourneyLiveFields";
 import { Fragment, memo } from "react";
-import { NavLink } from "../../UIModule/hooks/useUrlNavigation";
+import StopLabel from "./StopLabel";
 import { tripSegment } from "../providers/trip";
-import { hasStopDetails, navHref } from "../providers/render";
+import {
+  hasStopDetails,
+  navHref,
+  scheduledCallTime,
+} from "../providers/render";
 import type { Trip, Leg } from "../../TransportCoreModule/types";
 import type { Dictionary } from "../../TransportCoreModule/providers/translations";
 function TripStops({
@@ -14,6 +18,9 @@ function TripStops({
   stopOffset = 0,
   totalStops = trip.stops.length,
   timeline = false,
+  referenceTime = trip.stops[0]
+    ? scheduledCallTime(trip.stops[0], "departure")
+    : undefined,
 }: {
   trip: Trip;
   t: Dictionary;
@@ -23,6 +30,7 @@ function TripStops({
   stopOffset?: number;
   totalStops?: number;
   timeline?: boolean;
+  referenceTime?: string | null;
 }) {
   const segment = leg ? tripSegment(trip, leg) : null,
     details = hasStopDetails(trip);
@@ -34,17 +42,16 @@ function TripStops({
       {trip.stops.map((c, i) => {
         const index = i + stopOffset,
           selected = segment !== null && i >= segment.from && i <= segment.to;
-        const href =
-          current && (c.stop.id || (c.stop.lat !== null && c.stop.lon !== null))
-            ? navHref(current, {
-                map: "stop",
-                tripStop: String(index),
-                stopLeg: current.searchParams.has("leg")
-                  ? null
-                  : current.searchParams.get("stops"),
-                stopSide: null,
-              })
-            : null;
+        const href = current
+          ? navHref(current, {
+              map: "stop",
+              tripStop: String(index),
+              stopLeg: current.searchParams.has("leg")
+                ? null
+                : current.searchParams.get("stops"),
+              stopSide: null,
+            })
+          : null;
         const km =
           typeof c.routeKm === "number" &&
           Number.isFinite(c.routeKm) &&
@@ -71,41 +78,16 @@ function TripStops({
               call={c}
               locale={locale}
               event={index === totalStops - 1 ? "arrival" : "departure"}
+              referenceTime={referenceTime}
             />
             <span className="trip-stop-name">
-              {href ? (
-                <NavLink
-                  className="stop-map-link"
-                  data-trip-stop-map={index}
-                  data-nav
-                  aria-haspopup="dialog"
-                  href={href}
-                >
-                  {c.stop.name}
-                </NavLink>
-              ) : (
-                c.stop.name
-              )}
-              {c.requestStop && (
-                <>
-                  {" "}
-                  <abbr
-                    className="request-stop"
-                    title={t.requestStop}
-                    aria-label={t.requestStop}
-                  >
-                    z
-                  </abbr>
-                </>
-              )}
-              {c.stop.platform && (
-                <>
-                  {" "}
-                  <small>
-                    · {t.platform} {c.stop.platform}
-                  </small>
-                </>
-              )}
+              <StopLabel
+                stop={c.stop}
+                t={t}
+                requestStop={c.requestStop}
+                href={href}
+                linkAttributes={{ "data-trip-stop-map": index }}
+              />
             </span>
             {details && (
               <>

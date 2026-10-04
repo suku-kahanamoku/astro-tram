@@ -1,7 +1,8 @@
 /** Browser-only fixtures imported by Playwright through the dev server; not an application route. */
 import { createRoot } from "react-dom/client";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import MainMenu from "../src/modules/UIModule/components/MainMenu";
+import ThemeToggle from "../src/modules/UIModule/components/ThemeToggle";
 import AdSlot from "../src/modules/AdsModule/components/AdSlot";
 import { consentProvider } from "../src/modules/AdsModule/providers/consent";
 import "../src/modules/UIModule/styles/main-menu.css";
@@ -34,14 +35,26 @@ function Harness() {
     </div>
   );
 }
-export function mountHarness() {
+function mount(id: string, content: ReactNode) {
   const element = document.createElement("div");
-  element.id = "react-test-harness";
+  element.id = id;
   document.body.prepend(element);
   const root = createRoot(element);
-  root.render(<Harness />);
+  root.render(content);
   return () => {
     root.unmount();
     element.remove();
   };
+}
+export function mountHarness() {
+  return mount("react-test-harness", <Harness />);
+}
+export function mountThemeHarness() {
+  return mount(
+    "theme-test-harness",
+    <>
+      <ThemeToggle locale="cs" />
+      <ThemeToggle locale="en" />
+    </>,
+  );
 }

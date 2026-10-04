@@ -1,5 +1,6 @@
 import type { Dictionary } from "../../TransportCoreModule/providers/translations";
 import type { Journey, Trip, TripStop } from "../../TransportCoreModule/types";
+import { localFields } from "../../TransportCoreModule/providers/state";
 export const escapeHtml = (value: unknown) =>
   String(value ?? "").replace(
     /[&<>"']/g,
@@ -13,6 +14,17 @@ export function time(value: string, locale: string) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
+}
+/** Compare calendar days in the same local zone used by the displayed clock, including DST. */
+export function isFollowingDay(value: string, reference?: string | null) {
+  if (!reference) return false;
+  const instant = new Date(value),
+    start = new Date(reference);
+  return (
+    Number.isFinite(instant.getTime()) &&
+    Number.isFinite(start.getTime()) &&
+    localFields(instant).day > localFields(start).day
+  );
 }
 export const date = (value: string, locale: string) =>
   new Intl.DateTimeFormat(locale, { day: "numeric", month: "short" }).format(

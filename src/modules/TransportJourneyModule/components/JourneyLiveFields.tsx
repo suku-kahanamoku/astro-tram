@@ -1,13 +1,13 @@
 import { useJourneyTiming } from "../../TransportTrackingModule/hooks/useTrackingSnapshot";
 import {
   date,
-  time,
   duration,
   scheduledDuration,
   scheduledCallTime,
 } from "../providers/render";
 import type { Journey, TripStop } from "../../TransportCoreModule/types";
 import type { Dictionary } from "../../TransportCoreModule/providers/translations";
+import ScheduleTime from "./ScheduleTime";
 type Props = { journey: Journey; locale: string; t: Dictionary };
 export function JourneyTime({
   journey,
@@ -28,13 +28,13 @@ export function JourneyTime({
   const value =
     event === "departure" ? leg.scheduledDeparture : leg.scheduledArrival;
   return (
-    <time
+    <ScheduleTime
+      value={value}
+      referenceTime={journey.legs[0]?.scheduledDeparture}
+      locale={locale}
       className={className}
-      dateTime={value}
-      data-trip-point={timelinePoint}
-    >
-      {time(value, locale)}
-    </time>
+      timelinePoint={timelinePoint}
+    />
   );
 }
 export function JourneyDuration({ journey, t }: Omit<Props, "locale">) {
@@ -77,15 +77,15 @@ export function TripCallTime({
   call,
   locale,
   event = "departure",
+  referenceTime,
 }: {
   call: TripStop;
   locale: string;
   event?: "arrival" | "departure";
+  referenceTime?: string | null;
 }) {
   const value = scheduledCallTime(call, event);
   return (
-    <time dateTime={value ?? undefined}>
-      {value ? time(value, locale) : "—"}
-    </time>
+    <ScheduleTime value={value} referenceTime={referenceTime} locale={locale} />
   );
 }

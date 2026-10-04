@@ -12,7 +12,9 @@ import {
   scheduledDuration,
   time,
   date,
+  isFollowingDay,
 } from "../src/modules/TransportJourneyModule/providers/render";
+import ScheduleTime from "../src/modules/TransportJourneyModule/components/ScheduleTime";
 import { dictionary } from "../src/modules/TransportCoreModule/providers/translations";
 import type {
   Journey,
@@ -74,4 +76,59 @@ test("intermediate and terminal calls display scheduled departures and arrivals 
     }),
   );
   assert.ok(fallback.includes(`>${time(call.departure!, "cs")}</time>`));
+});
+
+test("next-day clocks compare the displayed local calendar day across UTC boundaries, months and DST", () => {
+  const previousZone = process.env.TZ;
+  process.env.TZ = "Europe/Prague";
+  try {
+    const start = "2026-10-04T21:45:00Z"; // 23:45 locally
+    assert.equal(isFollowingDay("2026-10-04T21:56:00Z", start), false);
+    assert.equal(isFollowingDay("2026-10-04T22:00:00Z", start), true);
+    assert.equal(isFollowingDay("2026-10-04T22:37:00Z", start), true);
+    // Both UTC dates below still display as 5 October locally.
+    assert.equal(
+      isFollowingDay("2026-10-05T00:12:00Z", "2026-10-04T22:00:00Z"),
+      false,
+    );
+    assert.equal(
+      isFollowingDay("2027-01-01T00:00:00+01:00", "2026-12-31T23:59:00+01:00"),
+      true,
+    );
+    assert.equal(
+      isFollowingDay("2026-03-30T00:00:00+02:00", "2026-03-29T00:30:00+01:00"),
+      true,
+    );
+    assert.equal(
+      isFollowingDay("2026-10-25T02:15:00+01:00", "2026-10-25T02:45:00+02:00"),
+      false,
+    );
+    assert.equal(isFollowingDay("2026-10-04T21:40:00Z", start), false);
+    assert.equal(isFollowingDay(start, undefined), false);
+    assert.equal(isFollowingDay("invalid", start), false);
+    assert.equal(isFollowingDay(start, "invalid"), false);
+
+    const html = renderToStaticMarkup(
+      createElement(ScheduleTime, {
+        value: "2026-10-04T22:00:00Z",
+        referenceTime: start,
+        locale: "cs",
+      }),
+    );
+    assert.ok(html.includes('data-next-day="true"'));
+    assert.ok(html.includes(">00:00</time>"));
+    assert.ok(html.includes('title="pondělí 5. října 2026"'));
+    const missing = renderToStaticMarkup(
+      createElement(ScheduleTime, {
+        value: null,
+        referenceTime: start,
+        locale: "cs",
+      }),
+    );
+    assert.ok(missing.includes(">—</time>"));
+    assert.ok(!missing.includes("data-next-day"));
+  } finally {
+    if (previousZone === undefined) delete process.env.TZ;
+    else process.env.TZ = previousZone;
+  }
 });

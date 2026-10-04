@@ -19,6 +19,7 @@ export default function TripDialog({
   locale,
   url,
   onClose,
+  referenceTime,
 }: {
   live?: TripObservation;
   open: boolean;
@@ -29,6 +30,7 @@ export default function TripDialog({
   locale: string;
   url: URL;
   onClose: () => void;
+  referenceTime?: string | null;
 }) {
   const from = trip?.stops[0]?.stop.name,
     to = trip?.stops.at(-1)?.stop.name;
@@ -117,6 +119,7 @@ export default function TripDialog({
             t={t}
             locale={locale}
             url={url}
+            referenceTime={referenceTime ?? leg?.scheduledDeparture}
           />
         ) : (
           <ul className="trip-stops" data-trip-dialog-stops aria-live="polite">

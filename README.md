@@ -89,6 +89,15 @@ lokálním OTP jen kvůli chybějící integraci. SK/AT/PL záložka není tvrze
   `TransportCoreModule/config/client.ts`.
 - `JourneyResults`, `TripStops` a `TripLegend` jsou React komponenty. Poznámky
   poskytovatelů se vykreslují jako text a odkazy mají kontrolovaný protokol.
+- `ScheduleTime` je jediný renderer hodin pro souhrn, všechny úseky včetně chůze,
+  mezizastávky i dialog celého spoje. Časy z pozdějšího místního kalendářního dne
+  než první odjezd daného spojení používají `--error`; názvy zastávek a celé řádky
+  barvu nemění. Dialog přebírá výchozí den celého spojení, nikoli až jeho úseku.
+  Tooltip takového času obsahuje skutečné datum. Rozhoduje místní kalendářní den,
+  nikoli UTC datum, číslo hodiny ani uplynutí 24 hodin; zpoždění nemění jízdní řád.
+- Všechny nativní scrollbary řídí globální styl v `UIModule/styles/theme.css`:
+  jezdec používá `--primary`, pozadí `--paper`. Starší WebKit má společný fallback;
+  v režimu vynucených systémových barev přebírá scrollbar systémové barvy.
 - `UrlNavigationProvider` a `NavLink` z UIModule obsluhují URL a historii;
   `LocalNavigationProvider` drží přechodný stav detailů v Reactu bez změny historie.
   Zavření dialogů zachovává výběr a vrací fokus.
@@ -108,6 +117,32 @@ serverových importů v browseru hlídají architektonické testy také pro `.ts
 Playwright má navíc scénáře pro hydrataci, jazykový přepínač, opakované připojení
 mobilního menu, reklamní souhlas a opožděné odpovědi našeptávače. Testovací React
 harness leží v `tests/`, není aplikační routou a nevstupuje do produkčního buildu.
+
+### Kontrola sdílení kódu (2026-10-04)
+
+Kontrola vycházela z projektového grafu, porovnání přesně shodných bloků v jeho
+129 TS/TSX souborech (alespoň 45 tokenů) a ručního ověření souvisejících komponent
+a hooků. Automatické porovnání nenašlo větší shodné bloky napříč soubory;
+neprokazuje však absenci sémanticky podobné logiky.
+
+| Místo                                   | Zjištění / vhodné sdílení                                                                                                                                                                      |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `JourneyLiveFields` a `TripStops`       | Dvojí vykreslení hodin sjednocuje `ScheduleTime`; datové wrappery jen vybírají plánovaný příjezd/odjezd.                                                                                       |
+| `JourneyResults/StopLink` a `TripStops` | `StopLabel` sjednocuje název, nástupiště, zastávku na znamení a mapový odkaz. Kontext dodává URL a identifikaci zastávky; dostupnost odkazu se rozhoduje na jednom místě.                      |
+| `UIModule/hooks/useTheme`               | Jedna funkce `applyTheme` obsluhuje inicializaci, přepnutí, systémový motiv, storage i obnovení stránky. Preference ukládá `light`/`dark`, aby se nezaměnila za název brandu `tram`.           |
+| `PlaceField` a `CityPicker`             | Výběr, klávesnice a seznam už sdílí `Combobox`; `useAsyncOptions` řeší dotazy při psaní. `useCityCatalog` má odlišný životní cyklus: přednačtení celého katalogu jednou na zemi.               |
+| `TripTimeline` a `JourneyLegPosition`   | Sdílejí `useTripProgress`, `useTripTimeline` a `TripVehicleDot`; accordion pouze převádí průběh na vybraný úsek. `useTrip` a `TripResources` sdílejí načtené zastávky i probíhající požadavky. |
+| Oba `useMapView`                        | `TransportMapModule` je doménový adaptér, obecný `MapModule` vlastní OpenLayers i GPS lifecycle; nejde o dvě samostatné implementace mapy.                                                     |
+| `Dialog`, `Collapse` a `useDisclosure`  | Mají rozdílné chování: nativní modalita/fokus, animace výšky a rozbalovací menu. Podobné zavírání samo o sobě není důvodem sloučit je do jednoho hooku.                                        |
+
+Oba zbývající kandidáti jsou realizovaní. Popisky zastávek používají stejnou
+komponentu v accordionu, mezizastávkách i dialogu bez přidaného DOM obalu.
+`useTheme` synchronizuje ovládací prvky i okna přes jednotnou cestu; vlastní
+`tram:theme` událost nese zvolený režim a funguje i při zablokovaném storage.
+Klíč preference zůstává `tram-theme`, jeho hodnoty jsou `light` nebo `dark`.
+Starší nejednoznačná hodnota `tram` a neplatné hodnoty přebírají systémový režim.
+Při odpojení hook odstraní všechny své posluchače. Konfigurace barev brandu
+zůstává v UIModule.
 
 ### Dopravní metadata zastávek
 

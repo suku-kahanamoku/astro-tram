@@ -24,6 +24,7 @@ import { modeLabel } from "../../TransportCoreModule/providers/transportPresenta
 import { navHref } from "../providers/render";
 import { tripSegment } from "../providers/trip";
 import TripStops from "./TripStops";
+import StopLabel from "./StopLabel";
 import type {
   SearchResult,
   Journey,
@@ -82,35 +83,18 @@ function StopLink({
   t: Dictionary;
 }) {
   return (
-    <>
-      {stop.id || (stop.lat !== null && stop.lon !== null) ? (
-        <NavLink
-          className="stop-map-link"
-          data-stop-map={`${index}-${side}`}
-          data-nav
-          aria-haspopup="dialog"
-          href={navHref(url, {
-            map: "stop",
-            stopLeg: String(index),
-            stopSide: side,
-            leg: null,
-            tripStop: null,
-          })}
-        >
-          {stop.name}
-        </NavLink>
-      ) : (
-        stop.name
-      )}
-      {stop.platform && (
-        <>
-          {" "}
-          <small>
-            · {t.platform} {stop.platform}
-          </small>
-        </>
-      )}
-    </>
+    <StopLabel
+      stop={stop}
+      t={t}
+      linkAttributes={{ "data-stop-map": `${index}-${side}` }}
+      href={navHref(url, {
+        map: "stop",
+        stopLeg: String(index),
+        stopSide: side,
+        leg: null,
+        tripStop: null,
+      })}
+    />
   );
 }
 function JourneyDetail({
@@ -247,6 +231,7 @@ function JourneyDetail({
                             current={url}
                             stopOffset={segment.from + 1}
                             totalStops={trip.stops.length}
+                            referenceTime={journey.legs[0]?.scheduledDeparture}
                             timeline
                           />
                         )}

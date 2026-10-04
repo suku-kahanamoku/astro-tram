@@ -25,6 +25,7 @@ export default function TransportOverlays({
   country,
   onMapClose,
   onPoint,
+  journeyStart,
 }: {
   modalOpen: boolean;
   modalLeg?: Journey["legs"][number];
@@ -43,6 +44,7 @@ export default function TransportOverlays({
   country: string;
   onMapClose: () => void;
   onPoint: (lat: number, lon: number) => void;
+  journeyStart?: string;
 }) {
   return (
     <>
@@ -55,6 +57,7 @@ export default function TransportOverlays({
         locale={locale}
         url={url}
         onClose={onTripClose}
+        referenceTime={journeyStart}
       />
       <MapDialog
         open={mapOpen}

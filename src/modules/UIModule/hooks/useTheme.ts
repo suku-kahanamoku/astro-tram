@@ -1,13 +1,24 @@
-import { useEffect, useRef, useState } from "react";
-import { themeConfig } from "../config/theme";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { themeConfig, type ThemeMode } from "../config/theme";
 export function useTheme() {
   const [dark, setDark] = useState(false),
     [ready, setReady] = useState(false);
-  const preference = useRef<string | null>(null);
+  const preference = useRef<ThemeMode | null>(null);
+  const applyTheme = useCallback((mode: ThemeMode) => {
+    const theme = themeConfig[mode];
+    document.documentElement.dataset.theme = theme.name;
+    document.documentElement.dataset.themeMode = mode;
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", theme.color);
+    setDark(mode === "dark");
+    setReady(true);
+  }, []);
   useEffect(() => {
     const system = matchMedia("(prefers-color-scheme: dark)");
-    const valid = (v: string | null) =>
-      v === themeConfig.light.name || v === themeConfig.dark.name ? v : null;
+    // A brand name (both modes are "tram") cannot identify a light/dark preference.
+    const valid = (v: unknown): ThemeMode | null =>
+      v === "light" || v === "dark" ? v : null;
     const read = () => {
       try {
         preference.current = valid(
@@ -16,17 +27,7 @@ export function useTheme() {
       } catch {}
     };
     const apply = () => {
-      const next = preference.current
-        ? preference.current === themeConfig.dark.name
-        : system.matches;
-      const theme = next ? themeConfig.dark : themeConfig.light;
-      document.documentElement.dataset.theme = theme.name;
-      document.documentElement.dataset.themeMode = next ? "dark" : "light";
-      document
-        .querySelector('meta[name="theme-color"]')
-        ?.setAttribute("content", theme.color);
-      setDark(next);
-      setReady(true);
+      applyTheme(preference.current ?? (system.matches ? "dark" : "light"));
     };
     const storage = (e: StorageEvent) => {
       if (e.key !== null && e.key !== themeConfig.storageKey) return;
@@ -37,33 +38,35 @@ export function useTheme() {
       read();
       apply();
     };
+    const changed = (event: Event) => {
+      const mode = valid(event instanceof CustomEvent ? event.detail : null);
+      if (mode) {
+        preference.current = mode;
+        apply();
+      } else restore();
+    };
     read();
     apply();
     system.addEventListener("change", apply);
     window.addEventListener("storage", storage);
     window.addEventListener("pageshow", restore);
-    window.addEventListener("tram:theme", restore);
+    window.addEventListener("tram:theme", changed);
     return () => {
       system.removeEventListener("change", apply);
       window.removeEventListener("storage", storage);
       window.removeEventListener("pageshow", restore);
-      window.removeEventListener("tram:theme", restore);
+      window.removeEventListener("tram:theme", changed);
     };
-  }, []);
+  }, [applyTheme]);
   const toggle = () => {
     const next = !dark;
-    preference.current = next ? themeConfig.dark.name : themeConfig.light.name;
+    const mode = next ? "dark" : "light";
+    preference.current = mode;
     try {
       localStorage.setItem(themeConfig.storageKey, preference.current);
     } catch {}
-    const theme = next ? themeConfig.dark : themeConfig.light;
-    document.documentElement.dataset.theme = theme.name;
-    document.documentElement.dataset.themeMode = next ? "dark" : "light";
-    document
-      .querySelector('meta[name="theme-color"]')
-      ?.setAttribute("content", theme.color);
-    setDark(next);
-    window.dispatchEvent(new Event("tram:theme"));
+    applyTheme(mode);
+    window.dispatchEvent(new CustomEvent("tram:theme", { detail: mode }));
   };
   return { dark, ready, toggle };
 }
