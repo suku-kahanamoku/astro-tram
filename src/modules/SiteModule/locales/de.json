@@ -6,7 +6,8 @@
     "account": "Mein Konto",
     "menu": "Menü",
     "search": "Verbindung finden",
-    "how": "So funktioniert’s"
+    "how": "So funktioniert’s",
+    "licenses": "Lizenzen und Quellen"
   },
   "pipeline": {
     "sync": "Sync",
@@ -23,6 +24,7 @@
     "disconnected": "Der lokale Runner antwortet nicht mehr. Der Auftrag wird nicht automatisch wiederholt.",
     "runnerError": "Der lokale Runner konnte den Auftrag nicht abschließen. Details stehen im lokalen Fehlerprotokoll.",
     "mavenFailed": "Die Java-Kompilierung oder Tests sind fehlgeschlagen. Datensammlung und Graph-Builds wurden nicht gestartet.",
+    "otpRestoreFailed": "Einige lokale OTP-Instanzen konnten nicht neu starten. Der Runner wird ihre Wiederherstellung erneut versuchen.",
     "login": "Für diese Aktion als Administrator anmelden.",
     "signIn": "Anmelden",
     "forbidden": "Diese Aktion erfordert Administratorrechte.",
@@ -44,5 +46,13 @@
   "brandStrip": {
     "formula": "Eine gute Grundlage. Für jede neue Idee.",
     "promise": "Ihre Inhalte. Ihr Stil. Ihr Raum."
+  },
+  "licenses": {
+    "title": "Lizenzen und Quellen",
+    "intro": "Wir verwenden Verkehrs- und Kartendaten ihrer Herausgeber sowie Open-Source-Software. Für jede Quelle gelten eigene Lizenzbedingungen.",
+    "software": "Wichtigste verwendete Technologien",
+    "softwareIntro": "Softwarelizenzen gelten für die jeweiligen Bibliotheken, nicht automatisch für Fahrpläne oder andere Daten.",
+    "license": "Lizenz",
+    "source": "Projekt"
   }
 }

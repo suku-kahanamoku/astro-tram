@@ -82,7 +82,6 @@ export default function MapDialog({
     >
       <div className="map-header">
         <div>
-          <span className="eyebrow">TRAM / MAP</span>
           <h2 id="map-title" className="map-title-symbol">
             {mode !== "journey" && (
               <TransportBadge

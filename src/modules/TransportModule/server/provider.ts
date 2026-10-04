@@ -5,6 +5,7 @@ import {
 } from "../../TransportCoreModule/config/tripFeatures";
 import { createHash } from "node:crypto";
 import { staticCatalogCache } from "./staticCatalogCache";
+import { collectJourneyPage } from "./journeyPage";
 import type { CoreClient } from "../../CoreModule/server/php-core";
 import { HttpError } from "../../CoreModule/server/errors";
 import { projectAttributions } from "../../TransportCoreModule/providers/attributions";
@@ -387,66 +388,68 @@ export function createTransportProvider(core: CoreClient) {
       };
     },
     async search(body: Record<string, unknown>) {
-      const raw = object(
-        await core.request("/transport/v1/journeys/search", {
-          method: "POST",
-          // Backend may resolve two stops, query live sources, then try fallback.
-          timeoutMs: 25_000,
-          body,
-        }),
-      );
-      if (!Array.isArray(raw.journeys))
-        throw new HttpError(502, "invalid_backend_response");
-      const journeys: Journey[] = raw.journeys.slice(0, 20).map((value) => {
-        const j = object(value),
-          source = object(j.source);
-        if (!Array.isArray(j.legs) || !j.legs.length || j.legs.length > 30)
+      return collectJourneyPage(body, async (body, timeoutMs) => {
+        const raw = object(
+          await core.request("/transport/v1/journeys/search", {
+            method: "POST",
+            // Backend may resolve two stops, query live sources, then try fallback.
+            timeoutMs,
+            body,
+          }),
+        );
+        if (!Array.isArray(raw.journeys))
           throw new HttpError(502, "invalid_backend_response");
-        const legs = j.legs.map(leg);
+        const journeys: Journey[] = raw.journeys.slice(0, 100).map((value) => {
+          const j = object(value),
+            source = object(j.source);
+          if (!Array.isArray(j.legs) || !j.legs.length || j.legs.length > 30)
+            throw new HttpError(502, "invalid_backend_response");
+          const legs = j.legs.map(leg);
+          return {
+            key: createHash("sha256")
+              .update(
+                JSON.stringify(
+                  legs.map((l) => [
+                    l.tripId,
+                    l.mode,
+                    l.scheduledDeparture,
+                    l.scheduledArrival,
+                    l.from.id,
+                    l.to.id,
+                  ]),
+                ),
+              )
+              .digest("hex")
+              .slice(0, 24),
+            duration: Math.max(0, Number(j.duration_seconds) || 0),
+            transfers: Math.max(0, Number(j.transfers) || 0),
+            legs,
+            source: {
+              provider: text(source.provider, 64),
+              mode: text(source.mode, 20),
+              limited: source.limited === true,
+              attribution: text(source.attribution, 300),
+            },
+          };
+        });
+        const resolvedPlaces: SearchResult["resolvedPlaces"] = {};
+        for (const side of ["from", "to"] as const) {
+          const rawPlace = object(object(raw.resolved_places)[side]);
+          const mapped = stop(rawPlace);
+          if (mapped.id && mapped.name)
+            resolvedPlaces[side] = {
+              ...mapped,
+              sourceMode: text(rawPlace.source_mode, 20),
+            };
+        }
         return {
-          key: createHash("sha256")
-            .update(
-              JSON.stringify(
-                legs.map((l) => [
-                  l.tripId,
-                  l.mode,
-                  l.scheduledDeparture,
-                  l.scheduledArrival,
-                  l.from.id,
-                  l.to.id,
-                ]),
-              ),
-            )
-            .digest("hex")
-            .slice(0, 24),
-          duration: Math.max(0, Number(j.duration_seconds) || 0),
-          transfers: Math.max(0, Number(j.transfers) || 0),
-          legs,
-          source: {
-            provider: text(source.provider, 64),
-            mode: text(source.mode, 20),
-            limited: source.limited === true,
-            attribution: text(source.attribution, 300),
-          },
+          journeys,
+          partial: raw.partial === true,
+          resolvedPlaces,
+          city: text(object(raw.area).city, 120) || null,
+          intercity: object(raw.area).intercity === true,
         };
       });
-      const resolvedPlaces: SearchResult["resolvedPlaces"] = {};
-      for (const side of ["from", "to"] as const) {
-        const rawPlace = object(object(raw.resolved_places)[side]);
-        const mapped = stop(rawPlace);
-        if (mapped.id && mapped.name)
-          resolvedPlaces[side] = {
-            ...mapped,
-            sourceMode: text(rawPlace.source_mode, 20),
-          };
-      }
-      return {
-        journeys,
-        partial: raw.partial === true,
-        resolvedPlaces,
-        city: text(object(raw.area).city, 120) || null,
-        intercity: object(raw.area).intercity === true,
-      };
     },
     async stop(stopId: string): Promise<Stop> {
       const raw = object(await core.request(`/transport/v1/stops/${stopId}`));

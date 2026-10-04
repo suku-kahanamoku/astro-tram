@@ -74,14 +74,13 @@ function instant(value: unknown): string | null {
 export function projectAttributions(value: unknown): DataAttribution[] {
   if (!Array.isArray(value) || value.length > 500)
     throw new TypeError("invalid_attributions");
-  const ids = new Set<string>();
-  return value.map((value) => {
+  const sources = new Map<string, DataAttribution>();
+  for (const valueRow of value) {
+    const value = valueRow;
     if (!value || typeof value !== "object" || Array.isArray(value))
       throw new TypeError("invalid_attributions");
     const row = value as Record<string, unknown>;
     const id = string(row.id, 256);
-    if (ids.has(id)) throw new TypeError("invalid_attributions");
-    ids.add(id);
     const license = publicAttributionUrl(row.license_url);
     if (
       !license ||
@@ -89,7 +88,7 @@ export function projectAttributions(value: unknown): DataAttribution[] {
       row.requirements.length > 50
     )
       throw new TypeError("invalid_attributions");
-    return {
+    const source: DataAttribution = {
       id,
       feed_id: row.feed_id == null ? null : string(row.feed_id, 256),
       name: string(row.name, 512),
@@ -100,5 +99,28 @@ export function projectAttributions(value: unknown): DataAttribution[] {
       updated_at: instant(row.updated_at),
       requirements: row.requirements.map((note) => string(note, 8000)),
     };
-  });
+    const previous = sources.get(id);
+    if (previous) {
+      const {
+        published_at: previousPublished,
+        updated_at: previousUpdated,
+        ...previousCredit
+      } = previous;
+      const {
+        published_at: published,
+        updated_at: updated,
+        ...credit
+      } = source;
+      if (JSON.stringify(previousCredit) !== JSON.stringify(credit))
+        throw new TypeError("invalid_attributions");
+      const latest = (a: string | null, b: string | null) =>
+        a === null ? b : b === null || Date.parse(a) >= Date.parse(b) ? a : b;
+      sources.set(id, {
+        ...source,
+        published_at: latest(previousPublished, published),
+        updated_at: latest(previousUpdated, updated),
+      });
+    } else sources.set(id, source);
+  }
+  return [...sources.values()];
 }

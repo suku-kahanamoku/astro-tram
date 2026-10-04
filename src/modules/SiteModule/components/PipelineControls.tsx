@@ -105,7 +105,9 @@ export default function PipelineControls({ locale }: { locale: Locale }) {
           ? t.runnerError
           : job?.phase === "maven_failed"
             ? t.mavenFailed
-            : "";
+            : job?.phase === "local_otp_restore_failed"
+              ? t.otpRestoreFailed
+              : "";
   return (
     <div className="pipeline-controls" aria-busy={pending !== null}>
       <div className="pipeline-buttons">

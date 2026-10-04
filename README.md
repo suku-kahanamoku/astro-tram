@@ -216,6 +216,16 @@ Po refreshi proběhne nové online vyhledání. Identita detailu se odvozuje ze 
 
 Datum a čas formuláře i výsledků se zobrazují v časovém pásmu zařízení. URL a backendový dotaz nesou jednoznačný časový okamžik. Formulář odmítá neexistující místní čas při jarním přechodu na letní čas.
 
+Výsledky se stránkují po 10 spojeních. Další stránka začíná po posledním
+plánovaném odjezdu, předchozí končí před prvním plánovaným příjezdem;
+realtime tyto hranice nemění. URL parametr `page=earlier|later` určuje směr
+stránky nezávisle na volbě příjezdu/odjezdu ve formuláři a přežije refresh.
+Nové odeslání formuláře parametr odstraní. Server doplňuje krátké časové
+odpovědi do 10 unikátních spojení; limity jsou společně v
+`TransportCoreModule/config/journeyPaging.ts` (24 požadavků, horizont 24 hodin,
+celkem 25 sekund). Při výpadku, neúplné odpovědi zdroje nebo dosažení limitu
+zachová dostupná spojení a označí neúplné výsledky.
+
 ## Veřejná serverová vrstva
 
 - `GET /api/transport/places/?q={"name":{"$regex":"Praha"},"state":"CZ"}`: povolený `q` filtr, nejvýše 20 míst pod `data`; předává standardní filtr na php-core `POST /transport/v1/places/search`. Volitelné `city` omezuje obec.
@@ -225,12 +235,34 @@ Datum a čas formuláře i výsledků se zobrazují v časovém pásmu zařízen
 - `GET /api/transport/stop/?id=...`: veřejný detail zastávky z php-core; pro mapu doplní souřadnice chybějící ve výsledku hledání.
 - `GET /api/transport/attributions/`: veřejná licenční metadata skutečných GTFS a OSM vstupů aktivního Java grafu, přes php-core `/transport/v1/attributions`. Nejde o seznam všech nakonfigurovaných zdrojů; endpoint nepřijímá filtry ani stránkování.
 
-`TransportAttributions` načítá tento dokument do patičky. Zobrazuje atribuce,
-licenční odkazy, povinné poznámky a dostupná data publikace/aktualizace.
-Serverová i klientská projekce propouští pouze veřejná pole a veřejné odkazy;
-interní API adresy a credentials se nezobrazují. Starší backend nebo chybějící
-aktivní graf vrátí chybu a patička nevymýšlí náhradní zdroje. Aby atribuce
-odpovídaly novým free profilům, musí být nejprve jejich graf sestavený a aktivovaný.
+Patička odkazuje na `/licence/`, `/en/licenses/` a `/de/lizenzen/`.
+Stránka načítá atribuce přes serverový provider a `TransportAttributions`
+je vykreslí už v HTML, včetně přesných licenčních odkazů, povinných poznámek
+a dostupných dat publikace/aktualizace. Výpadek backendu zobrazí zprávu;
+nepoužívá vymyšlený náhradní seznam. Shodné duplicitní atribuce z federace
+zemí se slučují podle ID; konfliktní atribuce se nadále odmítají.
+Při rozdílných datech publikace/aktualizace se ponechá nejnovější datum.
+Ostatní stránky tento seznam nenačítají.
+Mapy si ponechávají vlastní attribution OpenStreetMap.
+
+Manifest grafu zatím zahrnuje pouze statické GTFS a OSM. Samostatně udržovaný
+registr `TransportModule/config/data-licenses.ts` zveřejňuje doložené podmínky
+realtime služeb z Java konfigurace CZ/DE; při změně těchto adaptérů musí být
+aktualizován, nejde o automatický výčet běžících služeb. Softwarové položky
+jsou v `SiteModule/config/licenses.ts`, hlavní frontendové licence a copyright
+notices jsou také dostupné pod `/licenses/*.txt`.
+Tentýž registr odděleně eviduje samostatně stažený statický GTFS IDS JMK;
+aktuální český graf však používá export Spojenky. Neoznačuje IDS JMK
+za právě používaný vstup. Veřejný přehled softwaru neuvádí Astro ani React;
+jejich lokální licenční notices zůstávají dostupné.
+
+**Reklamní provoz není schválen samotným zveřejněním licencí.** Produkční
+český graf při ověření 5. 10. 2026 používá export Spojenky s nekomerčním
+oprávněním; CZ traffic-state JSON má samostatné nekomerční podmínky.
+Pro tento obchodní model je potřeba doložit další oprávnění nebo tyto zdroje
+nahradit. CC BY licence GTFS/GTFS-RT IDS JMK automaticky nepokrývá JSON API.
+Licence OSM a povinnosti případné veřejné odvozené databáze/grafu se posuzují
+odděleně od vlastní aplikace a od provozních pravidel mapových tiles.
 
 Vyhledávání má serverový HTTP limit 25 sekund, aby Java API mohlo dokončit plánování přes PHP gateway; ostatní požadavky mají limit 10 sekund. Provider whitelistuje odpovědi, nepředává surové chyby ani interní metadata. HTTP odpovědi API a výsledkové stránky mají `Cache-Control: private, no-store`; výsledky se neindexují. Backend nadále kontroluje tenant a limity.
 

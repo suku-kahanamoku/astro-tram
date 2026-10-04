@@ -8,6 +8,7 @@ import {
 import type { useJourneySearch } from "../../TransportSearchModule/hooks/useJourneySearch";
 import type { useTrip } from "../hooks/useTrip";
 import type { Locale } from "../../LangModule/providers/locale";
+import { adjacentJourneyPage } from "../../TransportCoreModule/providers/journeyPaging";
 
 type SearchState = ReturnType<typeof useJourneySearch>;
 type TripState = ReturnType<typeof useTrip>;
@@ -45,8 +46,8 @@ export default function TransportResults({
 }) {
   const [share, setShare] = useState("");
   const error = searchError(search.error, t);
-  const pageLink = (delta: number) =>
-    `${searchUrl}?${writeState({ ...search.state, at: new Date(Date.parse(search.state.at!) + delta * 60000).toISOString().replace(".000Z", "Z") })}`;
+  const pageLink = (page: "earlier" | "later") =>
+    `${searchUrl}?${writeState(adjacentJourneyPage(search.state, search.data!.journeys, page))}`;
 
   if (!results) return null;
 
@@ -111,16 +112,20 @@ export default function TransportResults({
           </>
         ) : null}
       </div>
-      {search.state.at && (
+      {!search.loading && !search.error && !!search.data?.journeys.length && (
         <div className="results-pagination" data-pagination>
           <a
             className="button button-outline"
             data-earlier
-            href={pageLink(-60)}
+            href={pageLink("earlier")}
           >
             ← {t.earlier}
           </a>
-          <a className="button button-outline" data-later href={pageLink(60)}>
+          <a
+            className="button button-outline"
+            data-later
+            href={pageLink("later")}
+          >
             {t.later} →
           </a>
         </div>

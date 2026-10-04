@@ -69,8 +69,8 @@
   "close": "Close",
   "mapError": "The map could not be loaded. You can enter coordinates.",
   "mapUnavailable": "No points or route geometry are available for this journey.",
-  "earlier": "One hour earlier",
-  "later": "One hour later",
+  "earlier": "Previous 10 journeys",
+  "later": "Next 10 journeys",
   "locationError": "Location could not be obtained. Allow location access or choose a stop.",
   "locating": "Getting your current location…",
   "stale": "Your location is no longer current. Request a new measurement.",
@@ -187,5 +187,11 @@
   "station": "Station",
   "urbanTransport": "Urban transport",
   "regionalTransport": "Regional transport",
-  "mixedTransport": "Urban and regional transport"
+  "mixedTransport": "Urban and regional transport",
+  "dataAttributionsEmpty": "The backend currently provides no licence records.",
+  "dataAttributionsUnavailable": "The data source list could not be loaded. Please reload this page.",
+  "dataSupplementaryTitle": "Supplementary realtime services",
+  "dataSupplementaryScope": "These records describe the separate terms of realtime services documented in the TRAM configuration. Availability varies by region and trip. They do not extend rights to other data.",
+  "dataSupplementaryGtfsTitle": "Additional prepared GTFS sources",
+  "dataSupplementaryGtfsScope": "Separately downloaded GTFS sources not listed among the inputs of the currently active graphs. Their presence here does not mean that journey search is currently using them."
 }

@@ -1,27 +1,22 @@
-import { useEffect, useState } from "react";
 import Icon from "../../UIModule/components/TransitIcon";
 import type { Locale } from "../../LangModule/config";
 import type { DataAttribution } from "../../TransportCoreModule/types";
 import { dictionary } from "../../TransportCoreModule/providers/translations";
-import { transportClient } from "../../TransportCoreModule/providers/client";
-import { projectAttributions } from "../../TransportCoreModule/providers/attributions";
 import "../styles/attributions.css";
 
 /** Credits come from the active graph/provider manifest, never from a country preset. */
-export default function TransportAttributions({ locale }: { locale: Locale }) {
-  const [sources, setSources] = useState<DataAttribution[]>([]);
+export default function TransportAttributions({
+  locale,
+  sources,
+  title,
+  headingId = "transport-attributions-title",
+}: {
+  locale: Locale;
+  sources: DataAttribution[];
+  title?: string;
+  headingId?: string;
+}) {
   const t = dictionary(locale);
-  useEffect(() => {
-    const controller = new AbortController();
-    transportClient
-      .attributions(controller.signal)
-      .then(projectAttributions)
-      .then((data) => {
-        if (!controller.signal.aborted) setSources(data);
-      })
-      .catch(() => {});
-    return () => controller.abort();
-  }, []);
   if (!sources.length) return null;
   const date = (value: string) =>
     new Intl.DateTimeFormat(locale, {
@@ -34,10 +29,10 @@ export default function TransportAttributions({ locale }: { locale: Locale }) {
   return (
     <section
       className="transport-attributions"
-      aria-labelledby="transport-attributions-title"
+      aria-labelledby={headingId}
       data-transport-attributions
     >
-      <h2 id="transport-attributions-title">{t.dataAttributionsTitle}</h2>
+      <h2 id={headingId}>{title ?? t.dataAttributionsTitle}</h2>
       <p className="attribution-processing">{t.dataProcessed}</p>
       <ul className="attribution-sources">
         {sources.map((source) => (

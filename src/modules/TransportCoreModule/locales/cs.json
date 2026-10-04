@@ -69,8 +69,8 @@
   "close": "Zavřít",
   "mapError": "Mapu se nepodařilo načíst. Můžeš zadat souřadnice.",
   "mapUnavailable": "Pro tento spoj nejsou dostupné body ani geometrie trasy.",
-  "earlier": "O hodinu dříve",
-  "later": "O hodinu později",
+  "earlier": "Předchozích 10 spojení",
+  "later": "Dalších 10 spojení",
   "locationError": "Polohu se nepodařilo získat. Povol přístup k poloze nebo vyber zastávku.",
   "locating": "Zjišťuji aktuální polohu…",
   "stale": "Poloha už není aktuální. Vyžádej nové měření.",
@@ -187,5 +187,11 @@
   "station": "Stanice",
   "urbanTransport": "MHD",
   "regionalTransport": "Regionální doprava",
-  "mixedTransport": "MHD a regionální doprava"
+  "mixedTransport": "MHD a regionální doprava",
+  "dataAttributionsEmpty": "Backend aktuálně neposkytuje žádné licenční záznamy.",
+  "dataAttributionsUnavailable": "Seznam datových zdrojů se teď nepodařilo načíst. Zkus stránku obnovit.",
+  "dataSupplementaryTitle": "Doplňkové realtime služby",
+  "dataSupplementaryScope": "Tyto záznamy popisují samostatné podmínky realtime služeb evidovaných v konfiguraci TRAM. Jejich dostupnost se liší podle oblasti a spoje. Nejde o rozšíření práv k jiným datům.",
+  "dataSupplementaryGtfsTitle": "Další připravené GTFS zdroje",
+  "dataSupplementaryGtfsScope": "Samostatně stažené GTFS zdroje, které nejsou uvedeny mezi vstupy aktuálně aktivních grafů. Jejich přítomnost v tomto seznamu neznamená, že je vyhledávání právě používá."
 }

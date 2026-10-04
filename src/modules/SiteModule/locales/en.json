@@ -6,7 +6,8 @@
     "account": "My account",
     "menu": "Menu",
     "search": "Find a journey",
-    "how": "How it works"
+    "how": "How it works",
+    "licenses": "Licences and sources"
   },
   "pipeline": {
     "sync": "Sync",
@@ -23,6 +24,7 @@
     "disconnected": "The local runner stopped responding. The job will not retry automatically.",
     "runnerError": "The local runner could not finish the job. Details are in the local error record.",
     "mavenFailed": "Java compilation or tests failed. Data collection and graph builds did not start.",
+    "otpRestoreFailed": "Some local OTP instances could not restart. The runner will retry restoring them.",
     "login": "Sign in as an administrator to use this action.",
     "signIn": "Sign in",
     "forbidden": "This action requires administrator permissions.",
@@ -44,5 +46,13 @@
   "brandStrip": {
     "formula": "A solid foundation. For every new idea.",
     "promise": "Your content. Your style. Your space."
+  },
+  "licenses": {
+    "title": "Licences and sources",
+    "intro": "We use transport and map data from their publishers and open-source software. Each source has its own licence terms.",
+    "software": "Main technologies used",
+    "softwareIntro": "Software licences apply to the respective libraries, not automatically to timetables or other data.",
+    "license": "Licence",
+    "source": "Project"
   }
 }

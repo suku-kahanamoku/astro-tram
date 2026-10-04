@@ -13,7 +13,14 @@ export { locales, type Locale } from "../modules/LangModule/config";
  * Identifikátory všech rout stránky, včetně těch, které vyžadují přihlášení.
  * Pořadí položek určuje, v jakém pořadí se trasy kontrolují při resolve.
  */
-export const pages = ["home", "about", "search", "login", "account"] as const;
+export const pages = [
+  "home",
+  "about",
+  "licenses",
+  "search",
+  "login",
+  "account",
+] as const;
 
 /** Jeden z {@link pages}. */
 export type PageId = (typeof pages)[number];
@@ -22,7 +29,7 @@ export type PageId = (typeof pages)[number];
  * Routy, které smějí být indexované a cacheované. Zbývající routy
  * (`login`, `account`) se v `robots.txt` zakazují.
  */
-export const publicPages: PageId[] = ["home", "about"];
+export const publicPages: PageId[] = ["home", "about", "licenses"];
 
 /**
  * Textové slovníky jednotlivých jazyků pro různé sekce webu,

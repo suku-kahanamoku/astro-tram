@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("footer renders only active backend sources, exact credits, update dates and external links", async ({
+test("licence page renders active backend sources, exact credits, update dates and external links", async ({
   page,
   request,
 }) => {
@@ -13,7 +13,14 @@ test("footer renders only active backend sources, exact credits, update dates an
     /DO_NOT_EXPOSE|private_token|api_key/,
   );
   await page.goto("/");
-  const credits = page.locator("footer [data-transport-attributions]");
+  await expect(
+    page.locator("footer [data-transport-attributions]"),
+  ).toHaveCount(0);
+  await page.locator('footer a[href="/licence/"]').click();
+  await expect(page).toHaveURL(/\/licence\/$/);
+  const credits = page.locator(
+    '[data-transport-attributions][aria-labelledby="transport-attributions-title"]',
+  );
   await expect(credits).toBeVisible();
   await expect(credits.locator(".attribution-processing")).toHaveText(
     "Data byla zpracována pro vyhledávání a zobrazení v aplikaci TRAM.",
@@ -38,33 +45,73 @@ test("footer renders only active backend sources, exact credits, update dates an
     await expect(link).toHaveAttribute("rel", "noopener noreferrer");
     await expect(link.locator('svg[data-mode="external"]')).toHaveCount(1);
   }
-  await page.goto("/en/");
-  await expect(page.locator("[data-transport-attributions] h2")).toHaveText(
+  await page.goto("/en/licenses/");
+  await expect(credits.locator("h2")).toHaveText(
     "Transport and map data sources",
   );
   await expect(
-    page
-      .locator("[data-transport-attributions]")
-      .getByRole("link", { name: "Licence", exact: true }),
+    credits.getByRole("link", { name: "Licence", exact: true }),
   ).toHaveCount(2);
 });
 
-for (const [name, status, data] of [
-  ["empty", 200, []],
-  ["unavailable", 503, null],
-] as const) {
-  test(`footer does not invent attribution when the backend is ${name}`, async ({
-    page,
-  }) => {
-    const response = page.waitForResponse("**/api/transport/attributions/");
-    await page.route("**/api/transport/attributions/", async (route) =>
-      route.fulfill({
-        status,
-        json: { success: status === 200, data },
-      }),
+test("licence credits are present in server HTML without JavaScript", async ({
+  browser,
+}) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  try {
+    const page = await context.newPage();
+    const response = await page.goto("http://localhost:4328/licence/");
+    expect(response?.status()).toBe(200);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      "Licence a zdroje",
     );
-    await page.goto("/");
-    await response;
-    await expect(page.locator("[data-transport-attributions]")).toHaveCount(0);
-  });
-}
+    await expect(
+      page.locator('[data-attribution-source="fixture-timetable"]'),
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-attribution-source="realtime:idsjmk-traffic"]'),
+    ).toContainText("NonCommercial");
+    await expect(page.locator(".software-license-list")).toContainText(
+      "OpenTripPlanner",
+    );
+    await expect(page.locator(".software-license-list")).not.toContainText(
+      "Astro",
+    );
+    await expect(page.locator(".software-license-list")).not.toContainText(
+      "React / React DOM",
+    );
+    await expect(
+      page.locator('[data-attribution-source="gtfs:idsjmk:idsjmk"]'),
+    ).toContainText("IDS JMK GTFS");
+    const notice = await page.request.get("/licenses/openlayers.txt");
+    expect(notice.status()).toBe(200);
+    expect(await notice.text()).toContain("Copyright");
+    expect(await response!.text()).not.toMatch(
+      /DO_NOT_EXPOSE|private_token|api_key/,
+    );
+  } finally {
+    await context.close();
+  }
+});
+
+test("footer licence links are localized and other pages do not fetch the data list", async ({
+  page,
+}) => {
+  const requests: string[] = [];
+  page.on("request", (request) => requests.push(request.url()));
+  for (const [home, link, title] of [
+    ["/", "/licence/", "Licence a zdroje"],
+    ["/en/", "/en/licenses/", "Licences and sources"],
+    ["/de/", "/de/lizenzen/", "Lizenzen und Quellen"],
+  ]) {
+    await page.goto(home);
+    await page.locator(`footer a[href="${link}"]`).click();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
+    await expect(
+      page.locator('[data-attribution-source="fixture-timetable"]'),
+    ).toBeVisible();
+  }
+  expect(
+    requests.filter((url) => url.includes("/api/transport/attributions/")),
+  ).toEqual([]);
+});

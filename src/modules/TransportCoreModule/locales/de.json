@@ -69,8 +69,8 @@
   "close": "Schließen",
   "mapError": "Karte konnte nicht geladen werden. Du kannst Koordinaten eingeben.",
   "mapUnavailable": "Für diese Verbindung sind keine Kartenpunkte oder Geometrien verfügbar.",
-  "earlier": "Eine Stunde früher",
-  "later": "Eine Stunde später",
+  "earlier": "Vorherige 10 Verbindungen",
+  "later": "Nächste 10 Verbindungen",
   "locationError": "Standort nicht verfügbar. Erlaube den Zugriff oder wähle eine Haltestelle.",
   "locating": "Aktueller Standort wird ermittelt…",
   "stale": "Der Standort ist nicht mehr aktuell. Fordere eine neue Messung an.",
@@ -187,5 +187,11 @@
   "station": "Bahnhof",
   "urbanTransport": "Stadtverkehr",
   "regionalTransport": "Regionalverkehr",
-  "mixedTransport": "Stadt- und Regionalverkehr"
+  "mixedTransport": "Stadt- und Regionalverkehr",
+  "dataAttributionsEmpty": "Das Backend stellt derzeit keine Lizenzeinträge bereit.",
+  "dataAttributionsUnavailable": "Die Liste der Datenquellen konnte nicht geladen werden. Bitte lade diese Seite neu.",
+  "dataSupplementaryTitle": "Ergänzende Echtzeitdienste",
+  "dataSupplementaryScope": "Diese Einträge beschreiben die gesonderten Bedingungen der in der TRAM-Konfiguration dokumentierten Echtzeitdienste. Die Verfügbarkeit hängt von Region und Fahrt ab. Sie erweitern keine Rechte an anderen Daten.",
+  "dataSupplementaryGtfsTitle": "Weitere vorbereitete GTFS-Quellen",
+  "dataSupplementaryGtfsScope": "Separat heruntergeladene GTFS-Quellen, die nicht unter den Eingaben der aktuell aktiven Graphen aufgeführt sind. Ihre Aufnahme in diese Liste bedeutet nicht, dass die Verbindungssuche sie derzeit verwendet."
 }

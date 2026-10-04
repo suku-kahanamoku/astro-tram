@@ -1,4 +1,5 @@
 import type { Fix, Place, SearchState } from "../types";
+import { journeyPaging } from "../config/journeyPaging";
 export function validCoordinates(lat: number, lon: number) {
   return (
     Number.isFinite(lat) &&
@@ -39,6 +40,9 @@ export function readState(params: URLSearchParams): SearchState {
   };
   const at = params.get("at");
   return {
+    ...(params.get("page") === "earlier" || params.get("page") === "later"
+      ? { page: params.get("page") as "earlier" | "later" }
+      : {}),
     ...(params.get("city")?.trim()
       ? { city: params.get("city")!.trim().slice(0, 120) }
       : {}),
@@ -74,6 +78,7 @@ export function writeState(state: SearchState): URLSearchParams {
   if (state.direct) p.set("direct", "1");
   if (state.country) p.set("country", state.country);
   if (state.city) p.set("city", state.city);
+  if (state.page) p.set("page", state.page);
   return p;
 }
 export function searchBody(
@@ -103,11 +108,13 @@ export function searchBody(
   return {
     "from-dest": place(state.from),
     "to-dest": place(state.to),
-    [state.arrive ? "to-date" : "from-date"]: state.at,
+    [(state.page ? state.page === "earlier" : state.arrive)
+      ? "to-date"
+      : "from-date"]: state.at,
     ...(state.country ? { state: state.country } : {}),
     ...(state.city ? { city: state.city } : {}),
     "max-transfers": state.direct ? 0 : 5,
-    limit: 10,
+    limit: journeyPaging.size,
   };
 }
 export const requiresLocation = (state: SearchState) =>

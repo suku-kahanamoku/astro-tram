@@ -39,7 +39,11 @@ export default function SearchForm({
     setFields(localFields(state.at ? new Date(state.at) : new Date()));
     setError("");
   }, [persistentSearch]);
-  const read = () => ({ ...draft, at: formInstant(fields.day, fields.time) });
+  const read = () => ({
+    ...draft,
+    page: undefined,
+    at: formInstant(fields.day, fields.time),
+  });
   const changeScope = (patch: Partial<SearchState>) =>
     setDraft((s) => ({
       ...s,

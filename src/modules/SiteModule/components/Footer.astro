@@ -16,9 +16,14 @@ const { locale } = Astro.props,
     <p>{t.common.footer}</p>
   </div>
   <div class="footer-meta">
-    <a href={url(locale, "about")}>{t.nav.about} →</a>
-    <span>{t.common.privacy}</span>
-    <span>© {new Date().getFullYear()} TRAM</span>
+    <nav class="footer-links" aria-label={t.nav.menu}>
+      <a href={url(locale, "about")}>{t.nav.about} →</a>
+      <a href={url(locale, "licenses")}>{t.nav.licenses} →</a>
+    </nav>
+    <div class="footer-notes">
+      <span>{t.common.privacy}</span>
+      <span>© {new Date().getFullYear()} TRAM</span>
+    </div>
   </div>
   <slot />
 </footer>

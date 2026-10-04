@@ -308,12 +308,21 @@ button {
   margin-top: 8px;
 }
 .footer-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: end;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
   font-size: 11px;
   color: var(--muted);
+}
+.footer-links,
+.footer-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.footer-notes {
+  align-items: end;
 }
 .footer-meta a {
   color: var(--ink);
@@ -364,6 +373,9 @@ button {
     flex-direction: column;
   }
   .footer-meta {
+    gap: 20px;
+  }
+  .footer-notes {
     align-items: start;
   }
   .button {

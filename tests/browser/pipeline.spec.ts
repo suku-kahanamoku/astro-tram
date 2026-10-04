@@ -184,4 +184,9 @@ test("queue feedback explains an offline runner and specific local failures", as
   await expect(controls.getByRole("status")).toContainText(
     "Podrobnosti jsou v lokálním záznamu chyb",
   );
+  phase = "local_otp_restore_failed";
+  await page.reload();
+  await expect(controls.getByRole("status")).toContainText(
+    "Runner bude jejich obnovení opakovat",
+  );
 });

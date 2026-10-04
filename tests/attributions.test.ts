@@ -109,11 +109,32 @@ test("invalid required attribution data fails instead of inventing or truncating
   assert.deepEqual(projectAttributions([]), []);
   for (const input of [
     null,
-    [credit, credit],
+    [credit, { ...credit, attribution: "Conflicting credit" }],
     [{ ...credit, attribution: "" }],
     [{ ...credit, license_url: "http://localhost/license" }],
     [{ ...credit, requirements: [42] }],
     [{ ...credit, updated_at: "not-a-date" }],
   ])
     assert.throws(() => projectAttributions(input), /invalid_attributions/);
+});
+
+test("identical credits repeated by country federation are rendered once", () => {
+  assert.deepEqual(projectAttributions([credit, { ...credit }]), [credit]);
+});
+
+test("federated copies of the same credit retain the newest publication and update dates", () => {
+  const newer = {
+    ...credit,
+    published_at: "2026-10-05T08:00:00Z",
+    updated_at: "2026-10-05T07:00:00Z",
+  };
+  assert.deepEqual(projectAttributions([credit, newer]), [newer]);
+  assert.deepEqual(projectAttributions([newer, credit]), [newer]);
+  assert.deepEqual(
+    projectAttributions([
+      { ...credit, published_at: null, updated_at: null },
+      newer,
+    ]),
+    [newer],
+  );
 });

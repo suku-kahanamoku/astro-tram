@@ -231,6 +231,46 @@ http
         private_secret: "DO_NOT_EXPOSE",
         vehicle_position: { lat: 50, lon: 14 },
       });
+      if (from.id?.startsWith("pagination_")) {
+        const spacing = from.id === "pagination_night" ? 75 : 2;
+        const base = "2026-10-05T22:00:00Z";
+        const arrive = input["to-date"] !== undefined;
+        const cursor = Date.parse(input[arrive ? "to-date" : "from-date"]);
+        const journeys = Array.from({ length: 50 }, (_, i) => ({
+          id: `page-${i}`,
+          duration_seconds: 900,
+          transfers: 0,
+          legs: [
+            leg(
+              start,
+              end,
+              shift(base, i * spacing),
+              shift(base, i * spacing + 15),
+              `PAGE${i}`,
+            ),
+          ],
+          source: {
+            provider: "fixture",
+            mode: "schedule",
+            limited: false,
+            attribution: "Test",
+          },
+        })).filter((journey) => {
+          const time = Date.parse(
+            journey.legs[0][
+              arrive ? "scheduled_arrival" : "scheduled_departure"
+            ],
+          );
+          const distance = (time - cursor) * (arrive ? -1 : 1);
+          return distance >= 0 && distance < 3600000;
+        });
+        return send(200, {
+          journeys: arrive
+            ? journeys.slice(-input.limit)
+            : journeys.slice(0, input.limit),
+          partial: false,
+        });
+      }
       const journeys = [
         {
           id: randomBytes(16).toString("hex"),
@@ -252,8 +292,20 @@ http
           duration_seconds: 1800,
           transfers: 1,
           legs: [
-            leg(start, stops[2], shift(at, 5), shift(at, 15), "T2"),
-            leg(stops[2], end, shift(at, 20), shift(at, 35), "T3"),
+            leg(
+              start,
+              stops[2],
+              shift(at, input["to-date"] ? -15 : 5),
+              shift(at, input["to-date"] ? -5 : 15),
+              "T2",
+            ),
+            leg(
+              stops[2],
+              end,
+              shift(at, input["to-date"] ? 0 : 20),
+              shift(at, input["to-date"] ? 15 : 35),
+              "T3",
+            ),
           ],
           source: {
             provider: "pid-otp",

@@ -1,0 +1,38 @@
+---
+import { softwareLicenses } from "../config/licenses";
+import { dictionary } from "../providers/translations";
+import type { Locale } from "../../LangModule/config";
+import Icon from "../../UIModule/components/TransitIcon";
+interface Props {
+  locale: Locale;
+}
+const t = dictionary(Astro.props.locale).licenses;
+---
+
+<section class="software-licenses" aria-labelledby="software-licenses-title">
+  <h2 id="software-licenses-title">{t.software}</h2>
+  <p>{t.softwareIntro}</p>
+  <ul class="software-license-list">
+    {softwareLicenses.map((software) => (
+      <li>
+        <strong>{software.name}</strong>
+        <span>{software.license}</span>
+        <div class="attribution-links">
+          <a
+            href={software.licenseUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {t.license}{" "}
+            {software.licenseUrl.startsWith("https:") && (
+              <Icon name="external" size={14} />
+            )}
+          </a>
+          <a href={software.source} target="_blank" rel="noopener noreferrer">
+            {t.source} <Icon name="external" size={14} />
+          </a>
+        </div>
+      </li>
+    ))}
+  </ul>
+</section>

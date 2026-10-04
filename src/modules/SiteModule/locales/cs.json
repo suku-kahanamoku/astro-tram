@@ -6,7 +6,8 @@
     "account": "Můj účet",
     "menu": "Menu",
     "search": "Najít spojení",
-    "how": "Jak to funguje"
+    "how": "Jak to funguje",
+    "licenses": "Licence a zdroje"
   },
   "pipeline": {
     "sync": "Sync",
@@ -23,6 +24,7 @@
     "disconnected": "Lokální runner přestal odpovídat. Úloha se automaticky neopakuje.",
     "runnerError": "Lokální runner nemohl dokončit úlohu. Podrobnosti jsou v lokálním záznamu chyb.",
     "mavenFailed": "Kompilace nebo testy Java aplikace selhaly. Sběr dat a build grafů nezačal.",
+    "otpRestoreFailed": "Některé lokální OTP se nepodařilo znovu spustit. Runner bude jejich obnovení opakovat.",
     "login": "Pro tuto akci se přihlas jako administrátor.",
     "signIn": "Přihlásit se",
     "forbidden": "Tato akce vyžaduje oprávnění administrátora.",
@@ -44,5 +46,13 @@
   "brandStrip": {
     "formula": "Dobrý základ. Pro každý další nápad.",
     "promise": "Váš obsah. Váš styl. Váš prostor."
+  },
+  "licenses": {
+    "title": "Licence a zdroje",
+    "intro": "Používáme dopravní a mapová data jejich vydavatelů a open-source software. Každý zdroj má vlastní licenční podmínky.",
+    "software": "Hlavní použité technologie",
+    "softwareIntro": "Licence softwaru se vztahují k příslušným knihovnám, nikoli automaticky k jízdním řádům nebo jiným datům.",
+    "license": "Licence",
+    "source": "Projekt"
   }
 }

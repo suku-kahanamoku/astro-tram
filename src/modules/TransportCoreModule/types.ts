@@ -11,6 +11,7 @@ export interface SearchState {
   direct: boolean;
   country: string;
   city?: string;
+  page?: "earlier" | "later";
 }
 export interface Fix {
   lat: number;

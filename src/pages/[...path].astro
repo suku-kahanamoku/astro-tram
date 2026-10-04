@@ -5,6 +5,10 @@ import Story from "../modules/LandingModule/components/StorySections.astro";
 import Search from "../modules/TransportModule/components/Search.astro";
 import Login from "../modules/AuthModule/components/Login.astro";
 import Account from "../modules/AuthModule/components/Account.astro";
+import DataLicenses from "../modules/TransportModule/components/DataLicenses.astro";
+import SoftwareLicenses from "../modules/SiteModule/components/SoftwareLicenses.astro";
+import { dictionary as siteDictionary } from "../modules/SiteModule/providers/translations";
+import "../modules/TransportModule/styles/attributions.css";
 import { dictionary as authDictionary } from "../modules/AuthModule/providers/translations";
 import { dictionary } from "../modules/LandingModule/providers/translations";
 import { dictionary as transportDictionary } from "../modules/TransportCoreModule/providers/translations";
@@ -17,6 +21,7 @@ const t = dictionary(locale),
   search = transportDictionary(locale);
 const error = !route;
 const auth = authDictionary(locale);
+const licenses = siteDictionary(locale).licenses;
 const user = page === "account" ? await Astro.locals.getUser() : null;
 if (page === "account" && !user) return Astro.redirect(url(locale, "login"));
 if (error) Astro.response.status = 404;
@@ -32,19 +37,21 @@ if (page === "search" || page === "account" || page === "login") {
   {locale}
   page={error ? undefined : page}
   title={
-    error
-      ? "404"
-      : page === "login"
-        ? auth.auth.title
-        : page === "account"
-          ? auth.auth.account
-          : page === "search"
-            ? search.results
-            : page === "about"
-              ? t.navAbout
-              : `${t.title1} ${t.title2}`
+    page === "licenses"
+      ? licenses.title
+      : error
+        ? "404"
+        : page === "login"
+          ? auth.auth.title
+          : page === "account"
+            ? auth.auth.account
+            : page === "search"
+              ? search.results
+              : page === "about"
+                ? t.navAbout
+                : `${t.title1} ${t.title2}`
   }
-  description={t.intro}
+  description={page === "licenses" ? licenses.intro : t.intro}
   noindex={error || page === "search" || page === "login" || page === "account"}
 >
   {error ? (
@@ -59,6 +66,14 @@ if (page === "search" || page === "account" || page === "login") {
     <Login {locale} />
   ) : page === "account" && user ? (
     <Account {locale} {user} />
+  ) : page === "licenses" ? (
+    <section class="shell simple-page licenses-page">
+      <span class="eyebrow">TRAM</span>
+      <h1>{licenses.title}</h1>
+      <p>{licenses.intro}</p>
+      <DataLicenses {locale} />
+      <SoftwareLicenses {locale} />
+    </section>
   ) : page === "home" ? (
     <>
       <Hero {locale} />
