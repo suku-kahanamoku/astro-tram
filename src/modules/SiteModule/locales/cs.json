@@ -8,6 +8,24 @@
     "search": "Najít spojení",
     "how": "Jak to funguje"
   },
+  "pipeline": {
+    "sync": "Sync",
+    "deploy": "Deploy",
+    "sending": "Odesílám…",
+    "syncTitle": "Synchronizovat data a sestavit grafy na lokálním stroji",
+    "deployTitle": "Nasadit připravené grafy na Cloudflare",
+    "queued": "Čeká na spuštění.",
+    "running": "Probíhá…",
+    "ready": "Hotovo.",
+    "failed": "Úloha selhala.",
+    "offline": "Lokální stroj není připojený.",
+    "memory": "Na lokálním stroji není dostatek volné RAM.",
+    "login": "Pro tuto akci se přihlas jako administrátor.",
+    "signIn": "Přihlásit se",
+    "forbidden": "Tato akce vyžaduje oprávnění administrátora.",
+    "busy": "Jiná úloha už čeká nebo běží.",
+    "unavailable": "Ovládání úloh je nedostupné. Zkontroluj konfiguraci backendu a zkus to znovu."
+  },
   "common": {
     "skip": "Přejít k obsahu",
     "back": "Zpět na úvod",

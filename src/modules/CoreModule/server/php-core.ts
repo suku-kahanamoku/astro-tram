@@ -1,4 +1,7 @@
 import { HttpError } from "./errors";
+import { createHash } from "node:crypto";
+const fetchScopes = new WeakMap<typeof fetch, number>();
+let nextFetchScope = 0;
 
 /**
  * Konfigurace odchozího HTTP klienta k php-core.
@@ -40,7 +43,21 @@ export function createCoreClient(
   config: CoreConfig,
   fetcher: typeof fetch = fetch,
 ) {
+  // A server-only cache namespace includes credentials and injected transport identity.
+  // Hashes and raw credentials never form part of public response data.
+  if (!fetchScopes.has(fetcher)) fetchScopes.set(fetcher, ++nextFetchScope);
+  const cacheScope = createHash("sha256")
+    .update(
+      JSON.stringify([
+        config.baseUrl,
+        config.apiKey,
+        config.tenantHost,
+        fetchScopes.get(fetcher),
+      ]),
+    )
+    .digest("hex");
   return {
+    cacheScope,
     /**
      * Provede jeden požadavek k php-core a vrátí data z obálky odpovědi.
      *

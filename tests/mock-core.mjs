@@ -23,13 +23,14 @@ const brnoStop = {
 };
 const shift = (at, min) =>
   new Date(Date.parse(at) + min * 60000).toISOString().replace(".000Z", "Z");
+const pipelineJobs = new Map();
 http
   .createServer(async (req, res) => {
     const send = (status, data, code) => {
       res.writeHead(status, { "Content-Type": "application/json" });
       res.end(
         JSON.stringify({
-          success: status === 200,
+          success: status >= 200 && status < 300,
           data,
           ...(code
             ? { errors: { code }, message: "INTERNAL_PRIVATE_TOKEN" }
@@ -46,6 +47,61 @@ http
       return send(403, null);
     let body = "";
     for await (const chunk of req) body += chunk;
+    const bearer = req.headers.authorization;
+    const admin = bearer === `Bearer ${"a".repeat(64)}`;
+    const authenticated = admin || bearer === `Bearer ${"b".repeat(64)}`;
+    const user = {
+      id: 1,
+      email: admin ? "admin@example.test" : "user@example.test",
+      first_name: "Test",
+      last_name: "User",
+      role: admin ? "admin" : "user",
+    };
+    if (url.pathname === "/auth/login") {
+      const data = JSON.parse(body);
+      if (
+        data.password !== "fixture-password" ||
+        !["admin@example.test", "user@example.test"].includes(data.email)
+      )
+        return send(401, null);
+      const isAdmin = data.email === "admin@example.test";
+      return send(200, {
+        ...user,
+        email: data.email,
+        role: isAdmin ? "admin" : "user",
+        token: (isAdmin ? "a" : "b").repeat(64),
+      });
+    }
+    if (url.pathname === "/auth/me")
+      return send(authenticated ? 200 : 401, user);
+    if (url.pathname === "/auth/logout")
+      return send(authenticated ? 200 : 401, null);
+    if (url.pathname === "/transport-admin/local-pipeline") {
+      if (!authenticated) return send(401, null);
+      if (!admin) return send(403, null);
+      if (req.method === "GET") {
+        const job = pipelineJobs.get(bearer);
+        return send(200, {
+          ...(job
+            ? {
+                ...job,
+                status: Date.now() - job.at > 1000 ? "ready" : "queued",
+              }
+            : { status: "idle" }),
+          runner: { online: true },
+        });
+      }
+      const action = JSON.parse(body).action;
+      if (!["sync_build", "deploy"].includes(action)) return send(422, null);
+      const job = {
+        id: "00000000-0000-0000-0000-000000000001",
+        action,
+        status: "queued",
+        at: Date.now(),
+      };
+      pipelineJobs.set(bearer, job);
+      return send(202, job);
+    }
     if (url.pathname === "/transport/v1/attributions")
       return send(200, [
         {

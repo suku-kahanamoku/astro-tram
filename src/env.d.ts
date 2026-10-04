@@ -15,8 +15,12 @@ declare namespace App {
      * `Cache-Control: private, no-store`.
      */
     privatePage?: boolean;
+    /** Private form pages preserve same-origin referrers so browsers send a usable POST Origin. */
+    sameOriginForms?: boolean;
     /** Sada serverových providerů vytvořená pro tento požadavek v `src/server/providers.ts`. */
     providers: import("./server/providers").Providers;
+    /** Server-only session bearer; populated by Auth middleware, never serialized to UI. */
+    sessionToken?: string;
     /**
      * Načte přihlášeného uživatele z relace. Volání je memoizované na jeden
      * požadavek; při chybě 401 se relace smaže a vrátí se `null`.

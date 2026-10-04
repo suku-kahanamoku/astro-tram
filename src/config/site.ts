@@ -3,5 +3,5 @@ export const site = {
   name: "TRAM",
   email: "",
   theme: defaultTheme,
-  modules: { auth: false, ads: false, realtime: false },
+  modules: { auth: true, ads: false, realtime: false },
 } as const;

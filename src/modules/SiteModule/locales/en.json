@@ -8,6 +8,24 @@
     "search": "Find a journey",
     "how": "How it works"
   },
+  "pipeline": {
+    "sync": "Sync",
+    "deploy": "Deploy",
+    "sending": "Sending…",
+    "syncTitle": "Sync data and build graphs on the local machine",
+    "deployTitle": "Deploy prepared graphs to Cloudflare",
+    "queued": "Waiting to start.",
+    "running": "In progress…",
+    "ready": "Done.",
+    "failed": "Job failed.",
+    "offline": "The local machine is offline.",
+    "memory": "The local machine has insufficient free RAM.",
+    "login": "Sign in as an administrator to use this action.",
+    "signIn": "Sign in",
+    "forbidden": "This action requires administrator permissions.",
+    "busy": "Another job is already queued or running.",
+    "unavailable": "Job controls are unavailable. Check the backend configuration and try again."
+  },
   "common": {
     "skip": "Skip to content",
     "back": "Back to home",

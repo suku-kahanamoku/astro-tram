@@ -9,6 +9,7 @@
     width: 100%;
     max-width: 420px;
     gap: 20px;
+    min-width: 0;
   }
   .auth-card h1 {
     font-size: 32px;
@@ -29,5 +30,10 @@
     display: grid;
     gap: 8px;
     font-size: 13px;
+    min-width: 0;
+  }
+  .auth-form input {
+    min-width: 0;
+    max-width: 100%;
   }
 }

@@ -1,6 +1,5 @@
 ---
 import "../styles/components.css";
-import Section from "../../UIModule/components/Section.astro";
 import { dictionary } from "../providers/translations";
 import { type Locale } from "../../LangModule/providers/locale";
 import type { User } from "../types";
@@ -22,7 +21,7 @@ const t = dictionary(locale);
 // žádné interní údaje; stav odhlášení se předává dotazním parametrem.
 ---
 
-<Section contentClass="auth-section">
+<section class="shell auth-section">
   <div class="card auth-card">
     <p class="eyebrow">{t.auth.account}</p>
     <h1>
@@ -41,4 +40,4 @@ const t = dictionary(locale);
       </button>
     </form>
   </div>
-</Section>
+</section>

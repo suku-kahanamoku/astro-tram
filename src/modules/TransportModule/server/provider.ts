@@ -4,6 +4,7 @@ import {
   type TripFeature,
 } from "../../TransportCoreModule/config/tripFeatures";
 import { createHash } from "node:crypto";
+import { staticCatalogCache } from "./staticCatalogCache";
 import type { CoreClient } from "../../CoreModule/server/php-core";
 import { HttpError } from "../../CoreModule/server/errors";
 import { projectAttributions } from "../../TransportCoreModule/providers/attributions";
@@ -303,35 +304,40 @@ export function createTransportProvider(core: CoreClient) {
       return { status: "available", url: address, ticket, expiresAt };
     },
     async cities(country: string) {
-      const raw = object(
-        await core.request("/transport/v1/cities/search", {
-          method: "POST",
-          body: {
-            q: { state: country },
-            limit: 10000,
-            page: 1,
-            sort: [{ name: 1 }],
-          },
-        }),
+      return staticCatalogCache.get(
+        `${core.cacheScope}:cities:${country}`,
+        async () => {
+          const raw = object(
+            await core.request("/transport/v1/cities/search", {
+              method: "POST",
+              body: {
+                q: { state: country },
+                limit: 10000,
+                page: 1,
+                sort: [{ name: 1 }],
+              },
+            }),
+          );
+          if (
+            !Array.isArray(raw.data) ||
+            raw.data.length > 10000 ||
+            raw.has_more === true
+          )
+            throw new HttpError(502, "invalid_backend_response");
+          const data = raw.data.map((p) => {
+            const row = object(p);
+            return {
+              id: text(row.id),
+              name: text(row.name, 120),
+              state: text(row.state, 2),
+              sourceMode: text(row.source_mode),
+            };
+          });
+          if (data.some((p) => !p.id || !p.name || p.state !== country))
+            throw new HttpError(502, "invalid_backend_response");
+          return { data, partial: raw.partial === true };
+        },
       );
-      if (
-        !Array.isArray(raw.data) ||
-        raw.data.length > 10000 ||
-        raw.has_more === true
-      )
-        throw new HttpError(502, "invalid_backend_response");
-      const data = raw.data.map((p) => {
-        const row = object(p);
-        return {
-          id: text(row.id),
-          name: text(row.name, 120),
-          state: text(row.state, 2),
-          sourceMode: text(row.source_mode),
-        };
-      });
-      if (data.some((p) => !p.id || !p.name || p.state !== country))
-        throw new HttpError(502, "invalid_backend_response");
-      return { data, partial: raw.partial === true };
     },
     async places(
       query: string | null,

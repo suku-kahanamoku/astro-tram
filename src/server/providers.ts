@@ -6,6 +6,7 @@ import {
 import { createCoreClient } from "../modules/CoreModule/server/php-core";
 import { createTransportProvider } from "../modules/TransportModule/server/provider";
 import { createAuthProvider } from "../modules/AuthModule/server/provider";
+import { createPipelineProvider } from "../modules/SiteModule/server/pipelineProvider";
 
 /**
  * Sestaví poskytovatele serverové vrstvy pro jeden požadavek.
@@ -25,6 +26,7 @@ export function createProviders() {
   return {
     auth: createAuthProvider(core),
     transport: createTransportProvider(core),
+    pipeline: createPipelineProvider(core),
   };
 }
 

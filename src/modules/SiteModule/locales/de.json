@@ -8,6 +8,24 @@
     "search": "Verbindung finden",
     "how": "So funktioniert’s"
   },
+  "pipeline": {
+    "sync": "Sync",
+    "deploy": "Deploy",
+    "sending": "Wird gesendet…",
+    "syncTitle": "Daten synchronisieren und Graphen auf dem lokalen Rechner erstellen",
+    "deployTitle": "Vorbereitete Graphen auf Cloudflare bereitstellen",
+    "queued": "Wartet auf den Start.",
+    "running": "Läuft…",
+    "ready": "Fertig.",
+    "failed": "Auftrag fehlgeschlagen.",
+    "offline": "Der lokale Rechner ist offline.",
+    "memory": "Der lokale Rechner hat nicht genügend freien RAM.",
+    "login": "Für diese Aktion als Administrator anmelden.",
+    "signIn": "Anmelden",
+    "forbidden": "Diese Aktion erfordert Administratorrechte.",
+    "busy": "Ein anderer Auftrag wartet bereits oder läuft.",
+    "unavailable": "Die Auftragssteuerung ist nicht verfügbar. Backend-Konfiguration prüfen und erneut versuchen."
+  },
   "common": {
     "skip": "Zum Inhalt springen",
     "back": "Zur Startseite",

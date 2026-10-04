@@ -1,0 +1,54 @@
+.pipeline-controls {
+  position: relative;
+}
+.pipeline-buttons {
+  display: flex;
+  gap: 8px;
+}
+.pipeline-controls .pipeline-sync {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+.pipeline-controls button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.pipeline-feedback {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(320px, calc(100vw - 32px));
+  padding: 12px 16px;
+  background: var(--paper, white);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  box-shadow: 0 6px 20px #0001;
+  z-index: 25;
+  font-size: 12px;
+}
+.pipeline-feedback a {
+  color: var(--red);
+  text-decoration: underline;
+}
+@media (max-width: 900px) {
+  .header-actions .pipeline-controls .button {
+    display: inline-flex;
+    padding: 10px 12px;
+    min-height: 44px;
+  }
+}
+@media (max-width: 600px) {
+  .tram-header.shell {
+    gap: 8px;
+  }
+  .tram-header .header-actions {
+    gap: 8px;
+  }
+  .header-actions .pipeline-controls .button {
+    padding-inline: 8px;
+  }
+  .pipeline-buttons {
+    gap: 6px;
+  }
+}

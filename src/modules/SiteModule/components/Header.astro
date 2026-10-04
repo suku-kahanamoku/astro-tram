@@ -1,7 +1,7 @@
 ---
 import BrandMark from "./BrandMark.astro";
 import LanguagePicker from "../../LangModule/components/LanguagePicker.astro";
-import Icon from "../../UIModule/components/TransitIcon.astro";
+import PipelineControls from "./PipelineControls";
 import { dictionary } from "../providers/translations";
 import { url, type PageId, type Locale } from "../../../config/routes";
 interface Props {
@@ -39,9 +39,6 @@ const { locale, page = "home" } = Astro.props,
       locale={locale}
       href={(code) => url(code, page) + Astro.url.search}
     />
-    <a href={`${url(locale)}#search`} class="button button-small">
-      {t.nav.search}
-      <Icon name="arrow" size={17} />
-    </a>
+    <PipelineControls {locale} client:load />
   </div>
 </header>

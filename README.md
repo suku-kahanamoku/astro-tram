@@ -54,7 +54,42 @@ a WebSocket; dialog dostane statické zastávky hned a živá měření upravuj�
 - `LangModule`: čeština, angličtina, němčina; společné komponenty pro všechny jazyky.
 - `SiteModule`: hlavička, patička, SEO.
 
-Základní moduly Auth, Ads a Realtime ze scaffoldu jsou zachované pro další vývoj; v konfiguraci TRAM jsou vypnuté. Frontend neprodává jízdenky ani netvrdí dostupnost nativních mobilních aplikací.
+Auth je zapnutý pro administrační ovládání Sync/Deploy. Ads a Realtime ze scaffoldu jsou zachované pro další vývoj a vypnuté. Frontend neprodává jízdenky ani netvrdí dostupnost nativních mobilních aplikací.
+
+### Sync a Deploy v hlavičce
+
+Původní akci „Najít spojení“ vpravo nahrazují tlačítka **Sync** a **Deploy**,
+viditelná i na mobilu. Odkaz na vyhledávání v navigaci zůstává. Sync zařadí
+`sync_build` (synchronizace a sestavení grafů na lokálním stroji); Deploy
+zařadí nasazení připravených grafů. Žádná úloha se nespouští načtením stránky.
+Stav se obnovuje po pěti sekundách; čekající/běžící úloha blokuje obě tlačítka.
+Zobrazuje se dokončení, selhání, odpojený runner a nedostatek paměti.
+
+Ovládání vyžaduje existujícího aktivního uživatele s rolí `admin` v tenantu
+`tram`, přihlášeného přes `/prihlaseni/` (ostatní jazyky používají vlastní URL).
+Relace je pouze v HttpOnly cookie. Nepřihlášené tlačítko nabídne přihlášení;
+php-core ověřuje tenant a roli u každého požadavku. Účty se automaticky nevytvářejí.
+
+`GET/POST /api/admin/local-pipeline/` vede přes CoreModule klienta na oddělený
+php-core `GET/POST /transport-admin/local-pipeline`. POST přijímá pouze
+`{"action":"sync_build"}` nebo `{"action":"deploy"}`, vyžaduje stejný origin
+a má společný limit těla 16 KiB. Odpovědi jsou `private, no-store`; frontend
+publikuje jen stav úlohy a dostupnost runneru.
+
+Na PHP serveru nastavte vedle běžného interního klíče a mapování tenantu:
+
+```dotenv
+TRANSPORT_LOCAL_PIPELINE_ENABLED=1
+TRANSPORT_JAVA_TENANT=tram
+TRANSPORT_LOCAL_PIPELINE_URL=https://tram-api.collegas.workers.dev
+TRANSPORT_LOCAL_PIPELINE_TOKEN=<Cloudflare ADMIN_TOKEN, pouze na PHP serveru>
+```
+
+Oddělená URL umožňuje ponechat lokální vyhledávání na `TRANSPORT_JAVA_URL`.
+Na buildovacím PC musí běžet `java-tram/runner.sh`; viz
+[lokální pipeline](../../java-tram/LOCAL_PIPELINE.md). Nový administrační
+entrypoint vyžaduje také aktualizovaný PHP `api/.htaccess` a nasazení změn
+php-core. Cloudflare Admin token nepatří do Astro prostředí ani prohlížeče.
 
 ## React a klientský stav
 
@@ -516,3 +551,21 @@ frontu podle `Retry-After`, nebo na 60 sekund při chybějící hlavičce.
 BFF tuto hlavičku přenáší z php-core. Limity backendu se nezvyšují.
 
 Čas poslední zastávky plného detailu je příjezd, i když zdroj uvádí také pozdější odjezd (například po pobytu na konečné). Mezilehlé zastávky zobrazují odjezd; výřez mezilehlých zastávek zachovává jejich místo v celém spoji. Pobyt na konečné se nepřičítá k jízdě předchozího úseku.
+
+### Optimalizace statických dat (4. 10. 2026)
+
+`TripResources` vlastní jednu frontu a cache pro detail i veřejné souřadnice
+zastávek. Dialog a GPS osa sdílejí i probíhající požadavek; nevzniká druhé
+načtení `trip&coordinates=1`. Java gateway vrací souřadnice už v základním
+detailu. Po načtení se detail při znovuotevření zobrazí ze stejné RAM cache.
+Poloha a zpoždění se při otevření dál obnovují samostatným HTTP observation
+a následně WebSocketem. Cache statických dat je nesmí zastavit ani uchovávat.
+
+Veřejný katalog měst má navíc serverovou RAM cache na 30 sekund, maximálně
+32 položek / 4 MiB serializovaných dat. Namespace zahrnuje URL php-core,
+tenant a serverový credential; klíče neopouštějí server. Souběžné požadavky
+stejné konfigurace sdílejí načtení. Chyby se necacheují a vrácená data jsou
+nezávislé kopie. Změna katalogu se projeví po expiraci; cache není globální
+mezi Netlify instancemi a nepřežije restart funkce. Neobsahuje polohy,
+observation, hledání s GPS ani uživatelská data. První načtení po restartu
+a probuzení cloudové JVM stále vyžaduje síť. Změna kódu sama nic nenasazuje.

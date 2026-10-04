@@ -156,7 +156,7 @@ const allowed: Record<string, string[]> = {
   UIModule: [],
   CoreModule: [],
   LangModule: ["UIModule"],
-  SiteModule: ["UIModule", "LangModule"],
+  SiteModule: ["UIModule", "LangModule", "CoreModule"],
   ContentModule: ["UIModule", "LangModule"],
   AuthModule: ["CoreModule", "UIModule", "LangModule"],
   AdsModule: ["UIModule", "LangModule"],

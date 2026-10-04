@@ -189,3 +189,60 @@ test("failed HTTP observation displays unknown delay and unavailable GPS instead
     page.locator("[data-trip-dialog] [data-delay-status]"),
   ).toHaveText("Zpoždění neznámé");
 });
+
+test("GPS timeline and opening dialog join one pending static detail and reuse it on reopen", async ({
+  page,
+}) => {
+  let staticReads = 0;
+  let release!: () => void;
+  const ready = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/api/transport/trip/**", async (route) => {
+    staticReads++;
+    expect(new URL(route.request().url()).searchParams.has("coordinates")).toBe(
+      false,
+    );
+    const response = await route.fetch();
+    await ready;
+    await route.fulfill({ response });
+  });
+  await page.route("**/api/transport/tracking/", (route) =>
+    route.fulfill({ json: { success: true, data: { status: "unsupported" } } }),
+  );
+  await page.route("**/api/transport/observation/**", (route) =>
+    route.fulfill({
+      json: {
+        success: true,
+        data: {
+          status: "live",
+          position: { lat: 50.075, lon: 14.43 },
+          delay_seconds: 360,
+          cancelled: false,
+          observed_at: new Date().toISOString(),
+          valid_until: new Date(Date.now() + 30000).toISOString(),
+        },
+      },
+    }),
+  );
+  try {
+    await page.goto(path);
+    const card = page.locator(".journey-card").first();
+    await card.locator(".journey-summary-toggle").click();
+    await expect.poll(() => staticReads).toBe(1);
+    await card.locator("[data-summary-trip]").click();
+    const dialog = page.locator("[data-trip-dialog]");
+    await expect(dialog).toBeVisible();
+    release();
+    await expect(dialog.locator(".trip-call")).toHaveCount(3);
+    await expect(dialog.locator(".delay-badge")).toHaveText("Zpoždění 6 min");
+    await expect(card.locator(".leg [data-trip-vehicle-dot]")).toBeVisible();
+    expect(staticReads).toBe(1);
+    await page.keyboard.press("Escape");
+    await card.locator("[data-summary-trip]").click();
+    await expect(dialog.locator(".trip-call")).toHaveCount(3);
+    expect(staticReads).toBe(1);
+  } finally {
+    release();
+  }
+});

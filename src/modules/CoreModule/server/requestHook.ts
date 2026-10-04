@@ -35,9 +35,11 @@ export function createRequestHook(
     response.headers.set("X-Content-Type-Options", "nosniff");
     response.headers.set(
       "Referrer-Policy",
-      context.locals.privatePage
-        ? "no-referrer"
-        : "strict-origin-when-cross-origin",
+      context.locals.sameOriginForms
+        ? "same-origin"
+        : context.locals.privatePage
+          ? "no-referrer"
+          : "strict-origin-when-cross-origin",
     );
     response.headers.set("X-Frame-Options", "SAMEORIGIN");
     if (context.url.pathname.startsWith("/api/") || context.locals.privatePage)

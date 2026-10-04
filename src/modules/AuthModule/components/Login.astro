@@ -1,6 +1,5 @@
 ---
 import "../styles/components.css";
-import Section from "../../UIModule/components/Section.astro";
 import { dictionary } from "../providers/translations";
 import { type Locale } from "../../LangModule/providers/locale";
 
@@ -20,7 +19,7 @@ const t = dictionary(locale);
 const error = Astro.url.searchParams.get("error");
 ---
 
-<Section contentClass="auth-section">
+<section class="shell auth-section">
   <div class="card auth-card">
     <p class="eyebrow">{t.auth.eyebrow}</p>
     <h1>{t.auth.title}</h1>
@@ -60,4 +59,4 @@ const error = Astro.url.searchParams.get("error");
       </button>
     </form>
   </div>
-</Section>
+</section>
