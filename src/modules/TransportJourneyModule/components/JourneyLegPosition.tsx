@@ -6,7 +6,7 @@ import { useTrip } from "../hooks/useTrip";
 import { useTripProgress } from "../hooks/useTripProgress";
 import { useTripTimeline } from "../hooks/useTripTimeline";
 import { tripSegment } from "../providers/trip";
-import { compactTripProgress } from "../providers/tripProgress";
+import { legTimelineProgress } from "../providers/tripProgress";
 import TripVehicleDot from "./TripVehicleDot";
 
 function Position({
@@ -14,23 +14,44 @@ function Position({
   leg,
   root,
   t,
+  expanded,
 }: {
   trip: Trip;
   leg: Leg;
   root: RefObject<HTMLDivElement | null>;
   t: Dictionary;
+  expanded: boolean;
 }) {
   const live = useTripObservation(leg.tripId);
   const { progress, retained, estimated } = useTripProgress(trip, live);
-  const compact = compactTripProgress(progress, tripSegment(trip, leg));
-  const top = useTripTimeline(root, compact, trip);
+  const placement = legTimelineProgress(
+    progress,
+    tripSegment(trip, leg),
+    expanded,
+  );
+  const top = useTripTimeline(
+    root,
+    placement?.progress ?? null,
+    trip,
+    expanded,
+  );
   return (
     <TripVehicleDot
       trip={trip}
       progress={progress}
       retained={retained}
       estimated={estimated}
-      top={top}
+      outside={placement?.outside}
+      top={
+        top === null
+          ? null
+          : top +
+            (placement?.outside === "before"
+              ? -14
+              : placement?.outside === "after"
+                ? 14
+                : 0)
+      }
       t={t}
     />
   );
@@ -41,10 +62,12 @@ export default function JourneyLegPosition({
   leg,
   t,
   children,
+  expanded = false,
 }: {
   leg: Leg;
   t: Dictionary;
   children: ReactNode;
+  expanded?: boolean;
 }) {
   const root = useRef<HTMLDivElement>(null);
   const live = useTripObservation(leg.tripId);
@@ -64,7 +87,13 @@ export default function JourneyLegPosition({
     >
       {children}
       {coordinateTrip && leg.tripId && (
-        <Position trip={coordinateTrip} leg={leg} root={root} t={t} />
+        <Position
+          trip={coordinateTrip}
+          leg={leg}
+          root={root}
+          t={t}
+          expanded={expanded}
+        />
       )}
     </div>
   );

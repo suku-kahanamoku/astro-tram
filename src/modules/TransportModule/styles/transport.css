@@ -1363,6 +1363,35 @@ a.trip-open:active {
   transform: translateX(-50%);
   background: var(--line);
 }
+.leg-timeline > time[data-trip-point] {
+  position: relative;
+}
+.leg-timeline > time[data-trip-point]::before {
+  content: "";
+  position: absolute;
+  left: var(--trip-axis-x);
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--muted);
+  border-radius: 50%;
+  background: var(--paper);
+}
+.leg-timeline .intermediate-stops .trip-stops {
+  padding-left: 0;
+}
+.leg-timeline .intermediate-stops .disclosure-motion {
+  margin-left: calc(var(--trip-axis-x) - 4px);
+  padding-left: calc(4px - var(--trip-axis-x));
+}
+.leg-timeline .trip-call {
+  position: relative;
+  --trip-axis-y: calc(12px + 0.7em);
+}
+.leg-timeline .trip-call::before {
+  display: none;
+}
 .trip-dialog .trip-timeline .trip-stops {
   margin-top: 0;
 }
@@ -1421,6 +1450,23 @@ a.trip-open:active {
     0 0 0 5px color-mix(in srgb, var(--red) 20%, transparent);
   z-index: 2;
   transition: top 350ms ease;
+}
+.trip-vehicle-dot[data-outside]::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  border: solid var(--red);
+  border-width: 0 2px 2px 0;
+}
+.trip-vehicle-dot[data-outside="before"]::after {
+  bottom: 15px;
+  transform: translateX(-50%) rotate(225deg);
+}
+.trip-vehicle-dot[data-outside="after"]::after {
+  top: 15px;
+  transform: translateX(-50%) rotate(45deg);
 }
 @media (prefers-reduced-motion: reduce) {
   .trip-vehicle-dot {

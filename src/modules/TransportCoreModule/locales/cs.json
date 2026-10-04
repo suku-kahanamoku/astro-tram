@@ -166,6 +166,8 @@
   "connectionAtRisk": "Přestup nevychází",
   "vehicleAtStop": "Vozidlo u zastávky {stop}",
   "vehicleBetweenStops": "Vozidlo mezi zastávkami {from} a {to}",
+  "vehicleBeforeSegment": "Před zobrazeným úsekem",
+  "vehicleAfterSegment": "Za zobrazeným úsekem",
   "vehicleTimelineLastKnown": "Poslední jednoznačná poloha na trase",
   "vehicleTimelineHint": "Přibližné umístění na ose zastávek podle aktuální GPS.",
   "vehicleTimelineUnavailable": "Živou GPS nelze jednoznačně přiřadit k úseku mezi zastávkami. Polohu najdeš na mapě.",

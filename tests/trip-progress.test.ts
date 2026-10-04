@@ -4,6 +4,7 @@ import {
   tripProgress,
   lastKnownTripProgress,
   compactTripProgress,
+  legTimelineProgress,
 } from "../src/modules/TransportJourneyModule/providers/tripProgress";
 import {
   delayMinutes,
@@ -71,6 +72,27 @@ test("compact accordion axis uses verified progress only within the selected leg
     compactTripProgress(tripProgress(trip, live(), now), null),
     null,
   );
+});
+
+test("expanded leg axes use actual stop rows and mark measured progress outside the selected segment", () => {
+  const progress = { from: 3, to: 4, fraction: 0.4, atStop: false };
+  const segment = { from: 2, to: 6 };
+  assert.deepEqual(legTimelineProgress(progress, segment, true), { progress });
+  assert.ok(
+    Math.abs(
+      legTimelineProgress(progress, segment, false)!.progress.fraction - 0.35,
+    ) < 0.00001,
+  );
+  assert.deepEqual(legTimelineProgress(progress, { from: 5, to: 7 }, true), {
+    progress: { from: 5, to: 5, fraction: 0, atStop: true },
+    outside: "before",
+  });
+  assert.deepEqual(legTimelineProgress(progress, { from: 0, to: 2 }, false), {
+    progress: { from: 1, to: 1, fraction: 0, atStop: true },
+    outside: "after",
+  });
+  assert.equal(legTimelineProgress(null, segment, true), null);
+  assert.equal(legTimelineProgress(progress, null, true), null);
 });
 
 test("schematic GPS projection locates a vehicle between stops without needing timetable times", () => {

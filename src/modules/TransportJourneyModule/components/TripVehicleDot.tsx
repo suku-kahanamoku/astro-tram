@@ -7,6 +7,7 @@ export default function TripVehicleDot({
   progress,
   retained,
   estimated = false,
+  outside,
   top,
   t,
 }: {
@@ -14,6 +15,7 @@ export default function TripVehicleDot({
   progress: TripProgress | null;
   retained: boolean;
   estimated?: boolean;
+  outside?: "before" | "after";
   top: number | null;
   t: Dictionary;
 }) {
@@ -23,11 +25,14 @@ export default function TripVehicleDot({
     : t.vehicleBetweenStops
         .replace("{from}", trip.stops[progress.from].stop.name)
         .replace("{to}", trip.stops[progress.to].stop.name);
-  const label = estimated
+  const positionLabel = estimated
     ? `${t.vehicleTimelineEstimate} ${location}`
     : retained
       ? `${t.vehicleTimelineLastKnown}: ${location}`
       : location;
+  const label = outside
+    ? `${outside === "before" ? t.vehicleBeforeSegment : t.vehicleAfterSegment}. ${positionLabel}`
+    : positionLabel;
   return (
     <>
       <span
@@ -35,6 +40,7 @@ export default function TripVehicleDot({
         data-trip-vehicle-dot
         data-retained={retained ? true : undefined}
         data-estimated={estimated ? true : undefined}
+        data-outside={outside}
         data-from={progress.from}
         data-to={progress.to}
         data-fraction={progress.fraction}

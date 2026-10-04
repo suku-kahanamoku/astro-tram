@@ -9,6 +9,7 @@ import Point from "ol/geom/Point.js";
 import LineString from "ol/geom/LineString.js";
 import { fromLonLat, toLonLat } from "ol/proj.js";
 import { Style, Stroke, Fill, Text, Circle as CircleStyle } from "ol/style.js";
+import { defaults as defaultInteractions } from "ol/interaction/defaults.js";
 import "ol/ol.css";
 import type { MapConfig, MapRoute } from "../types";
 
@@ -41,6 +42,8 @@ export function createMap(
   });
   const map = new Map({
     target,
+    // Dialog focus starts on its close button; gestures must work from the first event.
+    interactions: defaultInteractions({ onFocusOnly: false }),
     layers: [
       new TileLayer({ source: new OSM() }),
       new VectorLayer({ source, style }),

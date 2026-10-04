@@ -5,6 +5,7 @@ export function useTripTimeline(
   root: RefObject<HTMLDivElement | null>,
   progress: TripProgress | null,
   identity: unknown,
+  layout?: unknown,
 ) {
   const [placement, setPlacement] = useState<{
     identity: unknown;
@@ -20,17 +21,20 @@ export function useTripTimeline(
       return;
     }
     const element = root.current;
-    const from = element.querySelector<HTMLElement>(
-      `[data-trip-point="${progress.from}"]`,
-    );
-    const to = element.querySelector<HTMLElement>(
-      `[data-trip-point="${progress.to}"]`,
-    );
-    if (!from || !to) {
-      setPlacement(null);
-      return;
-    }
     const measure = () => {
+      // Closing disclosures retain their children for animation, but those are no longer anchors.
+      const anchor = (index: number) =>
+        [
+          ...element.querySelectorAll<HTMLElement>(
+            `[data-trip-point="${index}"]`,
+          ),
+        ].find((point) => !point.closest("[inert]"));
+      const from = anchor(progress.from),
+        to = anchor(progress.to);
+      if (!from || !to) {
+        setPlacement(null);
+        return;
+      }
       // Undo the dialog's entry scale: DOMRects include transforms, absolute top uses CSS pixels.
       const bounds = element.getBoundingClientRect();
       const height = parseFloat(getComputedStyle(element).height);
@@ -59,7 +63,7 @@ export function useTripTimeline(
       .querySelectorAll(".trip-call")
       .forEach((row) => observer.observe(row));
     return () => observer.disconnect();
-  }, [root, key, identity]);
+  }, [root, key, identity, layout]);
   // Keep the same marker DOM node between measurements so CSS can animate its movement.
   return progress && placement !== null && placement.identity === identity
     ? placement.top

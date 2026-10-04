@@ -20,6 +20,36 @@ export function compactTripProgress(
   const fraction = (point - segment.from) / (segment.to - segment.from);
   return { from: 0, to: 1, fraction, atStop: progress.atStop };
 }
+
+/** Place verified progress against visible rows, marking vehicles outside the selected leg. */
+export function legTimelineProgress(
+  progress: TripProgress | null,
+  segment: { from: number; to: number } | null,
+  expanded: boolean,
+): { progress: TripProgress; outside?: "before" | "after" } | null {
+  if (!progress || !segment || segment.to <= segment.from) return null;
+  const point =
+    progress.from + (progress.to - progress.from) * progress.fraction;
+  const outside =
+    point < segment.from ? "before" : point > segment.to ? "after" : undefined;
+  if (outside) {
+    const index =
+      outside === "before"
+        ? expanded
+          ? segment.from
+          : 0
+        : expanded
+          ? segment.to
+          : 1;
+    return {
+      progress: { from: index, to: index, fraction: 0, atStop: true },
+      outside,
+    };
+  }
+  return {
+    progress: expanded ? progress : compactTripProgress(progress, segment)!,
+  };
+}
 const radians = Math.PI / 180;
 /** Whether an observation may still be displayed as live GPS. */
 export function freshTripPosition(

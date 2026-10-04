@@ -94,6 +94,7 @@ lokálním OTP jen kvůli chybějící integraci. SK/AT/PL záložka není tvrze
   Zavření dialogů zachovává výběr a vrací fokus.
 - `MapDialog` a `useMapView` řídí mapu. OpenLayers se importuje až při otevření,
   spravuje pouze canvas podstrom a při uzavření se odpojí spolu s GPS watch/timerem.
+  Tažení a zoom kolečkem fungují ihned, i když fokus zůstává na tlačítku dialogu.
 - `LanguagePicker`, `MainMenu`, přepínání motivu a reklamní komponenty používají
   React stav a efekty s cleanupem. `ThemeInit` je React inicializace při hydrataci;
   první vykreslení používá serverový motiv, bez původního inline skriptu.
@@ -385,7 +386,12 @@ Detail spoje používá `TripTimeline` s osou vlevo od časů a bodem u každé 
 Accordion používá `JourneyLegPosition` a stejný `TripVehicleDot` jako dialog.
 Při dostupné GPS načte sdílený statický detail se souřadnicemi, ověří místo
 na celé trase a promítne postup mezi zastávkami na stručnou osu daného úseku.
-Vozidlo mimo tento úsek nemá v accordionu bod. Plný dialog ukazuje celý spoj.
+Po rozbalení mezizastávek se bod váže na konkrétní řádky. Stejnou osu používají
+tramvaje, autobusy, trolejbusy, metro, vlaky i další spoje. Platná nebo poslední
+známá poloha před/za vybraným úsekem je u okraje osy se směrovou šipkou a
+tooltipem „Před zobrazeným úsekem“ / „Za zobrazeným úsekem“, který zachovává
+skutečný název zastávky a rozlišení GPS, poslední známé polohy či odhadu.
+Plný dialog ukazuje celý spoj. Nedostupná data žádný bod nevytvářejí.
 Plánovaný odjezd neblokuje skutečné měření na výchozí zastávce. Backendový
 odhad před odjezdem umístí bod na první zastávku, při pobytu na danou
 zastávku a během jízdy mezi sousední zastávky. Neznámé zpoždění zůstává neznámé.

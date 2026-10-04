@@ -187,13 +187,13 @@ function JourneyDetail({
                 {l.cancelled && <span className="fallback">{t.cancelled}</span>}
               </div>
               <TripObservationStatus leg={l} t={t} />
-              <JourneyLegPosition leg={l} t={t}>
+              <JourneyLegPosition leg={l} t={t} expanded={!!segment}>
                 <JourneyTime
                   journey={journey}
                   index={i}
                   event="departure"
                   locale={locale}
-                  timelinePoint={0}
+                  timelinePoint={segment?.from ?? 0}
                 />
                 <div>
                   <StopLink
@@ -247,6 +247,7 @@ function JourneyDetail({
                             current={url}
                             stopOffset={segment.from + 1}
                             totalStops={trip.stops.length}
+                            timeline
                           />
                         )}
                       </ul>
@@ -258,7 +259,7 @@ function JourneyDetail({
                   index={i}
                   event="arrival"
                   locale={locale}
-                  timelinePoint={1}
+                  timelinePoint={segment?.to ?? 1}
                 />
                 <div>
                   <StopLink stop={l.to} index={i} side="to" url={url} t={t} />

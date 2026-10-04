@@ -166,6 +166,8 @@
   "connectionAtRisk": "Anschluss gefährdet",
   "vehicleAtStop": "Fahrzeug bei {stop}",
   "vehicleBetweenStops": "Fahrzeug zwischen {from} und {to}",
+  "vehicleBeforeSegment": "Vor dem angezeigten Abschnitt",
+  "vehicleAfterSegment": "Hinter dem angezeigten Abschnitt",
   "vehicleTimelineLastKnown": "Letzte eindeutig zugeordnete Position auf der Strecke",
   "vehicleTimelineHint": "Ungefähre Einordnung auf der Haltestellenachse anhand aktueller GPS-Daten.",
   "vehicleTimelineUnavailable": "Die Live-GPS-Position lässt sich keinem Abschnitt eindeutig zuordnen. Die Position ist auf der Karte sichtbar.",

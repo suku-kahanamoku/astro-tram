@@ -166,6 +166,8 @@
   "connectionAtRisk": "Connection at risk",
   "vehicleAtStop": "Vehicle near {stop}",
   "vehicleBetweenStops": "Vehicle between {from} and {to}",
+  "vehicleBeforeSegment": "Before the displayed segment",
+  "vehicleAfterSegment": "Beyond the displayed segment",
   "vehicleTimelineLastKnown": "Last unambiguous position on the route",
   "vehicleTimelineHint": "Approximate placement on the stop timeline based on current GPS.",
   "vehicleTimelineUnavailable": "Live GPS cannot be matched unambiguously to a segment between stops. See the position on the map.",
