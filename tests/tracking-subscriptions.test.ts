@@ -15,6 +15,60 @@ const point = (delay = 120) => ({
   cancelled: false,
 });
 
+test("fresh measured GPS takes precedence over a newer timetable estimate without prolonging its expiry", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout", "setInterval", "Date"] });
+  let push!: (data: unknown) => void;
+  const store = createTrackingStore();
+  const manager = createTrackingSubscriptions(store, {
+    tracking: async () => ({
+      status: "available",
+      url: "ws://localhost",
+      ticket: "one",
+      expiresAt: new Date(Date.now() + 900000).toISOString(),
+    }),
+    socket: (options) => {
+      push = (data) =>
+        options.onMessage?.({ type: "observation", trip: "trip", data });
+      return { connect() {}, send: () => true, close() {} };
+    },
+  });
+  manager.setIds(["trip"]);
+  await setImmediate();
+  const estimate = {
+    ...point(),
+    status: "estimated",
+    position: null,
+    delay_seconds: null,
+    cancelled: null,
+    estimated_progress: {
+      from_index: 0,
+      to_index: 1,
+      from_stop_id: "A",
+      to_stop_id: "B",
+      from_departure: new Date(0).toISOString(),
+      to_arrival: new Date(60000).toISOString(),
+      fraction: 0.5,
+      at_stop: false,
+      observed_at: new Date().toISOString(),
+      valid_until: new Date(Date.now() + 30000).toISOString(),
+    },
+  };
+  push(estimate);
+  assert.ok(store.getSnapshot().trip.estimatedProgress);
+  const measured = {
+    ...point(),
+    observed_at: new Date(Date.now() - 1000).toISOString(),
+    valid_until: new Date(Date.now() + 29000).toISOString(),
+  };
+  push(measured);
+  assert.equal(store.getSnapshot().trip.position?.lat, 50);
+  push(estimate);
+  assert.equal(store.getSnapshot().trip.estimatedProgress, undefined);
+  t.mock.timers.tick(29000);
+  assert.equal(store.getSnapshot().trip.status, "stale");
+  manager.dispose();
+});
+
 test("focused observation loads immediately even while its socket ticket is queued", async (t) => {
   t.mock.timers.enable({ apis: ["setTimeout", "setInterval", "Date"] });
   const reads: string[] = [],
@@ -225,7 +279,7 @@ test("an HTTP point works without a socket and keeps its expiry while the socket
   }
 });
 
-test("closing cancels an initial read and superseded reads cannot repopulate the store", async (t) => {
+test("shared initial reads are deduplicated and closing prevents late responses from repopulating the store", async (t) => {
   t.mock.timers.enable({ apis: ["setTimeout", "setInterval", "Date"] });
   const pending: { signal: AbortSignal; resolve: (value: unknown) => void }[] =
     [];
@@ -241,11 +295,22 @@ test("closing cancels an initial read and superseded reads cannot repopulate the
   manager.setIds(["dialog"]);
   manager.refresh("dialog");
   manager.refresh("dialog");
-  assert.equal(pending[0].signal.aborted, true);
-  pending[0].resolve(point());
+  assert.equal(pending.length, 1);
+  assert.equal(pending[0].signal.aborted, false);
   manager.setIds([]);
-  assert.equal(pending[1].signal.aborted, true);
-  pending[1].resolve(point());
+  assert.equal(pending[0].signal.aborted, true);
+  manager.setIds(["dialog"]);
+  manager.refresh("dialog");
+  pending[0].resolve(point(480));
+  pending[1].resolve(point(120));
+  await setImmediate();
+  assert.equal(store.getSnapshot().dialog.delaySeconds, 120);
+  manager.setIds([]);
+  manager.setIds(["dialog"]);
+  manager.refresh("dialog");
+  manager.setIds([]);
+  assert.equal(pending[2].signal.aborted, true);
+  pending[2].resolve(point());
   await setImmediate();
   assert.equal(store.getSnapshot().dialog, undefined);
   manager.dispose();

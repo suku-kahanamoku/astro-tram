@@ -8,7 +8,7 @@ import Feature from "ol/Feature.js";
 import Point from "ol/geom/Point.js";
 import LineString from "ol/geom/LineString.js";
 import { fromLonLat, toLonLat } from "ol/proj.js";
-import { Style, Stroke, Fill, Circle as CircleStyle } from "ol/style.js";
+import { Style, Stroke, Fill, Text, Circle as CircleStyle } from "ol/style.js";
 import "ol/ol.css";
 import type { MapConfig, MapRoute } from "../types";
 
@@ -31,6 +31,14 @@ export function createMap(
       stroke: new Stroke({ color: "#fff8ee", width: 3 }),
     }),
   });
+  const dottedStyle = new Style({
+    stroke: new Stroke({
+      color: "#ed483b",
+      width: 4,
+      lineDash: [1, 9],
+      lineCap: "round",
+    }),
+  });
   const map = new Map({
     target,
     layers: [
@@ -44,25 +52,45 @@ export function createMap(
         : options.config.mapZoom.picker,
     }),
   });
+  let routes = 0;
   const pick = (lat: number, lon: number) => {
     source.clear();
     source.addFeature(new Feature(new Point(fromLonLat([lon, lat]))));
   };
   if (options.journey) {
     for (const leg of options.journey.legs) {
-      if (leg.geometry)
-        source.addFeature(
-          new Feature(
-            new LineString(
-              leg.geometry.coordinates.map((c) => fromLonLat([c[0], c[1]])),
-            ),
+      if (leg.geometry && leg.geometry.coordinates.length >= 2) {
+        const feature = new Feature(
+          new LineString(
+            leg.geometry.coordinates.map((c) => fromLonLat([c[0], c[1]])),
           ),
         );
-      for (const stop of [leg.from, leg.to])
-        if (stop.lat !== null && stop.lon !== null)
-          source.addFeature(
-            new Feature(new Point(fromLonLat([stop.lon, stop.lat]))),
+        if (leg.lineStyle === "dotted") feature.setStyle(dottedStyle);
+        source.addFeature(feature);
+        routes++;
+      }
+      for (const [index, stop] of [leg.from, leg.to].entries())
+        if (stop.lat !== null && stop.lon !== null) {
+          const feature = new Feature(
+            new Point(fromLonLat([stop.lon, stop.lat])),
           );
+          const label = options.journey.endpointLabels?.[index];
+          if (label)
+            feature.setStyle(
+              new Style({
+                image: style.getImage() ?? undefined,
+                text: new Text({
+                  text: label,
+                  offsetY: -18,
+                  font: "bold 16px sans-serif",
+                  fill: new Fill({ color: "#172337" }),
+                  stroke: new Stroke({ color: "#fff8ee", width: 4 }),
+                }),
+                zIndex: 1,
+              }),
+            );
+          source.addFeature(feature);
+        }
     }
     if (source.getFeatures().length) {
       map.getView().fit(source.getExtent()!, {
@@ -73,7 +101,8 @@ export function createMap(
         .getView()
         .setZoom(
           (map.getView().getZoom() ?? options.config.mapZoom.journeyFitMax) +
-            options.config.mapZoom.journeyOffset,
+            (options.journey.zoomOffset ??
+              options.config.mapZoom.journeyOffset),
         );
     }
   } else {
@@ -99,5 +128,6 @@ export function createMap(
     },
     refresh: () => map.updateSize(),
     features: source.getFeatures().length,
+    routes,
   };
 }

@@ -4,6 +4,8 @@ import {
   journeyContext,
 } from "../providers/journeyExpansion";
 import DelayBadge from "./DelayBadge";
+import TripObservationStatus from "./TripObservationStatus";
+import JourneyLegPosition from "./JourneyLegPosition";
 import {
   JourneyTime,
   JourneyDuration,
@@ -29,6 +31,43 @@ import type {
   Trip,
 } from "../../TransportCoreModule/types";
 import type { Dictionary } from "../../TransportCoreModule/providers/translations";
+function WalkMapBadge({
+  journey,
+  index,
+  url,
+  t,
+}: {
+  journey: Journey;
+  index: number;
+  url: URL;
+  t: Dictionary;
+}) {
+  const { navigate } = useUrlNavigation();
+  const leg = journey.legs[index];
+  return (
+    <TransportBadge
+      as="button"
+      type="button"
+      mode="walk"
+      t={t}
+      className="walk-map-open"
+      data-walk-map={index}
+      aria-haspopup="dialog"
+      aria-label={`${t.walkMap}: ${leg.from.name} → ${leg.to.name}`}
+      onClick={() =>
+        navigate(
+          navHref(journeyContext(url, journey.key), {
+            map: "walk",
+            stopLeg: String(index),
+            stopSide: null,
+            leg: null,
+            tripStop: null,
+          }),
+        )
+      }
+    />
+  );
+}
 function StopLink({
   stop,
   index,
@@ -117,7 +156,9 @@ function JourneyDetail({
             <JourneyRisk journey={journey} index={i} t={t} />
             <article className="leg">
               <div className="leg-title" data-mode={l.mode}>
-                {l.tripId ? (
+                {l.mode === "walk" ? (
+                  <WalkMapBadge journey={journey} index={i} url={url} t={t} />
+                ) : l.tripId ? (
                   <TransportBadge
                     as={NavLink}
                     mode={l.mode}
@@ -145,12 +186,14 @@ function JourneyDetail({
                 )}
                 {l.cancelled && <span className="fallback">{t.cancelled}</span>}
               </div>
-              <div className="leg-stops">
+              <TripObservationStatus leg={l} t={t} />
+              <JourneyLegPosition leg={l} t={t}>
                 <JourneyTime
                   journey={journey}
                   index={i}
                   event="departure"
                   locale={locale}
+                  timelinePoint={0}
                 />
                 <div>
                   <StopLink
@@ -215,11 +258,12 @@ function JourneyDetail({
                   index={i}
                   event="arrival"
                   locale={locale}
+                  timelinePoint={1}
                 />
                 <div>
                   <StopLink stop={l.to} index={i} side="to" url={url} t={t} />
                 </div>
-              </div>
+              </JourneyLegPosition>
             </article>
           </Fragment>
         );
@@ -271,7 +315,9 @@ export default function JourneyResults({
                     <Fragment key={i}>
                       {i > 0 && <span aria-hidden="true">›</span>}
                       <span className="summary-leg-badges" data-mode={l.mode}>
-                        {l.tripId ? (
+                        {l.mode === "walk" ? (
+                          <WalkMapBadge journey={j} index={i} url={url} t={t} />
+                        ) : l.tripId ? (
                           <TransportBadge
                             as="button"
                             mode={l.mode}

@@ -7,6 +7,7 @@ import { createHash } from "node:crypto";
 import type { CoreClient } from "../../CoreModule/server/php-core";
 import { HttpError } from "../../CoreModule/server/errors";
 import { projectAttributions } from "../../TransportCoreModule/providers/attributions";
+import { projectEstimatedProgress } from "../../TransportCoreModule/providers/estimatedProgress";
 import { servedModes } from "../../TransportCoreModule/config/transportModes";
 import type {
   Geometry,
@@ -22,6 +23,7 @@ import type {
 import {
   validCoordinates,
   validInstant,
+  validObservationInstant,
 } from "../../TransportCoreModule/providers/state";
 const object = (value: unknown): Record<string, unknown> =>
   value !== null && typeof value === "object" && !Array.isArray(value)
@@ -247,10 +249,12 @@ export function createTransportProvider(core: CoreClient) {
         await core.request(`/transport/v1/trips/${id}/observation`),
       );
       const position = object(raw.position);
+      const estimated = projectEstimatedProgress(raw.estimated_progress);
       return {
         status: [
           "live",
           "last_known",
+          "estimated",
           "unsupported",
           "disabled",
           "busy",
@@ -264,8 +268,12 @@ export function createTransportProvider(core: CoreClient) {
           validCoordinates(position.lat, position.lon)
             ? { lat: position.lat, lon: position.lon }
             : null,
-        observed_at: instant(raw.observed_at),
-        valid_until: instant(raw.valid_until),
+        observed_at: validObservationInstant(raw.observed_at)
+          ? raw.observed_at
+          : null,
+        valid_until: validObservationInstant(raw.valid_until)
+          ? raw.valid_until
+          : null,
         delay_seconds:
           typeof raw.delay_seconds === "number" &&
           Number.isFinite(raw.delay_seconds) &&
@@ -273,6 +281,7 @@ export function createTransportProvider(core: CoreClient) {
             ? raw.delay_seconds
             : null,
         cancelled: typeof raw.cancelled === "boolean" ? raw.cancelled : null,
+        ...(estimated ? { estimated_progress: estimated } : {}),
       };
     },
     async tracking(id: string) {

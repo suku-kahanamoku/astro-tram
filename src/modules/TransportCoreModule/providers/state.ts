@@ -14,6 +14,13 @@ export function validInstant(value: unknown): value is string {
     Number.isFinite(Date.parse(value))
   );
 }
+/** Source observation timestamps may include fractional seconds (RFC 3339). */
+export function validObservationInstant(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    validInstant(value.replace(/\.\d{1,9}(?=Z$|[+-]\d{2}:\d{2}$)/, ""))
+  );
+}
 export function readState(params: URLSearchParams): SearchState {
   const read = (side: string): Place | undefined => {
     const kind = params.get(`${side}Kind`),

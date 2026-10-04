@@ -6,12 +6,12 @@ import type {
 } from "../../TransportCoreModule/types";
 import {
   validCoordinates,
-  validInstant,
+  validObservationInstant,
 } from "../../TransportCoreModule/providers/state";
 import { transportClientConfig as config } from "../../TransportCoreModule/config/client";
+import { projectEstimatedProgress } from "../../TransportCoreModule/providers/estimatedProgress";
 const trackingInstant = (value: unknown): value is string =>
-  typeof value === "string" &&
-  validInstant(value.replace(/\.\d{1,3}(?=Z|[+-])/, ""));
+  validObservationInstant(value);
 export const unavailableObservation = (
   status = "unavailable",
 ): TripObservation => ({
@@ -26,7 +26,11 @@ export const unavailableObservation = (
 export function observation(value: unknown, now = Date.now()): TripObservation {
   if (!value || typeof value !== "object") return unavailableObservation();
   const r = value as Record<string, unknown>;
-  if (r.status !== "live" && r.status !== "last_known")
+  if (
+    r.status !== "live" &&
+    r.status !== "last_known" &&
+    r.status !== "estimated"
+  )
     return unavailableObservation(
       ["unsupported", "disabled", "busy", "connecting", "stale"].includes(
         String(r.status),
@@ -35,6 +39,26 @@ export function observation(value: unknown, now = Date.now()): TripObservation {
         : "unavailable",
     );
   const p = r.position as { lat?: unknown; lon?: unknown } | null;
+  const estimated = projectEstimatedProgress(r.estimated_progress);
+  const estimatedProgress =
+    estimated &&
+    r.status !== "last_known" &&
+    Date.parse(estimated.observed_at) <= now + config.gpsFutureToleranceMs &&
+    Date.parse(estimated.observed_at) + config.gpsMaxAgeMs > now &&
+    Date.parse(estimated.valid_until) > now
+      ? {
+          fromIndex: estimated.from_index,
+          toIndex: estimated.to_index,
+          fromStopId: estimated.from_stop_id,
+          toStopId: estimated.to_stop_id,
+          fromDeparture: estimated.from_departure,
+          toArrival: estimated.to_arrival,
+          fraction: estimated.fraction,
+          atStop: estimated.at_stop,
+          observedAt: estimated.observed_at,
+          validUntil: estimated.valid_until,
+        }
+      : undefined;
   const maxAge =
     r.status === "last_known"
       ? config.lastKnownGpsMaxAgeMs
@@ -50,6 +74,7 @@ export function observation(value: unknown, now = Date.now()): TripObservation {
   )
     return unavailableObservation("stale");
   const position =
+    r.status !== "estimated" &&
     p &&
     typeof p.lat === "number" &&
     typeof p.lon === "number" &&
@@ -68,7 +93,12 @@ export function observation(value: unknown, now = Date.now()): TripObservation {
       ? r.cancelled
       : null;
   // A verified delay does not depend on a vehicle publishing its GPS.
-  if (!position && delaySeconds === null && cancelled === null)
+  if (
+    !position &&
+    delaySeconds === null &&
+    cancelled === null &&
+    !estimatedProgress
+  )
     return unavailableObservation("unavailable");
   return {
     status: r.status,
@@ -77,6 +107,7 @@ export function observation(value: unknown, now = Date.now()): TripObservation {
     validUntil: r.valid_until,
     delaySeconds,
     cancelled,
+    ...(estimatedProgress ? { estimatedProgress } : {}),
   };
 }
 export function knownDelayMinutes(

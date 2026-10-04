@@ -15,18 +15,24 @@ export function JourneyTime({
   event,
   locale,
   className,
+  timelinePoint,
 }: {
   journey: Journey;
   index: number;
   event: "departure" | "arrival";
   locale: string;
   className?: string;
+  timelinePoint?: number;
 }) {
   const leg = journey.legs[index];
   const value =
     event === "departure" ? leg.scheduledDeparture : leg.scheduledArrival;
   return (
-    <time className={className} dateTime={value}>
+    <time
+      className={className}
+      dateTime={value}
+      data-trip-point={timelinePoint}
+    >
       {time(value, locale)}
     </time>
   );

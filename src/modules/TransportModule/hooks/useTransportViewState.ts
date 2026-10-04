@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useUrlNavigation } from "../../UIModule/hooks/useUrlNavigation";
 import { expandedJourneys } from "../../TransportJourneyModule/providers/journeyExpansion";
 import { useJourneySearch } from "../../TransportSearchModule/hooks/useJourneySearch";
@@ -20,21 +21,35 @@ export function useTransportViewState(results: boolean) {
   const mode = parameters.get("map");
   const isTripMap = mode === "stop" && parameters.has("tripStop");
   const modalOpen = !!modalLeg?.tripId && (!mode || isTripMap);
+  const openedTrips = (search.data?.journeys ?? [])
+    .filter((journey) => expandedJourneys(url).has(journey.key))
+    .map((journey) => ({
+      key: journey.key,
+      ids: journey.legs.flatMap((leg) => (leg.tripId ? [leg.tripId] : [])),
+    }));
   const tracking = useTripTracking(
     [
-      ...(search.data?.journeys
-        .filter((journey) => expandedJourneys(url).has(journey.key))
-        .flatMap((journey) =>
-          journey.legs.flatMap((leg) => (leg.tripId ? [leg.tripId] : [])),
-        ) ?? []),
+      ...openedTrips.flatMap((group) => group.ids),
       ...(modalLeg?.tripId ? [modalLeg.tripId] : []),
     ],
     modalOpen ? modalLeg?.tripId : undefined,
+    openedTrips,
   );
   const mapLeg =
     selected?.legs[
       isTripMap && parameters.has("leg") ? index("leg") : index("stopLeg")
     ];
+  const walkLeg =
+    mode === "walk" && mapLeg?.mode === "walk" ? mapLeg : undefined;
+  const mapJourney = useMemo(
+    () =>
+      mode === "walk"
+        ? selected && walkLeg
+          ? { ...selected, legs: [walkLeg] }
+          : undefined
+        : selected,
+    [mode, selected, walkLeg],
+  );
   const middleResource = useTrip(middleLeg?.tripId);
   const separateModalResource = useTrip(
     modalOpen && modalLeg?.tripId !== middleLeg?.tripId
@@ -70,7 +85,9 @@ export function useTransportViewState(results: boolean) {
   const mapOpen =
     mode === "from" || mode === "to"
       ? !!place
-      : (mode === "journey" || mode === "stop") && !!selected;
+      : mode === "walk"
+        ? !!walkLeg
+        : (mode === "journey" || mode === "stop") && !!selected;
 
   return {
     url,
@@ -86,6 +103,7 @@ export function useTransportViewState(results: boolean) {
     isTripMap,
     modalOpen,
     mapLeg,
+    mapJourney,
     middleResource,
     modalResource,
     mapResource,

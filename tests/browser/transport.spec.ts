@@ -485,9 +485,9 @@ test("city picker defaults to all and offers online municipalities", async ({
   page,
 }) => {
   await page.goto("/");
-  await expect(page.getByRole("tab")).toHaveCount(4);
+  await expect(page.getByRole("tab")).toHaveCount(5);
   await expect(page.locator("#country-cz")).toBeEnabled();
-  for (const country of ["sk", "at", "pl"])
+  for (const country of ["sk", "at", "pl", "de"])
     await expect(page.locator(`#country-${country}`)).toBeDisabled();
   await expect(page.locator("#travel-city")).toHaveValue("Všechny jízdní řády");
   await page.locator("#travel-city").click();

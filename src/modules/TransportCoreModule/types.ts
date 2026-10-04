@@ -147,6 +147,19 @@ export interface TripObservation {
   validUntil: string | null;
   delaySeconds: number | null;
   cancelled: boolean | null;
+  estimatedProgress?: EstimatedTripProgress;
+}
+export interface EstimatedTripProgress {
+  fromIndex: number;
+  toIndex: number;
+  fromStopId: string;
+  toStopId: string;
+  fromDeparture: string;
+  toArrival: string;
+  fraction: number;
+  atStop: boolean;
+  observedAt: string;
+  validUntil: string;
 }
 
 /** Public credits for sources belonging to the currently active backend data. */

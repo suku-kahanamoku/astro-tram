@@ -1,4 +1,5 @@
 import DelayBadge from "./DelayBadge";
+import TripObservationStatus from "./TripObservationStatus";
 import type { TripObservation } from "../../TransportCoreModule/types";
 import Dialog from "../../UIModule/components/Dialog";
 import Icon from "../../UIModule/components/TransitIcon";
@@ -62,6 +63,7 @@ export default function TripDialog({
             )}
           </h2>
           {leg && <DelayBadge leg={leg} live={live} t={t} />}
+          {leg && <TripObservationStatus leg={leg} live={live} t={t} />}
         </div>
         <button
           className="icon-button"

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   tripProgress,
   lastKnownTripProgress,
+  compactTripProgress,
 } from "../src/modules/TransportJourneyModule/providers/tripProgress";
 import {
   delayMinutes,
@@ -35,6 +36,41 @@ const live = (lat = 50.005, lon = 14): TripObservation => ({
   validUntil: new Date(now + 30000).toISOString(),
   delaySeconds: 480,
   cancelled: false,
+});
+test("a measured position at the origin is visible before the scheduled departure", () => {
+  const future = {
+    ...trip,
+    stops: trip.stops.map((call) => ({
+      ...call,
+      departure: new Date(now + 3600000).toISOString(),
+    })),
+  };
+  assert.deepEqual(tripProgress(future, live(50), now), {
+    from: 0,
+    to: 0,
+    fraction: 0,
+    atStop: true,
+  });
+  assert.equal(tripProgress(future, undefined, now), null);
+});
+test("compact accordion axis uses verified progress only within the selected leg", () => {
+  const compact = compactTripProgress(tripProgress(trip, live(), now), {
+    from: 0,
+    to: 2,
+  })!;
+  assert.equal(compact.from, 0);
+  assert.equal(compact.to, 1);
+  assert.ok(Math.abs(compact.fraction - 0.25) < 0.00001);
+  assert.equal(compact.atStop, false);
+  assert.equal(
+    compactTripProgress(tripProgress(trip, live(), now), { from: 1, to: 2 }),
+    null,
+  );
+  assert.equal(compactTripProgress(null, { from: 0, to: 2 }), null);
+  assert.equal(
+    compactTripProgress(tripProgress(trip, live(), now), null),
+    null,
+  );
 });
 
 test("schematic GPS projection locates a vehicle between stops without needing timetable times", () => {

@@ -37,6 +37,7 @@ function TransportView({
     isTripMap,
     modalOpen,
     mapLeg,
+    mapJourney,
     middleResource,
     modalResource,
     mapResource,
@@ -44,7 +45,6 @@ function TransportView({
     place,
     mapOpen,
   } = useTransportViewState(results);
-  const selectedOriginal = selected;
   const middle = middleResource;
   const { resultsHeading, root, closeMap, closeTrip, selectPoint } =
     useTransportNavigation({
@@ -105,7 +105,7 @@ function TransportView({
             !mapResource.trip &&
             !mapResource.error
           }
-          journey={selectedOriginal}
+          journey={mapJourney}
           country={search.state.country}
           onMapClose={closeMap}
           onPoint={selectPoint}

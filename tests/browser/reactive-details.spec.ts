@@ -115,13 +115,16 @@ test("opening and reopening a trip draws an HTTP position before any websocket m
   await expect(card.locator(".journey-duration")).toContainText("15 min");
   expect(reads).toBe(0);
   await page.locator(".journey-summary-toggle").first().click();
+  await expect.poll(() => reads).toBe(1);
+  await expect(card.locator(".leg [data-trip-vehicle-dot]")).toBeVisible();
+  await expect(card.locator(".leg .delay-badge")).toContainText("2 min");
   await expect.poll(() => subscribed).toBe(1);
   const badge = page.locator("[data-summary-trip]").first();
   await badge.click();
   const dialog = page.locator("[data-trip-dialog]");
   const dot = dialog.locator("[data-trip-vehicle-dot]");
   await expect(dot).toBeVisible();
-  expect(reads).toBe(1);
+  expect(reads).toBe(2);
   expect(messages).toBe(0);
   await expect(dialog.locator(".delay-badge")).toContainText("2 min");
   await expect(card.locator(".journey-summary .delay-badge")).toContainText(
@@ -152,7 +155,7 @@ test("opening and reopening a trip draws an HTTP position before any websocket m
   await page.keyboard.press("Escape");
   await expect(dialog).not.toBeVisible();
   await badge.click();
-  await expect.poll(() => reads).toBe(2);
+  await expect.poll(() => reads).toBe(3);
   await expect(dot).toBeVisible();
   expect(subscribed, "opening an already watched trip keeps its socket").toBe(
     1,
@@ -216,7 +219,10 @@ test("fresh delay warns before the affected transfer while all timetable times s
           position: { lat: 50.076, lon: 14.4282 },
           observed_at: new Date(now).toISOString(),
           valid_until: new Date(now + 30000).toISOString(),
-          delay_seconds: 480,
+          delay_seconds:
+            new URL(route.request().url()).searchParams.get("id") === firstTrip
+              ? 480
+              : 0,
           cancelled: false,
         },
       },
@@ -265,12 +271,12 @@ test("fresh delay warns before the affected transfer while all timetable times s
   const legTimes = card.locator(".leg-stops > time");
   const scheduledTimes = ["10:00", "10:10", "10:10", "10:13", "10:15", "10:30"];
   await expect(legTimes).toHaveText(scheduledTimes);
-  await expect(card.locator(".transfer-risk-notice")).toHaveCount(0);
+  await expect(card.locator(".transfer-risk-notice")).toHaveCount(1);
   await expect.poll(() => pushes.size).toBe(2);
   await card.locator("[data-summary-trip]").first().click();
   const dialog = page.locator("[data-trip-dialog]");
   await expect(dialog.locator(".delay-badge")).toContainText("8 min");
-  expect(reads).toBe(1);
+  expect(reads).toBe(3);
   await expect(
     card.locator(".journey-summary .delay-badge").first(),
   ).toContainText("8 min");

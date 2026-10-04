@@ -195,7 +195,7 @@ test("every supported mode has its own badge color; reduced motion disables tran
     els.map((el) => getComputedStyle(el).backgroundColor),
   );
   expect(new Set(colors).size).toBe(modes.length);
-  await badges.first().click();
+  await page.locator('.summary-badges .route-badge[data-mode="tram"]').click();
   const dialog = page.locator("[data-trip-dialog]");
   await expect(dialog).toBeVisible();
   await expect(dialog).toHaveCSS("transition-duration", "0s");

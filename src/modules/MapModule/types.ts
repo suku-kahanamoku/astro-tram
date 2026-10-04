@@ -14,7 +14,10 @@ export interface MapPlace {
 }
 
 export interface MapRoute {
+  endpointLabels?: readonly [string, string];
+  zoomOffset?: number;
   legs: ReadonlyArray<{
+    lineStyle?: "solid" | "dotted";
     from: MapPoint;
     to: MapPoint;
     geometry?: {

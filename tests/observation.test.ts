@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { createCoreClient } from "../src/modules/CoreModule/server/php-core";
 import { createTransportProvider } from "../src/modules/TransportModule/server/provider";
 import { observation } from "../src/modules/TransportModule/server/handlers";
+import { observation as readObservation } from "../src/modules/TransportTrackingModule/providers/tracking";
 
 test("initial GPS goes through the fixed tenant gateway and exposes only observation fields", async () => {
   const provider = createTransportProvider(
@@ -64,6 +65,38 @@ test("invalid trip IDs are rejected before calling the backend", async () => {
     locals: {},
   } as any);
   assert.equal(response.status, 422);
+});
+test("fractional source timestamps survive the BFF and client validation without extending expiry", async () => {
+  for (const precision of ["123", "123456789"]) {
+    const sample = {
+      status: "live",
+      position: { lat: 50, lon: 14 },
+      observed_at: `2026-10-04T10:00:00.${precision}Z`,
+      valid_until: `2026-10-04T10:00:30.${precision}Z`,
+      delay_seconds: 0,
+      cancelled: false,
+    };
+    const provider = createTransportProvider(
+      createCoreClient(
+        {
+          baseUrl: "https://core.test",
+          apiKey: "secret",
+          tenantHost: "tram.test",
+        },
+        async () => Response.json({ success: true, data: sample }),
+      ),
+    );
+    const data = await provider.observation("trip_id");
+    assert.deepEqual(data, sample);
+    const live = readObservation(data, Date.parse(sample.observed_at));
+    assert.equal(live.position?.lat, 50);
+    assert.equal(live.delaySeconds, 0);
+    assert.equal(live.validUntil, sample.valid_until);
+    assert.equal(
+      readObservation(data, Date.parse(sample.valid_until)).status,
+      "stale",
+    );
+  }
 });
 
 test("the initial observation gateway returns verified delay even when GPS is unavailable", async () => {

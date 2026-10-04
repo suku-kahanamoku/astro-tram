@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   tripProgress,
   lastKnownTripProgress,
+  estimatedTripProgress,
   type TripProgress,
 } from "../providers/tripProgress";
 import type { Trip, TripObservation } from "../../TransportCoreModule/types";
@@ -15,6 +16,7 @@ export function useTripProgress(trip: Trip, live?: TripObservation) {
   const [, refresh] = useState(0);
   const current = tripProgress(trip, live);
   const known = lastKnownTripProgress(trip, live);
+  const estimated = estimatedTripProgress(trip, live);
   const remembered = last?.trip === trip ? last.progress : null;
   useEffect(() => {
     const progress =
@@ -23,14 +25,16 @@ export function useTripProgress(trip: Trip, live?: TripObservation) {
     else setLast((previous) => (previous?.trip === trip ? previous : null));
   }, [trip, live]);
   useEffect(() => {
-    if (!live?.validUntil) return;
-    const remaining = Date.parse(live.validUntil) - Date.now();
+    const deadline = live?.estimatedProgress?.validUntil ?? live?.validUntil;
+    if (!deadline) return;
+    const remaining = Date.parse(deadline) - Date.now();
     if (!Number.isFinite(remaining) || remaining <= 0) return;
     const timer = setTimeout(() => refresh((value) => value + 1), remaining);
     return () => clearTimeout(timer);
   }, [live]);
   return {
-    progress: current ?? known ?? remembered,
-    retained: !current && !!(known ?? remembered),
+    progress: current ?? known ?? estimated ?? remembered,
+    retained: !current && !estimated && !!(known ?? remembered),
+    estimated: !current && !known && !!estimated,
   };
 }

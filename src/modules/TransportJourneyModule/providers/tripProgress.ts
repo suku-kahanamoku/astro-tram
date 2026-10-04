@@ -8,6 +8,18 @@ export interface TripProgress {
   fraction: number;
   atStop: boolean;
 }
+/** Collapse verified stop progress onto a schematic axis with two visible endpoints. */
+export function compactTripProgress(
+  progress: TripProgress | null,
+  segment: { from: number; to: number } | null,
+): TripProgress | null {
+  if (!progress || !segment || segment.to <= segment.from) return null;
+  const point =
+    progress.from + (progress.to - progress.from) * progress.fraction;
+  if (point < segment.from || point > segment.to) return null;
+  const fraction = (point - segment.from) / (segment.to - segment.from);
+  return { from: 0, to: 1, fraction, atStop: progress.atStop };
+}
 const radians = Math.PI / 180;
 /** Whether an observation may still be displayed as live GPS. */
 export function freshTripPosition(
@@ -49,6 +61,41 @@ export function tripProgress(
 ): TripProgress | null {
   if (!freshTripPosition(live, now)) return null;
   return projectPosition(trip, live.position);
+}
+
+/** Backend progress is distinct from GPS and must match the displayed stop occurrences. */
+export function estimatedTripProgress(
+  trip: Trip,
+  live?: TripObservation,
+  now = Date.now(),
+): TripProgress | null {
+  const estimate = live?.estimatedProgress;
+  if (
+    !estimate ||
+    live?.cancelled === true ||
+    !["estimated", "live"].includes(live.status) ||
+    Date.parse(estimate.observedAt) > now + config.gpsFutureToleranceMs ||
+    Date.parse(estimate.observedAt) + config.gpsMaxAgeMs <= now ||
+    Date.parse(estimate.validUntil) <= now
+  )
+    return null;
+  const from = trip.stops[estimate.fromIndex],
+    to = trip.stops[estimate.toIndex];
+  if (
+    !from ||
+    !to ||
+    from.stop.id !== estimate.fromStopId ||
+    to.stop.id !== estimate.toStopId ||
+    Date.parse(from.departure ?? "") !== Date.parse(estimate.fromDeparture) ||
+    Date.parse(to.arrival ?? "") !== Date.parse(estimate.toArrival)
+  )
+    return null;
+  return {
+    from: estimate.fromIndex,
+    to: estimate.toIndex,
+    fraction: estimate.fraction,
+    atStop: estimate.atStop,
+  };
 }
 
 /** Previously measured GPS is explicitly last-known, never a live observation. */

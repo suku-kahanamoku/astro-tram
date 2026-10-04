@@ -63,9 +63,11 @@ export function createTrackingSubscriptions(
       (!value.validUntil ||
         (current.observedAt &&
           value.observedAt &&
+          !(current.estimatedProgress && value.position) &&
           Date.parse(value.observedAt) < Date.parse(current.observedAt)))
     )
       return;
+    if (current?.position && value.estimatedProgress && !value.position) return;
     // An unavailable frame is not a newer measurement and must not cancel the
     // dialog's pending initial HTTP read of delay and position.
     if (value.validUntil) watch.revision = (watch.revision ?? 0) + 1;
@@ -120,7 +122,7 @@ export function createTrackingSubscriptions(
         socket?.send({ type: "unsubscribe", trip: id });
       watch.session = undefined;
       watch.subscribed = false;
-      if (!currentObservation(id))
+      if (!currentObservation(id) && !watch.snapshot)
         store.set(id, unavailableObservation(session.status));
       return;
     }
@@ -251,7 +253,11 @@ export function createTrackingSubscriptions(
     refresh(id: string) {
       const watch = watches.get(id);
       if (!watch || !active(id, watch) || !dependencies.observation) return;
-      watch.snapshot?.abort();
+      // Accordion and dialog can open together or share the same trip. Join
+      // their pending read instead of aborting it and issuing duplicate HTTP.
+      if (watch.snapshot) return;
+      if (!currentObservation(id))
+        store.set(id, unavailableObservation("connecting"));
       const controller = new AbortController();
       watch.snapshot = controller;
       const revision = watch.revision ?? 0;
@@ -268,7 +274,14 @@ export function createTrackingSubscriptions(
           }
         })
         // A failed initial read must not tear down the socket or erase a received point.
-        .catch(() => {})
+        .catch(() => {
+          if (
+            active(id, watch) &&
+            !controller.signal.aborted &&
+            !currentObservation(id)
+          )
+            apply(id, watch, unavailableObservation());
+        })
         .finally(() => {
           if (watch.snapshot === controller) watch.snapshot = undefined;
         });

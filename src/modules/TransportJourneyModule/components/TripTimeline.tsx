@@ -2,6 +2,7 @@ import { useTripObservation } from "../../TransportTrackingModule/hooks/useTrack
 import { useTripCoordinates } from "../hooks/useTripCoordinates";
 import { useRef } from "react";
 import TripStops from "./TripStops";
+import TripVehicleDot from "./TripVehicleDot";
 import { useTripProgress } from "../hooks/useTripProgress";
 import { useTripTimeline } from "../hooks/useTripTimeline";
 import type {
@@ -29,19 +30,15 @@ export default function TripTimeline({
   const root = useRef<HTMLDivElement>(null);
   const observation = useTripObservation(leg?.tripId);
   live = live ?? observation;
-  const coordinateTrip = useTripCoordinates(trip, leg?.tripId);
-  const { progress, retained } = useTripProgress(coordinateTrip, live);
+  const coordinateTrip = useTripCoordinates(
+    trip,
+    live?.position ? leg?.tripId : undefined,
+  );
+  const { progress, retained, estimated } = useTripProgress(
+    coordinateTrip,
+    live,
+  );
   const top = useTripTimeline(root, progress, trip);
-  const locationLabel = progress
-    ? progress.atStop
-      ? t.vehicleAtStop.replace("{stop}", trip.stops[progress.from].stop.name)
-      : t.vehicleBetweenStops
-          .replace("{from}", trip.stops[progress.from].stop.name)
-          .replace("{to}", trip.stops[progress.to].stop.name)
-    : "";
-  const label = retained
-    ? `${t.vehicleTimelineLastKnown}: ${locationLabel}`
-    : locationLabel;
   return (
     <div ref={root} className="trip-timeline" data-trip-timeline>
       <ul className="trip-stops" data-trip-dialog-stops>
@@ -54,25 +51,14 @@ export default function TripTimeline({
           timeline
         />
       </ul>
-      {progress && top !== null && (
-        <span
-          className="trip-vehicle-dot"
-          data-trip-vehicle-dot
-          data-retained={retained ? true : undefined}
-          data-from={progress.from}
-          data-to={progress.to}
-          data-fraction={progress.fraction}
-          style={{ top }}
-          role="img"
-          aria-label={label}
-          title={retained ? label : `${label}. ${t.vehicleTimelineHint}`}
-        />
-      )}
-      {label && (
-        <span className="sr-only" role="status">
-          {label}
-        </span>
-      )}
+      <TripVehicleDot
+        trip={trip}
+        progress={progress}
+        retained={retained}
+        estimated={estimated}
+        top={top}
+        t={t}
+      />
     </div>
   );
 }

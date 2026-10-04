@@ -19,6 +19,7 @@ export default function CountryTabs({
     SK: t.sk,
     AT: t.at,
     PL: t.pl,
+    DE: t.de,
     NO: t.no,
   };
   const codes = [
@@ -27,6 +28,7 @@ export default function CountryTabs({
       "SK",
       "AT",
       "PL",
+      "DE",
       ...countries.map((c) => c.state),
       value,
     ]),
@@ -44,12 +46,17 @@ export default function CountryTabs({
             type="button"
             role="tab"
             id={`country-${code.toLowerCase()}`}
+            aria-label={labels[code] ?? code}
             aria-selected={selected}
             aria-controls={
               selected ? `country-search-${code.toLowerCase()}` : undefined
             }
             disabled={!enabled}
-            title={!loading && !enabled ? t.countryUnavailable : undefined}
+            title={
+              !loading && !enabled
+                ? t.countryUnavailable
+                : (labels[code] ?? code)
+            }
             tabIndex={
               enabled &&
               (selected ||
@@ -85,7 +92,7 @@ export default function CountryTabs({
                 ...[...code].map((c) => 127397 + c.charCodeAt(0)),
               )}
             </span>
-            {labels[code] ?? code}
+            <span className="country-tab-label">{labels[code] ?? code}</span>
           </button>
         );
       })}

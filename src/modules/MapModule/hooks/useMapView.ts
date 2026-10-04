@@ -90,6 +90,7 @@ export function useMapView(
     let expiry: ReturnType<typeof setTimeout> | undefined;
     const readOnly =
       mode === "stop" ||
+      mode === "walk" ||
       place?.type === "stop" ||
       place?.type === "current_location";
     const set = (ready: boolean, message = "", name = "") => {
@@ -148,7 +149,7 @@ export function useMapView(
         handle = createMap(target, {
           center,
           config,
-          journey: mode === "journey" ? journey : undefined,
+          journey: mode === "journey" || mode === "walk" ? journey : undefined,
           readOnly,
           onPick: (lat, lon) => pick.current(lat, lon),
         });
@@ -157,6 +158,8 @@ export function useMapView(
           if (!disposed) handle?.refresh();
         });
         if (mode === "journey" && handle.features === 0)
+          set(true, texts.mapUnavailable);
+        if (mode === "walk" && handle.routes === 0)
           set(true, texts.mapUnavailable);
         if (fix) {
           const update = (lat: number, lon: number, timestamp: number) => {
@@ -203,10 +206,10 @@ export function useMapView(
             false,
             place?.type === "current_location"
               ? texts.locationError
-              : readOnly
-                ? texts.stopMapError
-                : mode === "journey"
-                  ? texts.routeMapError
+              : mode === "journey" || mode === "walk"
+                ? texts.routeMapError
+                : readOnly
+                  ? texts.stopMapError
                   : texts.mapError,
           );
       }

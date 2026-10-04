@@ -1,4 +1,4 @@
-import type { RefObject } from "react";
+import { useMemo, type RefObject } from "react";
 import { useMapView as useGenericMapView } from "../../MapModule/hooks/useMapView";
 import type { MapPlace, MapRoute } from "../../MapModule/types";
 import {
@@ -30,6 +30,22 @@ export function useMapView(
   },
 ) {
   const { t } = options;
+  const journey = useMemo<MapRoute | undefined>(
+    () =>
+      options.journey
+        ? {
+            legs: options.journey.legs.map((leg) => ({
+              from: leg.from,
+              to: leg.to,
+              geometry: leg.geometry,
+              lineStyle: leg.mode === "walk" ? "dotted" : "solid",
+            })),
+            endpointLabels: options.mode === "walk" ? ["A", "B"] : undefined,
+            zoomOffset: options.mode === "walk" ? 0 : undefined,
+          }
+        : undefined,
+    [options.journey, options.mode],
+  );
   return useGenericMapView(canvas, {
     open: options.open,
     identity: options.identity,
@@ -37,7 +53,7 @@ export function useMapView(
     place: mapPlace(options.place),
     stop: options.stop,
     waiting: options.waiting,
-    journey: options.journey as MapRoute | undefined,
+    journey,
     country: options.country,
     config,
     texts: {
@@ -48,7 +64,8 @@ export function useMapView(
       stopMapError: t.stopMapError,
       routeMapError: t.routeMapError,
       mapError: t.mapError,
-      mapUnavailable: t.mapUnavailable,
+      mapUnavailable:
+        options.mode === "walk" ? t.walkMapUnavailable : t.mapUnavailable,
     },
     resolveStop: transportClient.stop,
     getCurrentLocation: getFix,

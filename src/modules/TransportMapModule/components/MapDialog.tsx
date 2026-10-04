@@ -44,27 +44,34 @@ export default function MapDialog({
     t,
     onPick: (lat, lon) => setPoint({ lat, lon }),
   });
-  const readonly = place?.type === "current_location" || place?.type === "stop";
+  const readonly =
+    mode === "walk" ||
+    place?.type === "current_location" ||
+    place?.type === "stop";
   const title =
     mode === "stop"
       ? stop?.name || status.name || t.stopMap
       : mode === "journey"
         ? t.routeMap
-        : readonly
-          ? place?.type === "current_location"
-            ? t.current
-            : place?.label || t.stopMap
-          : t.mapTitle;
+        : mode === "walk"
+          ? t.walkMap
+          : readonly
+            ? place?.type === "current_location"
+              ? t.current
+              : place?.label || t.stopMap
+            : t.mapTitle;
   const hint =
     mode === "stop"
       ? t.stopMapHint
       : mode === "journey"
         ? t.routeMapHint
-        : readonly
-          ? place?.type === "current_location"
-            ? t.currentMapHint
-            : t.stopMapHint
-          : t.mapHint;
+        : mode === "walk"
+          ? t.walkMapHint
+          : readonly
+            ? place?.type === "current_location"
+              ? t.currentMapHint
+              : t.stopMapHint
+            : t.mapHint;
   return (
     <Dialog
       open={open}
@@ -80,11 +87,13 @@ export default function MapDialog({
             {mode !== "journey" && (
               <TransportBadge
                 mode={
-                  place?.type === "current_location"
-                    ? "location"
-                    : mode === "stop" || place?.type === "stop"
-                      ? (stop?.modes?.[0] ?? "stop")
-                      : "point"
+                  mode === "walk"
+                    ? "walk"
+                    : place?.type === "current_location"
+                      ? "location"
+                      : mode === "stop" || place?.type === "stop"
+                        ? (stop?.modes?.[0] ?? "stop")
+                        : "point"
                 }
                 variant="icon"
                 t={t}
@@ -92,6 +101,11 @@ export default function MapDialog({
             )}
             {title}
           </h2>
+          {mode === "walk" && journey && (
+            <p data-walk-endpoints>
+              A: {journey.legs[0].from.name} → B: {journey.legs[0].to.name}
+            </p>
+          )}
           {mode === "journey" && journey && (
             <div className="route-badges">
               {journey.legs.map((leg, i) => (

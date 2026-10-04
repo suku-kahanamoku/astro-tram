@@ -60,6 +60,74 @@ test("place metadata projection accepts only public country, served modes and ex
   assert.ok(!JSON.stringify(result).includes("secret"));
 });
 
+test("Java stop metadata reaches the same Astro shape in autocomplete, search and details", async () => {
+  const stop = {
+    id: "station_1",
+    name: "Hub",
+    state: "CZ",
+    city: "Brno",
+    lat: 49.2,
+    lon: 16.6,
+    modes: ["bus", "tram", "trolleybus"],
+    transport_scope: "mixed",
+    source_mode: "otp",
+  };
+  const provider = createTransportProvider(
+    createCoreClient(
+      {
+        baseUrl: "https://core.test/api",
+        apiKey: "secret",
+        tenantHost: "tram.test",
+      },
+      async (url) => {
+        const path = new URL(String(url)).pathname;
+        const data = path.endsWith("places/search")
+          ? { data: [stop] }
+          : path.includes("/stops/")
+            ? { result: stop }
+            : path.includes("/trips/")
+              ? { result: { stops: [{ stop }] } }
+              : {
+                  journeys: [
+                    {
+                      legs: [
+                        {
+                          mode: "tram",
+                          from: stop,
+                          to: stop,
+                          scheduled_departure: "2026-10-04T10:00:00Z",
+                          scheduled_arrival: "2026-10-04T10:10:00Z",
+                        },
+                      ],
+                    },
+                  ],
+                  resolved_places: { from: stop, to: stop },
+                };
+        return Response.json({ success: true, data });
+      },
+    ),
+  );
+  const places = await provider.places("Hub", "CZ");
+  const search = await provider.search({});
+  const detail = await provider.stop(stop.id);
+  const trip = await provider.trip("trip_1");
+  for (const place of [
+    places.data[0],
+    search.resolvedPlaces.from,
+    search.resolvedPlaces.to,
+    search.journeys[0].legs[0].from,
+    search.journeys[0].legs[0].to,
+    detail,
+    trip.stops[0].stop,
+  ]) {
+    assert.ok(place);
+    assert.deepEqual(place.modes, stop.modes);
+    assert.equal(place.transportScope, "mixed");
+    assert.equal(place.state, "CZ");
+    assert.equal(place.city, "Brno");
+  }
+});
+
 test("station descriptions localize country, city and supplied modes without inferring MHD", () => {
   const place = {
     id: "s1",
