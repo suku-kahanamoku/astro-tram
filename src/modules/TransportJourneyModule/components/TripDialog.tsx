@@ -2,7 +2,7 @@ import DelayBadge from "./DelayBadge";
 import type { TripObservation } from "../../TransportCoreModule/types";
 import Dialog from "../../UIModule/components/Dialog";
 import Icon from "../../UIModule/components/TransitIcon";
-import { modeLabel } from "../providers/transportIcons";
+import TransportBadge from "../../TransportCoreModule/components/TransportBadge";
 import { hasStopDetails } from "../providers/render";
 import TripTimeline from "./TripTimeline";
 import TripLegend from "./TripLegend";
@@ -45,9 +45,12 @@ export default function TripDialog({
           <h2 id="trip-title">
             {leg ? (
               <>
-                <span className="trip-title-service">
-                  {leg.line || modeLabel(leg.mode, t)} <Icon name={leg.mode} />
-                </span>
+                <TransportBadge
+                  mode={leg.mode}
+                  line={leg.line}
+                  t={t}
+                  className="trip-title-service"
+                />
                 {from && to && (
                   <span className="trip-title-route">
                     {from} – {to}

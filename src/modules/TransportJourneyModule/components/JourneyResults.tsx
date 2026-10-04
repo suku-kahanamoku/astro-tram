@@ -17,29 +17,18 @@ import {
   useUrlNavigation,
 } from "../../UIModule/hooks/useUrlNavigation";
 import Icon from "../../UIModule/components/TransitIcon";
-import { modeLabel } from "../providers/transportIcons";
+import TransportBadge from "../../TransportCoreModule/components/TransportBadge";
+import { modeLabel } from "../../TransportCoreModule/providers/transportPresentation";
 import { navHref } from "../providers/render";
 import { tripSegment } from "../providers/trip";
 import TripStops from "./TripStops";
 import type {
   SearchResult,
   Journey,
-  Leg,
   Stop,
   Trip,
 } from "../../TransportCoreModule/types";
 import type { Dictionary } from "../../TransportCoreModule/providers/translations";
-function Badge({ leg, t }: { leg: Leg; t: Dictionary }) {
-  return (
-    <>
-      {leg.mode === "walk" ? t.walk : leg.line || modeLabel(leg.mode, t)}
-      <Icon name={leg.mode} />
-      {leg.mode !== "walk" && (
-        <span className="sr-only"> {modeLabel(leg.mode, t)}</span>
-      )}
-    </>
-  );
-}
 function StopLink({
   stop,
   index,
@@ -129,9 +118,12 @@ function JourneyDetail({
             <article className="leg">
               <div className="leg-title" data-mode={l.mode}>
                 {l.tripId ? (
-                  <NavLink
-                    className="route-badge trip-open"
-                    data-mode={l.mode}
+                  <TransportBadge
+                    as={NavLink}
+                    mode={l.mode}
+                    line={l.line}
+                    t={t}
+                    className="trip-open"
                     data-trip-open={i}
                     data-nav
                     aria-haspopup="dialog"
@@ -143,13 +135,9 @@ function JourneyDetail({
                       stopSide: null,
                       tripStop: null,
                     })}
-                  >
-                    <Badge leg={l} t={t} />
-                  </NavLink>
+                  />
                 ) : (
-                  <span className="route-badge" data-mode={l.mode}>
-                    <Badge leg={l} t={t} />
-                  </span>
+                  <TransportBadge mode={l.mode} line={l.line} t={t} />
                 )}
                 <DelayBadge leg={l} t={t} />
                 {l.operator && (
@@ -284,9 +272,12 @@ export default function JourneyResults({
                       {i > 0 && <span aria-hidden="true">›</span>}
                       <span className="summary-leg-badges" data-mode={l.mode}>
                         {l.tripId ? (
-                          <button
-                            className="route-badge trip-open"
-                            data-mode={l.mode}
+                          <TransportBadge
+                            as="button"
+                            mode={l.mode}
+                            line={l.line}
+                            t={t}
+                            className="trip-open"
                             data-summary-trip={i}
                             aria-haspopup="dialog"
                             aria-label={`${modeLabel(l.mode, t)}: ${t.tripStops} ${l.line || ""}`}
@@ -310,13 +301,9 @@ export default function JourneyResults({
                                 }),
                               )
                             }
-                          >
-                            <Badge leg={l} t={t} />
-                          </button>
+                          />
                         ) : (
-                          <span className="route-badge" data-mode={l.mode}>
-                            <Badge leg={l} t={t} />
-                          </span>
+                          <TransportBadge mode={l.mode} line={l.line} t={t} />
                         )}
                         <DelayBadge leg={l} t={t} />
                       </span>

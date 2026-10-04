@@ -173,5 +173,10 @@
   "dataLicense": "Licence",
   "dataSource": "Zdroj dat",
   "dataPublished": "Zveřejněno",
-  "dataUpdated": "Aktualizováno"
+  "dataUpdated": "Aktualizováno",
+  "germany": "Německo",
+  "station": "Stanice",
+  "urbanTransport": "MHD",
+  "regionalTransport": "Regionální doprava",
+  "mixedTransport": "MHD a regionální doprava"
 }

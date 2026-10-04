@@ -173,5 +173,10 @@
   "dataLicense": "Licence",
   "dataSource": "Data source",
   "dataPublished": "Published",
-  "dataUpdated": "Updated"
+  "dataUpdated": "Updated",
+  "germany": "Germany",
+  "station": "Station",
+  "urbanTransport": "Urban transport",
+  "regionalTransport": "Regional transport",
+  "mixedTransport": "Urban and regional transport"
 }

@@ -1,7 +1,6 @@
 import { transitPaths } from "../providers/transitIcons";
 const aliases: Record<string, string> = {
   coach: "bus",
-  trolleybus: "bus",
   cable_car: "gondola",
   funicular: "train",
   monorail: "train",

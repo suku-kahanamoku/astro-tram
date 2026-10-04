@@ -10,6 +10,7 @@ export interface ComboOption {
   key: string;
   label: string;
   detail?: string;
+  icon?: ReactNode;
 }
 interface Props extends Omit<
   InputHTMLAttributes<HTMLInputElement>,
@@ -53,8 +54,12 @@ export default function Combobox({
     if (!open) setActive(-1);
     if (open && active >= 0) {
       list.current?.children[active]?.scrollIntoView({ block: "nearest" });
+    } else if (open && list.current) {
+      const bounds = list.current.getBoundingClientRect();
+      if (bounds.bottom > window.innerHeight || bounds.top < 0)
+        list.current.scrollIntoView({ block: "nearest" });
     }
-  }, [open, active]);
+  }, [open, active, options.length]);
   return (
     <>
       <div className="place-input">
@@ -119,6 +124,11 @@ export default function Combobox({
               id={`${listId}-${i}`}
               role="option"
               aria-selected={active === i}
+              aria-label={option.label}
+              aria-describedby={
+                option.detail ? `${listId}-${i}-detail` : undefined
+              }
+              className={option.icon ? "combo-rich-option" : undefined}
               aria-setsize={options.length}
               aria-posinset={i + 1}
               onClick={() => {
@@ -126,8 +136,13 @@ export default function Combobox({
                 onChoose(i);
               }}
             >
-              {option.label}
-              {option.detail && <small>{option.detail}</small>}
+              {option.icon && <span aria-hidden="true">{option.icon}</span>}
+              <span className="combo-option-text">
+                <span className="combo-option-label">{option.label}</span>
+                {option.detail && (
+                  <small id={`${listId}-${i}-detail`}>{option.detail}</small>
+                )}
+              </span>
             </li>
           ))}
         </ul>

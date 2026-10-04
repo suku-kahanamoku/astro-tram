@@ -173,5 +173,10 @@
   "dataLicense": "Lizenz",
   "dataSource": "Datenquelle",
   "dataPublished": "Veröffentlicht",
-  "dataUpdated": "Aktualisiert"
+  "dataUpdated": "Aktualisiert",
+  "germany": "Deutschland",
+  "station": "Bahnhof",
+  "urbanTransport": "Stadtverkehr",
+  "regionalTransport": "Regionalverkehr",
+  "mixedTransport": "Stadt- und Regionalverkehr"
 }

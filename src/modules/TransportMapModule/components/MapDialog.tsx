@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import Dialog from "../../UIModule/components/Dialog";
 import Icon from "../../UIModule/components/TransitIcon";
+import TransportBadge from "../../TransportCoreModule/components/TransportBadge";
 import { useMapView } from "../hooks/useMapView";
 import type { Place, Journey, Stop } from "../../TransportCoreModule/types";
 import type { Dictionary } from "../../TransportCoreModule/providers/translations";
@@ -75,7 +76,29 @@ export default function MapDialog({
       <div className="map-header">
         <div>
           <span className="eyebrow">TRAM / MAP</span>
-          <h2 id="map-title">{title}</h2>
+          <h2 id="map-title" className="map-title-symbol">
+            {mode !== "journey" && (
+              <TransportBadge
+                mode={
+                  place?.type === "current_location"
+                    ? "location"
+                    : mode === "stop" || place?.type === "stop"
+                      ? (stop?.modes?.[0] ?? "stop")
+                      : "point"
+                }
+                variant="icon"
+                t={t}
+              />
+            )}
+            {title}
+          </h2>
+          {mode === "journey" && journey && (
+            <div className="route-badges">
+              {journey.legs.map((leg, i) => (
+                <TransportBadge key={i} mode={leg.mode} line={leg.line} t={t} />
+              ))}
+            </div>
+          )}
         </div>
         <button
           className="icon-button"

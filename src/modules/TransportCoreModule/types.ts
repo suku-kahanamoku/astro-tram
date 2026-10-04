@@ -17,7 +17,13 @@ export interface Fix {
   lon: number;
   observedAt: string;
 }
-export interface Stop {
+export interface PlaceMetadata {
+  state?: string | null;
+  city?: string | null;
+  modes?: string[];
+  transportScope?: "urban" | "regional" | "mixed";
+}
+export interface Stop extends PlaceMetadata {
   id: string | null;
   name: string;
   lat: number | null;
@@ -69,8 +75,7 @@ export interface SearchResult {
   journeys: Journey[];
   partial: boolean;
 }
-export interface PlaceOption {
-  city?: string | null;
+export interface PlaceOption extends PlaceMetadata {
   id: string;
   name: string;
   lat: number | null;

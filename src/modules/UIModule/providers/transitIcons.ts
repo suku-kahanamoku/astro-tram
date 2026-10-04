@@ -16,6 +16,8 @@ export const transitPaths: Record<string, string> = {
 
   walk: "M15 4a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM7 21l3-7m3 0 3 7M7 12l2-4 4-1 2 5 4 1M12 8l-2 6 4 2",
   bus: "M4 16V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v11H4Zm0-5h16M7 16v4m10-4v4M7 14h.01m10 0h.01M1 7v5m22-5v5",
+  trolleybus:
+    "M8 5 11 1m3 4 3-4M4 16V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9H4Zm0-5h16M7 16v4m10-4v4M7 14h.01m10 0h.01M1 9v4m22-4v4",
   train:
     "M5 16V5a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3ZM5 10h14M12 2v8M8 14h.01m8 0h.01M8 19l-3 3m11-3 3 3",
   metro:

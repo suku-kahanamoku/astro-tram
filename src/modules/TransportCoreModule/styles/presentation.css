@@ -1,0 +1,30 @@
+.transport-mode-symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--mode-bg);
+  color: var(--mode-fg);
+}
+.place-option-symbols {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 3px;
+}
+.place-option-symbols:has(> :nth-child(2)) .transport-mode-symbol {
+  width: 30px;
+  height: 36px;
+}
+.place-option-symbols > small {
+  margin: 0;
+  font-weight: 700;
+}
+.map-title-symbol {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}

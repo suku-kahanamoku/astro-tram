@@ -1,6 +1,7 @@
 import { defineConfig, envField } from "astro/config";
 import react from "@astrojs/react";
 import node from "@astrojs/node";
+import netlify from "@astrojs/netlify";
 import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 import { loadEnv } from "vite";
@@ -26,7 +27,8 @@ export default defineConfig({
   site,
   output: "server",
   devToolbar: { enabled: false },
-  adapter: node({ mode: "standalone" }),
+  adapter:
+    process.env.NETLIFY === "true" ? netlify() : node({ mode: "standalone" }),
   server: { port: 4321 },
   trailingSlash: "always",
   i18n: {

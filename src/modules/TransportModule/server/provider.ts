@@ -7,6 +7,7 @@ import { createHash } from "node:crypto";
 import type { CoreClient } from "../../CoreModule/server/php-core";
 import { HttpError } from "../../CoreModule/server/errors";
 import { projectAttributions } from "../../TransportCoreModule/providers/attributions";
+import { servedModes } from "../../TransportCoreModule/config/transportModes";
 import type {
   Geometry,
   Journey,
@@ -16,6 +17,7 @@ import type {
   Trip,
   SearchResult,
   TripMetadata,
+  PlaceMetadata,
 } from "../../TransportCoreModule/types";
 import {
   validCoordinates,
@@ -98,9 +100,38 @@ function tripMetadata(value: unknown, operatorValue: unknown): TripMetadata {
       .filter((n) => Object.keys(n.texts).length),
   };
 }
+function placeMetadata(p: Record<string, unknown>): PlaceMetadata {
+  return {
+    ...(typeof p.state === "string" && /^[A-Z]{2}$/.test(p.state)
+      ? { state: p.state }
+      : {}),
+    ...(typeof p.city === "string" ? { city: text(p.city, 120) || null } : {}),
+    ...(Array.isArray(p.modes)
+      ? {
+          modes: [
+            ...new Set(
+              p.modes
+                .slice(0, 20)
+                .filter(
+                  (mode): mode is string =>
+                    typeof mode === "string" && servedModes.has(mode),
+                ),
+            ),
+          ],
+        }
+      : {}),
+    ...(typeof p.transport_scope === "string" &&
+    ["urban", "regional", "mixed"].includes(p.transport_scope)
+      ? {
+          transportScope: p.transport_scope as PlaceMetadata["transportScope"],
+        }
+      : {}),
+  };
+}
 function stop(value: unknown): Stop {
   const p = object(value);
   return {
+    ...placeMetadata(p),
     id: id(p.id),
     name: text(p.name),
     lat: typeof p.lat === "number" && Math.abs(p.lat) <= 90 ? p.lat : null,

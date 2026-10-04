@@ -74,9 +74,9 @@ test("both place fields get fresh ranking GPS and preserve the backend order wit
     expect(new URL(request.url()).search).toBe("");
     expect(request.postDataJSON().q.latitude).toBe(lat);
     expect(request.postDataJSON().q.name.$regex).toBe("tab");
-    await expect(page.locator(`#suggestions-${side} [role=option]`)).toHaveText(
-      ["Brno, Tábor", "Tábor"],
-    );
+    await expect(
+      page.locator(`#suggestions-${side} .combo-option-label`),
+    ).toHaveText(["Brno, Tábor", "Tábor"]);
     await page.locator(`#suggestions-${side} [role=option]`).first().click();
   }
   const stored = await page.evaluate(() =>

@@ -67,15 +67,22 @@ providery jsou samostatné TypeScript moduly. Backendové klíče zůstávají n
   `useTransport.ts` je odstraněný. Nevykresluje se přes `innerHTML`.
 - `SearchForm`, `PlaceField` a `CityPicker` používají společný `Combobox` z UIModule.
   `useAsyncOptions` řeší debounce, rušení požadavků a ignorování starých odpovědí.
-  Formulář se zpřístupní po hydrataci a ověření schopností tenantu přes
-  `/api/transport/coverage/` → php-core `/transport/v1/coverage`.
-  `CountryTabs` zpřístupní zemi pouze s primárním našeptávačem a plánovačem;
-  nepřipravené země zůstávají označené a neklikatelné. Výpadek načtení pokrytí
-  nabízí opakování. Záložky se zalamují i na mobilu a ovládají se šipkami.
-  Seznam měst se načítá jen při deklarované podpoře této operace. Přepnutí země
-  vymaže město i obě zastávky předchozí země. Primární zdroje se nezastupují
-  lokálním OTP jen kvůli chybějící integraci. SK/AT/PL záložka není tvrzení,
-  že je pro zemi již nasazený online plánovač; AU znamená Austrálii, AT Rakousko.
+- `TransportCoreModule/components/TransportBadge.tsx` používá jediný registr ikon,
+  barev a názvů v `config/transportModes.ts`. Stejná komponenta vykresluje symboly
+  v nabídce míst a měst, štítky v souhrnu i detailu spojení a v dialozích.
+  Tramvaj je oranžová, autobus zelený, vlak modrý; trolejbus má vlastní ikonu.
+  Prázdné pole nabízí aktuální polohu bez automatického vyžádání GPS.
+
+Formulář se zpřístupní po hydrataci a ověření schopností tenantu přes
+`/api/transport/coverage/` → php-core `/transport/v1/coverage`.
+`CountryTabs` zpřístupní zemi pouze s primárním našeptávačem a plánovačem;
+nepřipravené země zůstávají označené a neklikatelné. Výpadek načtení pokrytí
+nabízí opakování. Záložky se zalamují i na mobilu a ovládají se šipkami.
+Seznam měst se načítá jen při deklarované podpoře této operace. Přepnutí země
+vymaže město i obě zastávky předchozí země. Primární zdroje se nezastupují
+lokálním OTP jen kvůli chybějící integraci. SK/AT/PL záložka není tvrzení,
+že je pro zemi již nasazený online plánovač; AU znamená Austrálii, AT Rakousko.
+
 - `useJourneySearch` vlastní online hledání, chyby a opakování dotazu;
   `useTrip` načítá detail pouze pro otevřený pohled. Výsledky se neukládají do
   browser storage. Klientské limity, středy map a BFF endpointy jsou v
@@ -100,6 +107,28 @@ serverových importů v browseru hlídají architektonické testy také pro `.ts
 Playwright má navíc scénáře pro hydrataci, jazykový přepínač, opakované připojení
 mobilního menu, reklamní souhlas a opožděné odpovědi našeptávače. Testovací React
 harness leží v `tests/`, není aplikační routou a nevstupuje do produkčního buildu.
+
+### Dopravní metadata zastávek
+
+Astro propouští existující veřejné `state` a `city` do našeptávače. Pro barevné
+symboly konkrétních druhů dopravy je připravené volitelné `modes: string[]`;
+volitelné `transport_scope: "urban" | "regional" | "mixed"` doplní označení MHD
+či regionální dopravy. BFF propouští jen známé druhy dopravy a scope, nikdy
+backendové barvy, HTML, interní metadata ani neznámá pole. API frontendu používá
+`transportScope` v camelCase. Více módů zobrazí až tři ikony a počet zbývajících;
+text pod názvem obsahuje všechny dodané typy. Chybějící mód znamená neutrální
+ikonu zastávky; frontend jej nehádá ze jména, města ani neprůhledného ID.
+
+**Potřeba pro samostatnou backendovou session:** současný Java
+`ScheduleCatalogService.publicStop()` ještě `modes` ani `transport_scope` nevrací.
+Je třeba doplnit skutečně obsluhující módy ze vztahů GTFS
+`stop_times → trips → routes.route_type`, zahrnout je pro rodičovské stanice
+a do whitelistu `ListQueryService` i zastávkových projekcí journey repository.
+Rozlišení MHD musí pocházet z explicitních metadat zdroje/linky, ne z pouhé
+přítomnosti autobusu nebo tramvaje. Doporučený návratový tvar je např.
+`{state:"CZ",city:"Brno",modes:["tram","bus"],transport_scope:"urban"}`.
+PHP gateway už JSON předává beze změny. Java ani PHP se v této úpravě nemění;
+testovací metadata ověřují připravené zobrazení, ne dostupnost na živém backendu.
 
 ## URL a obnova stránky
 
@@ -152,7 +181,34 @@ npm run format:check
 
 Playwright spouští izolovaný mock php-core na portu 4399 a Astro na 4328. Ověřuje kompletní HTTP cestu browser → Astro → provider včetně pevného tenantu a tajného klíče. Pokrývá obnovu vyhledávání, lokální stav detailů bez navigace, příjezd/přímé spoje, GPS obnovu a zamítnutí, mapu, nedostupnost, jazykové URL a mobilní šířku. Mock není důkaz živého spojení s Golemio/Entur. Screenshoty jsou v `test-results/`.
 
-Produkční frontend, host TRAM a dopravní providery musí být nakonfigurovány před veřejným spuštěním. Tento projekt je připraven pro samostatný Node SSR server (`npm run build` + `npm start`); přístupový klíč nepatří do prohlížeče.
+Produkční frontend, host TRAM a dopravní providery musí být nakonfigurovány před veřejným spuštěním. Přístupový klíč nepatří do prohlížeče.
+
+## Nasazení na Netlify
+
+`netlify.toml` nastavuje Node 22, příkaz `npm run build:netlify` a publish adresář
+`dist`. Pro samostatný repozitář `astro-tram` ponechte Base directory a Package
+directory prázdné. Build používá `@astrojs/netlify`, který připraví statické soubory
+v `dist` a SSR funkci v `.netlify/v1/functions/ssr/`. Stránky a API se vykreslují
+za běhu; kořenový `index.html` proto není požadavkem tohoto SSR nasazení.
+Funkce i směrování nasadí Netlify automaticky, nepřidávejte SPA přepis na `index.html`.
+
+V Netlify Project configuration → Environment variables nastavte:
+
+- `PUBLIC_SITE_URL`: skutečný HTTPS origin produkčního webu, dostupný při buildu.
+- `PHP_CORE_URL`: veřejně nebo z Netlify dostupný HTTPS kořen php-core API včetně
+  `/api`; lokální `127.0.0.1` není adresa backendu pro Netlify.
+- `PHP_CORE_API_KEY`: interní klíč, pouze serverová proměnná.
+- `PHP_CORE_TENANT_HOST`: pevný host existujícího TRAM tenantu v php-core.
+
+Proměnné `PHP_CORE_*` musí být dostupné SSR funkci (scope Functions), nejen buildu.
+Změna proměnných vyžaduje nové nasazení. Deploy preview s přihlášením či jinými
+mutacemi potřebuje vlastní odpovídající `PUBLIC_SITE_URL` při buildu.
+
+Lokální kontrolu Netlify výstupu spustíte `npm run build:netlify`. Běžné
+`npm run build` mimo Netlify zachovává samostatný Node SSR server s výstupem
+`dist/client` a `dist/server`, spustitelný přes `npm start`. Na Netlify adaptér
+automaticky vybírá také jeho proměnná `NETLIFY=true`, takže funguje i samotné
+`npm run build` v jeho build prostředí. Lokální vývoj zůstává `npm run dev`.
 
 ## Oblast online hledání
 

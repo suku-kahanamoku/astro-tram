@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Combobox from "../../UIModule/components/Combobox";
+import TransportBadge from "../../TransportCoreModule/components/TransportBadge";
+import { countryLabel } from "../../TransportCoreModule/providers/transportPresentation";
 import { useCityCatalog } from "../hooks/useCityCatalog";
 import type { Dictionary } from "../../TransportCoreModule/providers/translations";
 const normalize = (value: string) =>
@@ -43,14 +45,26 @@ export default function CityPicker({
   }, [index, query]);
   const comboOptions = useMemo(
     () => [
-      { key: "", label: t.allTimetables },
+      {
+        key: "",
+        label: t.allTimetables,
+        detail: countryLabel(country, t),
+        icon: <TransportBadge mode="region" t={t} variant="icon" />,
+      },
       ...choices.map((city) => ({
         key: city.id,
         label: city.name,
-        detail: city.sourceMode === "fallback" ? t.fallback : undefined,
+        detail: [
+          t.city,
+          countryLabel(city.state, t),
+          city.sourceMode === "fallback" ? t.fallback : null,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+        icon: <TransportBadge mode="city" t={t} variant="icon" />,
       })),
     ],
-    [choices, t.allTimetables, t.fallback],
+    [choices, country, t],
   );
   const hide = () => {
     setOpen(false);

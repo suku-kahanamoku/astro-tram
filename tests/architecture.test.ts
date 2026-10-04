@@ -136,7 +136,7 @@ const allowed: Record<string, string[]> = {
     "TransportTrackingModule",
     "TransportMapModule",
   ],
-  TransportCoreModule: ["CoreModule", "LangModule"],
+  TransportCoreModule: ["CoreModule", "LangModule", "UIModule"],
   TransportSearchModule: ["UIModule", "LangModule", "TransportCoreModule"],
   TransportJourneyModule: [
     "UIModule",

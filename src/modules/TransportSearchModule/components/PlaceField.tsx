@@ -1,6 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Combobox from "../../UIModule/components/Combobox";
 import Icon from "../../UIModule/components/TransitIcon";
+import TransportBadge from "../../TransportCoreModule/components/TransportBadge";
+import { placeDetail } from "../../TransportCoreModule/providers/transportPresentation";
+import { servedModes } from "../../TransportCoreModule/config/transportModes";
 import { useAsyncOptions } from "../../UIModule/hooks/useAsyncOptions";
 import {
   getAutocompleteFix,
@@ -77,6 +80,10 @@ export default function PlaceField({
     });
   };
   const select = (index: number) => {
+    if (showLocation) {
+      void locate();
+      return;
+    }
     revision.current++;
     const p = options[index];
     if (!p) return;
@@ -103,7 +110,11 @@ export default function PlaceField({
     }
   };
   const searchPlaces = (query: string) => {
-    if (query.trim().length < config.minimumQueryLength) return;
+    if (query.trim().length < config.minimumQueryLength) {
+      setNearby(false);
+      setOpen(true);
+      return;
+    }
     setNearby(false);
     setOpen(true);
     run(async (signal) => {
@@ -127,13 +138,60 @@ export default function PlaceField({
       );
     }, config.autocompleteDelayMs);
   };
-  let hint = locating
+  const showLocation =
+    !nearby && text.trim().length < config.minimumQueryLength;
+  const comboOptions = useMemo(
+    () =>
+      showLocation
+        ? [
+            {
+              key: "current-location",
+              label: t.current,
+              detail: t.location,
+              icon: <TransportBadge mode="location" t={t} variant="icon" />,
+            },
+          ]
+        : options.map((p) => {
+            const modes = [
+              ...new Set(
+                (p.modes ?? []).filter((mode) => servedModes.has(mode)),
+              ),
+            ];
+            return {
+              key: p.id,
+              label: p.name,
+              detail: placeDetail(
+                { ...p, modes, state: p.state ?? state.country },
+                t,
+              ),
+              icon: (
+                <span className="place-option-symbols">
+                  {(modes.length ? modes.slice(0, 3) : ["stop"]).map((mode) => (
+                    <TransportBadge
+                      key={mode}
+                      mode={mode}
+                      t={t}
+                      variant="icon"
+                    />
+                  ))}
+                  {modes.length > 3 && <small>+{modes.length - 3}</small>}
+                </span>
+              ),
+            };
+          }),
+    [showLocation, options, state.country, t],
+  );
+  const openChoices = () => {
+    if (value?.type === "current_location") nearest();
+    else searchPlaces(text);
+  };
+  const hint = locating
     ? t.locating
     : loading
       ? nearby
         ? t.loadingNearby
         : t.loadingPlaces
-      : error
+      : error && !showLocation
         ? nearby
           ? t.nearbyChoicesError
           : ["backend_not_configured", "places_not_configured"].includes(error)
@@ -144,7 +202,7 @@ export default function PlaceField({
             ? options.length
               ? t.chooseNearby
               : t.noNearbyChoices
-            : options.length
+            : showLocation || options.length
               ? ""
               : t.noPlaces
           : "";
@@ -162,11 +220,7 @@ export default function PlaceField({
         maxLength={160}
         spellCheck={false}
         value={text}
-        options={options.map((p) => ({
-          key: p.id,
-          label: p.name,
-          detail: p.sourceMode === "fallback" ? t.fallback : undefined,
-        }))}
+        options={comboOptions}
         open={open}
         listId={`suggestions-${side}`}
         hint={hint}
@@ -176,8 +230,10 @@ export default function PlaceField({
         onBlur={hide}
         onFocus={(e) => {
           e.target.select();
-          if (value?.type === "current_location") nearest();
-          else searchPlaces(text);
+          openChoices();
+        }}
+        onClick={() => {
+          if (!open) openChoices();
         }}
         onText={(query) => {
           revision.current++;
@@ -186,7 +242,6 @@ export default function PlaceField({
           onChange(undefined);
           setNearby(false);
           hide();
-          if (query.trim().length < config.minimumQueryLength) return;
           setOpen(true);
           searchPlaces(query);
         }}

@@ -1,3 +1,5 @@
+@import "../../TransportCoreModule/styles/presentation.css";
+
 .search-section {
   scroll-margin-top: 25px;
 }
@@ -224,6 +226,7 @@
 }
 .suggestions {
   position: absolute;
+  scroll-margin-block: 12px;
   z-index: 20;
   top: 82px;
   left: 0;
@@ -243,6 +246,28 @@
   font-size: 12px;
   cursor: pointer;
   border-radius: 5px;
+}
+.suggestions .combo-rich-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 62px;
+  padding: 10px;
+}
+.combo-option-text {
+  display: block;
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.combo-rich-option .combo-option-label {
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.4;
+}
+.combo-rich-option small {
+  font-size: 11px;
+  line-height: 1.5;
 }
 .suggestions li:hover,
 .suggestions li[aria-selected="true"] {
@@ -382,13 +407,9 @@
   font-size: 10px;
   padding: 5px 8px;
   border-radius: 5px;
-  background: #e8ece1;
-  color: #40584a;
+  background: var(--mode-bg, #e8ece1);
+  color: var(--mode-fg, #40584a);
   font-weight: 800;
-}
-.route-badge.walk {
-  background: #f0ede7;
-  color: var(--muted);
 }
 .journey-duration {
   font-size: 13px;
@@ -888,6 +909,8 @@ a.trip-open:hover {
   align-items: center;
   gap: 10px;
   white-space: nowrap;
+  font-size: 17px;
+  padding: 8px 11px;
 }
 .trip-title-service .transport-icon {
   flex-shrink: 0;
@@ -1114,58 +1137,6 @@ a.trip-open:hover {
   color: var(--mode-fg, #40584a);
   border: 1px solid transparent;
 }
-.route-badge[data-mode="walk"] {
-  --mode-bg: #eeeae4;
-  --mode-fg: #655e54;
-}
-.route-badge[data-mode="bus"] {
-  --mode-bg: #e2efdf;
-  --mode-fg: #28582b;
-}
-.route-badge[data-mode="coach"] {
-  --mode-bg: #e9edd4;
-  --mode-fg: #4d5716;
-}
-.route-badge[data-mode="trolleybus"] {
-  --mode-bg: #e2f2eb;
-  --mode-fg: #116748;
-}
-.route-badge[data-mode="tram"] {
-  --mode-bg: #fce3e0;
-  --mode-fg: #a62e29;
-}
-.route-badge[data-mode="train"] {
-  --mode-bg: #e2ecfb;
-  --mode-fg: #24549c;
-}
-.route-badge[data-mode="metro"] {
-  --mode-bg: #f5e0f1;
-  --mode-fg: #853d7b;
-}
-.route-badge[data-mode="ferry"] {
-  --mode-bg: #d9f2f7;
-  --mode-fg: #086579;
-}
-.route-badge[data-mode="airplane"] {
-  --mode-bg: #e7e3fa;
-  --mode-fg: #574197;
-}
-.route-badge[data-mode="gondola"] {
-  --mode-bg: #fff0d5;
-  --mode-fg: #81520e;
-}
-.route-badge[data-mode="funicular"] {
-  --mode-bg: #f5e7d9;
-  --mode-fg: #81512c;
-}
-.route-badge[data-mode="bike"] {
-  --mode-bg: #edf4d4;
-  --mode-fg: #4f6214;
-}
-.route-badge[data-mode="car"] {
-  --mode-bg: #e5e9ee;
-  --mode-fg: #465971;
-}
 a.trip-open:hover {
   background: var(--mode-bg);
   color: var(--mode-fg);
@@ -1247,14 +1218,6 @@ a.trip-open:active {
   }
 }
 
-.route-badge[data-mode="cable_car"] {
-  --mode-bg: #ffe6d1;
-  --mode-fg: #934b13;
-}
-.route-badge[data-mode="monorail"] {
-  --mode-bg: #e2e4f8;
-  --mode-fg: #444d94;
-}
 .trip-call {
   animation: trip-content-enter 180ms ease;
 }
