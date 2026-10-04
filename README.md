@@ -23,13 +23,13 @@ Serverové proměnné:
 
 Interní API klíč ověřuje serverové volání Astro → php-core. Pevný tenant host vybírá datový tenant; nepřebírá se z hostu prohlížeče. Klíč se do prohlížeče neposílá.
 
-Backend používá společné `schema.sql` pro zabezpečení/limity, host ve `FRANCHISE_CODES`
+TRAM gateway nevyužívá SQL ani databázový rate limiter. Vyžaduje host ve `FRANCHISE_CODES`
 a Java gateway: `TRANSPORT_JAVA_ENABLED=1`, `TRANSPORT_JAVA_TENANT=tram`, soukromé
 `TRANSPORT_JAVA_URL` a `TRANSPORT_JAVA_TOKEN`. Dopravní adaptéry/importy/plánování
 v PHP byly odstraněny 3. 10. 2026; `tram_schema.sql`, `tram_seed.sql` ani PHP
 transportové configure/cron skripty nejsou závislostí frontendové gateway.
 Katalog, plánování a realtime zajišťují aktivní Java grafy/zdroje. Skutečný rozsah
-je v [lokálním zapojení zemí](../../java/OTP/INTERNATIONAL-LOCAL.md).
+je v [lokálním zapojení zemí](../../java-tram/OTP/INTERNATIONAL-LOCAL.md).
 Bez dostupné Java služby gateway vrací chybu, ne původní PHP fallback.
 
 ## Struktura
@@ -160,7 +160,7 @@ Formulář nabízí záložky Česko, Slovensko, Rakousko a Polsko. Povolí se p
 země, pro které běžící backend v `/api/transport/coverage/` potvrzuje hledání.
 Samotný příklad zdroje nebo katalog měst nestačí. Lokální Java zapojení a
 skutečný rozsah zahraničních feedů popisuje
-[konfigurace zemí](../../java/OTP/INTERNATIONAL-LOCAL.md): slovenská železnice
+[konfigurace zemí](../../java-tram/OTP/INTERNATIONAL-LOCAL.md): slovenská železnice
 a Bratislava, rakouská železnice ÖBB, polské sítě Poznań a Gdańsk. Nejde o
 úplné pokrytí všech měst těchto zemí. PHP předává požadavky Java API, které používá vlastní aktivní grafy.
 Nad Odkud/Kam je
