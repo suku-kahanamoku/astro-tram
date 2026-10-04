@@ -133,10 +133,11 @@ test("admin mutation rejects cross origin, extra fields and non-admin sessions",
   expect(await status.text()).not.toContain("test-only-secret");
 });
 
-test("queue feedback explains an offline runner and a failed local memory check", async ({
+test("queue feedback explains an offline runner and specific local failures", async ({
   page,
 }) => {
   let state = "queued";
+  let phase = "waiting_for_runner";
   await page.route("**/api/admin/local-pipeline/", (route) =>
     route.fulfill({
       json: {
@@ -145,10 +146,7 @@ test("queue feedback explains an offline runner and a failed local memory check"
           id: "00000000-0000-0000-0000-000000000001",
           action: "sync_build",
           status: state,
-          phase:
-            state === "failed"
-              ? "local_memory_insufficient"
-              : "waiting_for_runner",
+          phase,
           runner: { online: false },
         },
       },
@@ -163,6 +161,7 @@ test("queue feedback explains an offline runner and a failed local memory check"
     controls.getByRole("button", { name: "Sync", exact: true }),
   ).toBeDisabled();
   state = "failed";
+  phase = "local_memory_insufficient";
   await page.reload();
   await expect(controls.getByRole("status")).toContainText(
     "není dostatek volné RAM",
@@ -170,4 +169,19 @@ test("queue feedback explains an offline runner and a failed local memory check"
   await expect(
     controls.getByRole("button", { name: "Deploy", exact: true }),
   ).toBeEnabled();
+  phase = "runner_disconnected";
+  await page.reload();
+  await expect(controls.getByRole("status")).toContainText(
+    "Lokální runner přestal odpovídat",
+  );
+  phase = "maven_failed";
+  await page.reload();
+  await expect(controls.getByRole("status")).toContainText(
+    "Kompilace nebo testy Java aplikace selhaly",
+  );
+  phase = "runner_error";
+  await page.reload();
+  await expect(controls.getByRole("status")).toContainText(
+    "Podrobnosti jsou v lokálním záznamu chyb",
+  );
 });

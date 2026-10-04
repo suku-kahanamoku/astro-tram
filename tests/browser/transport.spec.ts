@@ -817,7 +817,7 @@ test("trip dialog displays provider legend with links, refresh, and clears old m
   expect(JSON.stringify(payload)).not.toContain("DO_NOT_EXPOSE");
   expect(payload.data.metadata.vehicle_position).toBeUndefined();
   const legend = page.locator("[data-trip-legend]");
-  await expect(legend).toContainText("22/1093");
+  await expect(legend).toHaveCount(0);
   const notes = page.locator("[data-trip-notes]");
   await expect(notes).toContainText("Testovací dopravce");
   await expect(notes).toContainText(
@@ -826,9 +826,7 @@ test("trip dialog displays provider legend with links, refresh, and clears old m
   await expect(
     notes.getByRole("link", { name: "www.example.test/tarif" }),
   ).toHaveAttribute("href", "https://www.example.test/tarif");
-  await expect(legend.locator("svg")).toHaveCount(2);
   await expect(notes.locator("svg")).toHaveCount(3);
-  await expect(legend).not.toContainText("Poznámka linky");
   expect(
     await notes.evaluate(
       (el) =>
@@ -842,12 +840,11 @@ test("trip dialog displays provider legend with links, refresh, and clears old m
   const route = page.locator("#trip-title .trip-title-route");
   const routeName = `${payload.data.stops[0].stop.name} – ${payload.data.stops.at(-1).stop.name}`;
   await expect(route).toHaveText(routeName);
-  await expect(legend).not.toContainText(routeName);
   await page.reload();
   await expect(page.locator(".journey-card.is-open")).toHaveCount(0);
   await page.locator(".journey-summary").first().click();
   await page.locator('[data-trip-open="0"]').click();
-  await expect(legend).toContainText("22/1093");
+  await expect(legend).toHaveCount(0);
   await expect(route).toHaveText(routeName);
   await page.keyboard.press("Escape");
   await page.route("**/api/transport/trip/**", (route) =>

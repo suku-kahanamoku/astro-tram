@@ -96,6 +96,16 @@ export default function PipelineControls({ locale }: { locale: Locale }) {
   };
 
   const message = job ? (job.status === "idle" ? "" : t[job.status]) : "";
+  const failureReason =
+    job?.phase === "local_memory_insufficient"
+      ? t.memory
+      : job?.phase === "runner_disconnected"
+        ? t.disconnected
+        : job?.phase === "runner_error"
+          ? t.runnerError
+          : job?.phase === "maven_failed"
+            ? t.mavenFailed
+            : "";
   return (
     <div className="pipeline-controls" aria-busy={pending !== null}>
       <div className="pipeline-buttons">
@@ -126,8 +136,9 @@ export default function PipelineControls({ locale }: { locale: Locale }) {
               {job?.status === "queued" && job.runner?.online === false && (
                 <> {t.offline}</>
               )}
-              {job?.status === "failed" &&
-                job.phase === "local_memory_insufficient" && <> {t.memory}</>}
+              {job?.status === "failed" && failureReason && (
+                <> {failureReason}</>
+              )}
             </>
           )}
           {needsLogin && (

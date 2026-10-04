@@ -569,3 +569,10 @@ nezávislé kopie. Změna katalogu se projeví po expiraci; cache není globáln
 mezi Netlify instancemi a nepřežije restart funkce. Neobsahuje polohy,
 observation, hledání s GPS ani uživatelská data. První načtení po restartu
 a probuzení cloudové JVM stále vyžaduje síť. Změna kódu sama nic nenasazuje.
+
+Produkční optimalizace byla nasazena 4. 10. 2026 jako Netlify deploy
+`6ac2c35e490adf4ec04b2ae0`; publikační zámek zůstává zapnutý. Skutečný
+veřejný katalog CZ odpověděl za 2,26 s, další načtení z RAM za 0,46 s.
+Statický detail přes PHP gateway odpověděl přibližně za 2,1 s; sdílená
+klientská fronta eliminuje druhý souběžný požadavek na souřadnice.
+Jde o vzorek z produkce, nikoli garanci odezvy nebo času studeného startu.

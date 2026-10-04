@@ -152,9 +152,7 @@ test("slow trip responses keep dialog geometry stable and long headings clear of
   const title = await dialog.locator("h2").boundingBox();
   const close = await dialog.locator("[data-close-trip]").boundingBox();
   expect(title!.x + title!.width).toBeLessThan(close!.x);
-  await expect(dialog.locator("[data-trip-legend]")).not.toContainText(
-    "Poznámka",
-  );
+  await expect(dialog.locator("[data-trip-legend]")).toHaveCount(0);
   await expect(dialog.locator("[data-trip-notes]")).toContainText("Poznámka");
   await page.screenshot({ path: testInfo.outputPath("trip-mobile.png") });
 });

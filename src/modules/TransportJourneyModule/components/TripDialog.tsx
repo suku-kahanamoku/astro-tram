@@ -77,19 +77,6 @@ export default function TripDialog({
           <Icon name="close" />
         </button>
       </div>
-      <div className="trip-summary-header">
-        {trip && leg && !error && (
-          <div data-trip-legend aria-label={t.tripInfo}>
-            <TripLegend
-              trip={trip}
-              leg={leg}
-              t={t}
-              locale={locale}
-              section="summary"
-            />
-          </div>
-        )}
-      </div>
       <div className="trip-body" aria-busy={!trip && !error}>
         {trip?.stops.some((c) => c.requestStop) && (
           <p className="trip-stop-legend" data-trip-stop-legend>

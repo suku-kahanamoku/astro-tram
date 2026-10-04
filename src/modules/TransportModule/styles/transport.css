@@ -1105,12 +1105,6 @@ a.trip-open:hover {
   display: block;
   margin: 0 auto 18px;
 }
-[data-trip-legend] .trip-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 24px;
-  padding: 12px 16px;
-}
 [data-trip-notes] {
   border-top: 1px solid var(--line);
   margin-top: 24px;
@@ -1500,17 +1494,6 @@ a.trip-open:active {
 .transfer-risk-notice {
   margin: 0 0 16px 34px;
   font-size: 12px;
-}
-
-.trip-summary-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem 1.5rem;
-  margin-bottom: 1rem;
-}
-.trip-summary-header .trip-legend {
-  margin-block: 0;
 }
 
 /* The summary link and service buttons are siblings, never nested interactive elements. */
