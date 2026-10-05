@@ -59,3 +59,54 @@ test("failed prefetch can retry; disposing aborts requests and rejects queued wo
   assert.ok((await settled).every((result) => result.status === "rejected"));
   await assert.rejects(resources.load("d"), /disposed/);
 });
+
+test("optional coordinates have their own shared request and cannot replace static stop rows", async () => {
+  let staticReads = 0,
+    coordinateReads = 0;
+  const original: Trip = {
+    stops: [
+      {
+        stop: {
+          id: "stop",
+          name: "Stop",
+          lat: null,
+          lon: null,
+          platform: null,
+        },
+        arrival: null,
+        departure: "2026-10-05T12:00:00Z",
+        expectedArrival: null,
+        expectedDeparture: null,
+      },
+    ],
+    sourceMode: "schedule",
+  };
+  const enriched = {
+    ...original,
+    stops: original.stops.map((call) => ({
+      ...call,
+      stop: { ...call.stop, lat: 49.2, lon: 16.6 },
+    })),
+  };
+  const resources = createTripResources(
+    async () => {
+      staticReads++;
+      return original;
+    },
+    async () => {
+      coordinateReads++;
+      return enriched;
+    },
+  );
+  assert.equal(await resources.load("trip"), original);
+  const a = resources.load("trip", true, true);
+  assert.equal(resources.load("trip", true, true), a);
+  assert.equal(await a, enriched);
+  assert.equal(resources.peek("trip"), original);
+  assert.equal(resources.peek("trip", true), enriched);
+  assert.equal(original.stops[0].stop.lat, null);
+  assert.equal(await resources.load("trip"), original);
+  assert.equal(staticReads, 1);
+  assert.equal(coordinateReads, 1);
+  resources.dispose();
+});

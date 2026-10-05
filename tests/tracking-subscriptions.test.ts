@@ -530,3 +530,78 @@ test("429 cools down the entire ticket queue; no burst on adding or removing ano
   await setImmediate();
   assert.equal(requests.length, 2);
 });
+
+test("online trip aliases share one socket and update their own delay and GPS without borrowing native timetable progress", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout", "setInterval", "Date"] });
+  const store = createTrackingStore();
+  let sockets = 0;
+  let push!: (data: unknown) => void;
+  const sent: unknown[] = [];
+  const manager = createTrackingSubscriptions(store, {
+    tracking: async () => ({
+      status: "available",
+      tripId: "native-trip",
+      url: "ws://localhost",
+      ticket: "ticket",
+      expiresAt: new Date(Date.now() + 900000).toISOString(),
+    }),
+    observation: async () => point(60),
+    socket: (options) => {
+      sockets++;
+      push = (data) =>
+        options.onMessage?.({ type: "observation", trip: "native-trip", data });
+      return {
+        connect() {
+          options.onState?.("open");
+        },
+        close() {},
+        send(value) {
+          sent.push(value);
+          return true;
+        },
+      };
+    },
+  });
+  manager.setIds(["online-trip"]);
+  manager.refresh("online-trip");
+  await setImmediate();
+  assert.equal(store.getSnapshot()["online-trip"].delaySeconds, 60);
+  push(point(180));
+  assert.equal(store.getSnapshot()["online-trip"].delaySeconds, 180);
+  assert.equal(store.getSnapshot()["online-trip"].position?.lat, 50);
+  push({
+    ...point(),
+    status: "estimated",
+    position: null,
+    delay_seconds: null,
+    cancelled: null,
+  });
+  assert.equal(store.getSnapshot()["online-trip"].delaySeconds, 180);
+  assert.equal(store.getSnapshot()["online-trip"].position?.lat, 50);
+  assert.equal(store.getSnapshot()["native-trip"], undefined);
+  assert.equal(sockets, 1);
+  manager.setIds(["online-trip", "another-segment"]);
+  t.mock.timers.tick(1000);
+  await setImmediate();
+  push(point(240));
+  assert.equal(store.getSnapshot()["another-segment"].delaySeconds, 240);
+  manager.setIds(["another-segment"]);
+  assert.equal(
+    sent.filter((item) => (item as { type: string }).type === "unsubscribe")
+      .length,
+    0,
+    "removing one segment keeps the shared native subscription",
+  );
+  push(point(300));
+  assert.equal(store.getSnapshot()["another-segment"].delaySeconds, 300);
+  assert.equal(sockets, 1);
+  manager.setIds([]);
+  assert.ok(
+    sent.some(
+      (item) =>
+        JSON.stringify(item) ===
+        JSON.stringify({ type: "unsubscribe", trip: "native-trip" }),
+    ),
+  );
+  manager.dispose();
+});

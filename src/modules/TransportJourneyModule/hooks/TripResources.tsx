@@ -16,7 +16,7 @@ export function TripResources({ children }: { children: ReactNode }) {
   return <Context.Provider value={resources}>{children}</Context.Provider>;
 }
 /** Both timeline and detail join the same pending request, not only completed cache entries. */
-export function useTripResources(_coordinates = false) {
+export function useTripResources() {
   const resources = useContext(Context);
   if (!resources) throw new Error("TripResources provider is missing");
   return resources;

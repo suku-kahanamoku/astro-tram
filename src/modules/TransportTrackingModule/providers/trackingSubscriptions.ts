@@ -19,6 +19,7 @@ type Watch = {
   renewal?: ReturnType<typeof setTimeout>;
   snapshot?: AbortController;
   revision?: number;
+  serverTrip?: string;
 };
 /** Incremental subscriptions and a shared ticket queue, scoped to one mounted search. */
 export function createTrackingSubscriptions(
@@ -118,8 +119,17 @@ export function createTrackingSubscriptions(
       !session.expiresAt
     ) {
       clearTimeout(watch.renewal);
-      if (watch.subscribed && ready)
-        socket?.send({ type: "unsubscribe", trip: id });
+      if (
+        watch.subscribed &&
+        ready &&
+        ![...watches].some(
+          ([other, item]) =>
+            item !== watch &&
+            item.subscribed &&
+            (item.serverTrip ?? other) === (watch.serverTrip ?? id),
+        )
+      )
+        socket?.send({ type: "unsubscribe", trip: watch.serverTrip ?? id });
       watch.session = undefined;
       watch.subscribed = false;
       if (!currentObservation(id) && !watch.snapshot)
@@ -133,6 +143,7 @@ export function createTrackingSubscriptions(
       return;
     }
     queue.delete(id);
+    watch.serverTrip = session.tripId ?? id;
     watch.session = session;
     if (socket) {
       subscribe(id, watch);
@@ -178,16 +189,26 @@ export function createTrackingSubscriptions(
         )
           return;
         const m = message as { type?: string; trip?: string; data?: unknown };
-        const item = m.trip ? watches.get(m.trip) : undefined;
-        if (!item || !m.trip) return;
-        if (m.type === "subscription_expired") {
-          item.subscribed = false;
-          clearTimeout(item.renewal);
-          queue.set(m.trip, item);
-          pump();
-        } else if (m.type === "observation") {
-          retries = 0;
-          apply(m.trip, item, observation(m.data));
+        if (!m.trip) return;
+        for (const [id, item] of watches) {
+          if ((item.serverTrip ?? id) !== m.trip) continue;
+          if (m.type === "subscription_expired") {
+            item.subscribed = false;
+            clearTimeout(item.renewal);
+            queue.set(id, item);
+            pump();
+          } else if (m.type === "observation") {
+            retries = 0;
+            let value = observation(m.data);
+            // Measured GPS and delay are portable. Native timetable progress is
+            // indexed by another planner's static stop list and cannot be reused.
+            if (m.trip !== id) {
+              if (value.status === "estimated")
+                value = unavailableObservation("unsupported");
+              else delete value.estimatedProgress;
+            }
+            apply(id, item, value);
+          }
         }
       },
     });
@@ -297,8 +318,16 @@ export function createTrackingSubscriptions(
           watch.snapshot?.abort();
           clearTimeout(watch.expiry);
           clearTimeout(watch.renewal);
-          if (watch.subscribed && ready)
-            socket?.send({ type: "unsubscribe", trip: id });
+          if (
+            watch.subscribed &&
+            ready &&
+            ![...watches].some(
+              ([other, item]) =>
+                item.subscribed &&
+                (item.serverTrip ?? other) === (watch.serverTrip ?? id),
+            )
+          )
+            socket?.send({ type: "unsubscribe", trip: watch.serverTrip ?? id });
           store.remove(id);
         }
       for (const id of desired) {

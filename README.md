@@ -608,3 +608,19 @@ veřejný katalog CZ odpověděl za 2,26 s, další načtení z RAM za 0,46 s.
 Statický detail přes PHP gateway odpověděl přibližně za 2,1 s; sdílená
 klientská fronta eliminuje druhý souběžný požadavek na souřadnice.
 Jde o vzorek z produkce, nikoli garanci odezvy nebo času studeného startu.
+
+Online trip může používat ticket s `tripId` jiného ověřeného vlastníka
+realtime (Java normalizuje `trip_id`). Sdílený tracking přiřadí jeho
+WebSocket zprávy k původnímu online spoji; počet socketů se nemění.
+HTTP observation načte aktuální badge/GPS ihned při otevření dialogu.
+Statické řádky a plánované časy zůstávají zachované, odhad postupu z cizího
+seznamu zastávek se nepřenáší. Bez doloženého realtime mapování API zůstává
+`unsupported`; samotná reference `realTimeData` není měření.
+
+Statický detail a volitelné `coordinates=1` mají samostatné položky ve
+sdílené klientské cache. Současné požadavky na stejnou variantu se spojí;
+oba typy používají jednu omezenou frontu. Souřadnice se dočtou až pro
+vykreslení polohy a nenahrazují již zobrazené řádky ani časy. Browser test
+ověřuje jejich okamžité zobrazení, jeden požadavek na každou variantu
+a zachování původních DOM řádků po příchodu GPS.
+Toto online realtime propojení a oprava cache zatím nejsou nasazené do produkce.

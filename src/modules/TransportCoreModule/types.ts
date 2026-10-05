@@ -140,6 +140,7 @@ export interface TrackingSession {
   url?: string;
   ticket?: string;
   expiresAt?: string;
+  tripId?: string;
 }
 export interface TripObservation {
   status: string;

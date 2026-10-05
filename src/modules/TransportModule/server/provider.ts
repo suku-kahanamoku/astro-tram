@@ -286,9 +286,9 @@ export function createTransportProvider(core: CoreClient) {
         ...(estimated ? { estimated_progress: estimated } : {}),
       };
     },
-    async tracking(id: string) {
+    async tracking(trip: string) {
       const r = object(
-        await core.request(`/transport/v1/trips/${id}/tracking`, {
+        await core.request(`/transport/v1/trips/${trip}/tracking`, {
           method: "POST",
           body: {},
         }),
@@ -302,7 +302,16 @@ export function createTransportProvider(core: CoreClient) {
         expiresAt = instant(r.expires_at);
       if (!/^(wss?:)\/\//.test(address) || !ticket || !expiresAt)
         throw new HttpError(502, "invalid_backend_response");
-      return { status: "available", url: address, ticket, expiresAt };
+      const tripId = r.trip_id === undefined ? undefined : id(r.trip_id);
+      if (r.trip_id !== undefined && !tripId)
+        throw new HttpError(502, "invalid_backend_response");
+      return {
+        status: "available",
+        url: address,
+        ticket,
+        expiresAt,
+        ...(tripId ? { tripId } : {}),
+      };
     },
     async cities(country: string) {
       return staticCatalogCache.get(
