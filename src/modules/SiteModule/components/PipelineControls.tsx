@@ -3,6 +3,7 @@ import type { PipelineAction, PipelineState } from "../types";
 import { dictionary } from "../providers/translations";
 import { url, type Locale } from "../../../config/routes";
 import "../styles/pipeline.css";
+import { useOnlinePlanners } from "../hooks/useOnlinePlanners";
 
 export default function PipelineControls({ locale }: { locale: Locale }) {
   const t = dictionary(locale).pipeline;
@@ -14,6 +15,26 @@ export default function PipelineControls({ locale }: { locale: Locale }) {
   const [pollVersion, setPollVersion] = useState(0);
   const submitting = useRef(false);
   const busy = job?.status === "queued" || job?.status === "running";
+  const online = useOnlinePlanners();
+  const onlineLabel = online.value
+    ? online.value.enabled
+      ? t.disableOnline
+      : t.enableOnline
+    : t.online;
+  const onlineTitle = online.value
+    ? online.value.enabled
+      ? t.disableOnlineTitle
+      : t.enableOnlineTitle
+    : t.onlineTitle;
+  const visibleError =
+    error ||
+    (online.error
+      ? online.error === 401
+        ? t.login
+        : online.error === 403
+          ? t.forbidden
+          : t.unavailable
+      : "");
 
   const reportError = (status: number) => {
     setNeedsLogin(status === 401);
@@ -109,12 +130,25 @@ export default function PipelineControls({ locale }: { locale: Locale }) {
               ? t.otpRestoreFailed
               : "";
   return (
-    <div className="pipeline-controls" aria-busy={pending !== null}>
+    <div
+      className="pipeline-controls"
+      aria-busy={pending !== null || online.pending}
+    >
       <div className="pipeline-buttons">
         <button
           type="button"
+          className="button button-small pipeline-online"
+          disabled={!online.loaded || online.pending || pending !== null}
+          title={onlineTitle}
+          aria-label={onlineTitle}
+          onClick={() => void online.toggle()}
+        >
+          {onlineLabel}
+        </button>
+        <button
+          type="button"
           className="button button-small pipeline-sync"
-          disabled={!loaded || pending !== null || busy}
+          disabled={!loaded || pending !== null || online.pending || busy}
           title={t.syncTitle}
           onClick={() => void submit("sync_build")}
         >
@@ -123,16 +157,16 @@ export default function PipelineControls({ locale }: { locale: Locale }) {
         <button
           type="button"
           className="button button-small"
-          disabled={!loaded || pending !== null || busy}
+          disabled={!loaded || pending !== null || online.pending || busy}
           title={t.deployTitle}
           onClick={() => void submit("deploy")}
         >
           {pending === "deploy" ? t.sending : t.deploy}
         </button>
       </div>
-      {(error || message) && (
+      {(visibleError || message) && (
         <div className="pipeline-feedback" role="status" aria-live="polite">
-          {error || (
+          {visibleError || (
             <>
               {job?.action === "sync_build" ? t.sync : t.deploy}: {message}
               {job?.status === "queued" && job.runner?.online === false && (
@@ -143,7 +177,7 @@ export default function PipelineControls({ locale }: { locale: Locale }) {
               )}
             </>
           )}
-          {needsLogin && (
+          {(needsLogin || online.error === 401) && (
             <>
               {" "}
               <a href={url(locale, "login")}>{t.signIn}</a>

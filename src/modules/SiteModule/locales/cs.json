@@ -29,7 +29,13 @@
     "signIn": "Přihlásit se",
     "forbidden": "Tato akce vyžaduje oprávnění administrátora.",
     "busy": "Jiná úloha už čeká nebo běží.",
-    "unavailable": "Ovládání úloh je nedostupné. Zkontroluj konfiguraci backendu a zkus to znovu."
+    "unavailable": "Ovládání úloh je nedostupné. Zkontroluj konfiguraci backendu a zkus to znovu.",
+    "online": "Online",
+    "disableOnline": "Vypnout",
+    "enableOnline": "Zapnout",
+    "onlineTitle": "Online plánovače",
+    "disableOnlineTitle": "Vypnout všechny online plánovače",
+    "enableOnlineTitle": "Zapnout všechny online plánovače"
   },
   "common": {
     "skip": "Přejít k obsahu",

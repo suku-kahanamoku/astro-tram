@@ -5,7 +5,8 @@
   display: flex;
   gap: 8px;
 }
-.pipeline-controls .pipeline-sync {
+.pipeline-controls .pipeline-sync,
+.pipeline-controls .pipeline-online {
   background: transparent;
   color: var(--ink);
   border: 1px solid var(--line);
@@ -50,5 +51,14 @@
   }
   .pipeline-buttons {
     gap: 6px;
+  }
+}
+@media (max-width: 420px) {
+  .tram-header .tram-brand > span {
+    display: none;
+  }
+  .header-actions .pipeline-controls .button {
+    padding-inline: 6px;
+    font-size: 12px;
   }
 }

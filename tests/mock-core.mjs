@@ -24,6 +24,7 @@ const brnoStop = {
 const shift = (at, min) =>
   new Date(Date.parse(at) + min * 60000).toISOString().replace(".000Z", "Z");
 const pipelineJobs = new Map();
+let onlinePlannersEnabled = true;
 http
   .createServer(async (req, res) => {
     const send = (status, data, code) => {
@@ -76,6 +77,17 @@ http
       return send(authenticated ? 200 : 401, user);
     if (url.pathname === "/auth/logout")
       return send(authenticated ? 200 : 401, null);
+    if (url.pathname === "/transport-admin/online-planners") {
+      if (!authenticated) return send(401, null);
+      if (!admin) return send(403, null);
+      if (req.method === "POST") {
+        const data = JSON.parse(body);
+        if (Object.keys(data).length !== 1 || typeof data.enabled !== "boolean")
+          return send(422, null);
+        onlinePlannersEnabled = data.enabled;
+      }
+      return send(200, { enabled: onlinePlannersEnabled });
+    }
     if (url.pathname === "/transport-admin/local-pipeline") {
       if (!authenticated) return send(401, null);
       if (!admin) return send(403, null);

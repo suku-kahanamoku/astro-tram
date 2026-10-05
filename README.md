@@ -58,6 +58,21 @@ Auth je zapnutý pro administrační ovládání Sync/Deploy. Ads a Realtime ze 
 
 ### Sync a Deploy v hlavičce
 
+Před Sync a Deploy je administrační přepínač **Vypnout / Zapnout** všech online
+plánovačů. Popisek vychází z potvrzeného serverového stavu; před načtením nebo
+bez přihlášení je neutrální „Online“. `GET/POST /api/admin/online-planners/`
+vede na oddělený php-core `/transport-admin/online-planners`; POST přijímá
+pouze `{"enabled":true}` nebo `{"enabled":false}`. Platí stejný admin/tenant,
+origin, velikostní limit a `private, no-store` jako pro úlohy. Změna je okamžitá,
+nezadává sync/build/deploy a nevyžaduje připojený lokální runner.
+Cloudflare ji ukládá v Durable Object i přes restart/nasazení; výchozí stav
+je zapnuto. Lokální router sdílí tento stav s obnovou do pěti sekund.
+Vypnutí používá vlastní grafy pro nové našeptávání, katalogy a hledání.
+Existující online výsledky/detaily mají původního vlastníka; realtime zdroje
+a sběr statických GTFS se nevypínají. Změna není prohlášení úplného pokrytí zemí.
+Pro nasazení tohoto ovládání je potřeba aktualizovat Astro, PHP admin gateway,
+Java router image a Cloudflare Worker; nové secrets ani DB migrace nejsou potřeba.
+
 Původní akci „Najít spojení“ vpravo nahrazují tlačítka **Sync** a **Deploy**,
 viditelná i na mobilu. Odkaz na vyhledávání v navigaci zůstává. Sync zařadí
 `sync_build` (synchronizace a sestavení grafů na lokálním stroji); Deploy

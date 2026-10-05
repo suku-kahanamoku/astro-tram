@@ -34,3 +34,33 @@ export const pipelineHandler: APIRoute = async ({ request, locals, url }) => {
     return errorResponse(error);
   }
 };
+
+export const onlinePlannersHandler: APIRoute = async ({
+  request,
+  locals,
+  url,
+}) => {
+  try {
+    const token = locals.sessionToken;
+    if (!token) throw new HttpError(401, "unauthorized");
+    if (url.search) throw new HttpError(422, "invalid_input");
+    let data;
+    if (request.method === "POST") {
+      const body = await readFields(request);
+      if (Object.keys(body).length !== 1 || typeof body.enabled !== "boolean")
+        throw new HttpError(422, "invalid_input");
+      data = await locals.providers.pipeline.setOnlinePlanners(
+        body.enabled,
+        token,
+      );
+    } else {
+      data = await locals.providers.pipeline.onlinePlanners(token);
+    }
+    return Response.json(
+      { success: true, data },
+      { headers: { "Cache-Control": "private, no-store" } },
+    );
+  } catch (error) {
+    return errorResponse(error);
+  }
+};

@@ -29,7 +29,13 @@
     "signIn": "Anmelden",
     "forbidden": "Diese Aktion erfordert Administratorrechte.",
     "busy": "Ein anderer Auftrag wartet bereits oder läuft.",
-    "unavailable": "Die Auftragssteuerung ist nicht verfügbar. Backend-Konfiguration prüfen und erneut versuchen."
+    "unavailable": "Die Auftragssteuerung ist nicht verfügbar. Backend-Konfiguration prüfen und erneut versuchen.",
+    "online": "Online",
+    "disableOnline": "Aus",
+    "enableOnline": "Ein",
+    "onlineTitle": "Online-Routenplaner",
+    "disableOnlineTitle": "Alle Online-Routenplaner ausschalten",
+    "enableOnlineTitle": "Alle Online-Routenplaner einschalten"
   },
   "common": {
     "skip": "Zum Inhalt springen",

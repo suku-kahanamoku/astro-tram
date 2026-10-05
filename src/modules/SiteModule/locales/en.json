@@ -29,7 +29,13 @@
     "signIn": "Sign in",
     "forbidden": "This action requires administrator permissions.",
     "busy": "Another job is already queued or running.",
-    "unavailable": "Job controls are unavailable. Check the backend configuration and try again."
+    "unavailable": "Job controls are unavailable. Check the backend configuration and try again.",
+    "online": "Online",
+    "disableOnline": "Disable",
+    "enableOnline": "Enable",
+    "onlineTitle": "Online planners",
+    "disableOnlineTitle": "Disable all online planners",
+    "enableOnlineTitle": "Enable all online planners"
   },
   "common": {
     "skip": "Skip to content",

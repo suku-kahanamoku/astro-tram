@@ -77,6 +77,67 @@ test("admin login queues sync and deploy through PHP; receipt and polling show c
   }
 });
 
+test("online toggle is first, reactive, persistent after reload and restricted to administrators", async ({
+  page,
+  request,
+}) => {
+  const endpoint = "/api/admin/online-planners/";
+  const adminHeaders = {
+    Origin: "http://localhost:4328",
+    Cookie: `scaffold_session=${"a".repeat(64)}`,
+  };
+  for (const [data, headers, status] of [
+    [{ enabled: false }, { ...adminHeaders, Origin: "https://evil.test" }, 403],
+    [{ enabled: "false" }, adminHeaders, 422],
+    [{ enabled: false, url: "x" }, adminHeaders, 422],
+    [
+      { enabled: false },
+      { ...adminHeaders, Cookie: `scaffold_session=${"b".repeat(64)}` },
+      403,
+    ],
+  ] as const)
+    expect((await request.post(endpoint, { data, headers })).status()).toBe(
+      status,
+    );
+  await request.post(endpoint, {
+    data: { enabled: true },
+    headers: adminHeaders,
+  });
+  await page.context().addCookies([
+    {
+      name: "scaffold_session",
+      value: "a".repeat(64),
+      url: "http://localhost:4328",
+    },
+  ]);
+  await page.goto("/");
+  const controls = page.locator(".pipeline-controls"),
+    buttons = controls.locator(".pipeline-buttons button");
+  await expect(buttons.first()).toHaveAccessibleName(
+    "Vypnout všechny online plánovače",
+  );
+  const currentUrl = page.url();
+  await buttons.first().click();
+  await expect(buttons.first()).toHaveAccessibleName(
+    "Zapnout všechny online plánovače",
+  );
+  expect(page.url()).toBe(currentUrl);
+  await page.reload();
+  await expect(buttons.first()).toHaveAccessibleName(
+    "Zapnout všechny online plánovače",
+  );
+  await buttons.first().click();
+  await expect(buttons.first()).toHaveAccessibleName(
+    "Vypnout všechny online plánovače",
+  );
+  const status = await request.get(endpoint, { headers: adminHeaders });
+  expect(status.headers()["cache-control"]).toContain("no-store");
+  expect(await status.json()).toEqual({
+    success: true,
+    data: { enabled: true },
+  });
+});
+
 test("admin mutation rejects cross origin, extra fields and non-admin sessions", async ({
   request,
 }) => {
