@@ -23,6 +23,18 @@ export const supplementaryGtfsLicenses: DataAttribution[] = [
  */
 export const supplementaryDataLicenses: DataAttribution[] = [
   {
+    id: "realtime:pid-golemio",
+    feed_id: null,
+    name: "PID / Golemio — podmínky Open Data API",
+    attribution:
+      "ROPID / Pražská integrovaná doprava / Operátor ICT — polohy vozidel a zpoždění PID. Identifikátory spojů jsou převedené do GTFS TRAM; živá měření se neukládají. Licence odkazovaných API se řídí podmínkami daného zdroje.",
+    license_url: "https://pid.cz/o-systemu/opendata/",
+    source_url: "https://api.golemio.cz/pid/docs/openapi/",
+    published_at: null,
+    updated_at: null,
+    requirements: [],
+  },
+  {
     id: "realtime:idsjmk-gtfs",
     feed_id: null,
     name: "IDS JMK GTFS-Realtime — CC BY 4.0",

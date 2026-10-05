@@ -624,3 +624,9 @@ vykreslení polohy a nenahrazují již zobrazené řádky ani časy. Browser tes
 ověřuje jejich okamžité zobrazení, jeden požadavek na každou variantu
 a zachování původních DOM řádků po příchodu GPS.
 Toto online realtime propojení a oprava cache zatím nejsou nasazené do produkce.
+
+Golemio/PID realtime (5. 10. 2026) obsluhuje Java country worker v Cloudflare,
+nikoli Astro/PHP. `GOLEMIO_API_KEY` je privátní Java env/Worker secret;
+nepřidávat jej do Netlify ani `PUBLIC_*`. Stránka licence uvádí PID/ROPID/OICT
+v `supplementaryDataLicenses`; manifest aktivního grafu popisuje statické vstupy.
+Údaj o licenci vlastního PID webu se nevydává za licenci všech Golemio API.
