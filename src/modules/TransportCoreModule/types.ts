@@ -19,6 +19,8 @@ export interface Fix {
   observedAt: string;
 }
 export interface PlaceMetadata {
+  kind?: "stop" | "city" | "street" | "address";
+  citySource?: "schedule" | "osm" | "nearest_settlement";
   state?: string | null;
   city?: string | null;
   modes?: string[];

@@ -193,5 +193,8 @@
   "dataSupplementaryTitle": "Doplňkové realtime služby",
   "dataSupplementaryScope": "Tyto záznamy popisují samostatné podmínky realtime služeb evidovaných v konfiguraci TRAM. Jejich dostupnost se liší podle oblasti a spoje. Nejde o rozšíření práv k jiným datům.",
   "dataSupplementaryGtfsTitle": "Další připravené GTFS zdroje",
-  "dataSupplementaryGtfsScope": "Samostatně stažené GTFS zdroje, které nejsou uvedeny mezi vstupy aktuálně aktivních grafů. Jejich přítomnost v tomto seznamu neznamená, že je vyhledávání právě používá."
+  "dataSupplementaryGtfsScope": "Samostatně stažené GTFS zdroje, které nejsou uvedeny mezi vstupy aktuálně aktivních grafů. Jejich přítomnost v tomto seznamu neznamená, že je vyhledávání právě používá.",
+  "street": "Ulice",
+  "address": "Adresa",
+  "nearCity": "V okolí: {city}"
 }

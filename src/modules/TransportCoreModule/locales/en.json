@@ -193,5 +193,8 @@
   "dataSupplementaryTitle": "Supplementary realtime services",
   "dataSupplementaryScope": "These records describe the separate terms of realtime services documented in the TRAM configuration. Availability varies by region and trip. They do not extend rights to other data.",
   "dataSupplementaryGtfsTitle": "Additional prepared GTFS sources",
-  "dataSupplementaryGtfsScope": "Separately downloaded GTFS sources not listed among the inputs of the currently active graphs. Their presence here does not mean that journey search is currently using them."
+  "dataSupplementaryGtfsScope": "Separately downloaded GTFS sources not listed among the inputs of the currently active graphs. Their presence here does not mean that journey search is currently using them.",
+  "street": "Street",
+  "address": "Address",
+  "nearCity": "Near {city}"
 }

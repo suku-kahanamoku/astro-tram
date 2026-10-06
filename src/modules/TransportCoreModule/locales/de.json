@@ -193,5 +193,8 @@
   "dataSupplementaryTitle": "Ergänzende Echtzeitdienste",
   "dataSupplementaryScope": "Diese Einträge beschreiben die gesonderten Bedingungen der in der TRAM-Konfiguration dokumentierten Echtzeitdienste. Die Verfügbarkeit hängt von Region und Fahrt ab. Sie erweitern keine Rechte an anderen Daten.",
   "dataSupplementaryGtfsTitle": "Weitere vorbereitete GTFS-Quellen",
-  "dataSupplementaryGtfsScope": "Separat heruntergeladene GTFS-Quellen, die nicht unter den Eingaben der aktuell aktiven Graphen aufgeführt sind. Ihre Aufnahme in diese Liste bedeutet nicht, dass die Verbindungssuche sie derzeit verwendet."
+  "dataSupplementaryGtfsScope": "Separat heruntergeladene GTFS-Quellen, die nicht unter den Eingaben der aktuell aktiven Graphen aufgeführt sind. Ihre Aufnahme in diese Liste bedeutet nicht, dass die Verbindungssuche sie derzeit verwendet.",
+  "street": "Straße",
+  "address": "Adresse",
+  "nearCity": "In der Nähe von {city}"
 }

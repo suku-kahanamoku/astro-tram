@@ -35,11 +35,19 @@ export function countryLabel(
 
 export function placeDetail(place: PlaceOption, t: Dictionary): string {
   return [
-    place.modes?.length && place.modes.every((mode) => mode === "train")
-      ? t.station
-      : t.stopName,
+    place.kind === "street"
+      ? t.street
+      : place.kind === "address"
+        ? t.address
+        : place.kind === "city"
+          ? t.city
+          : place.modes?.length && place.modes.every((mode) => mode === "train")
+            ? t.station
+            : t.stopName,
     countryLabel(place.state, t),
-    place.city,
+    place.citySource === "nearest_settlement" && place.city
+      ? t.nearCity.replace("{city}", place.city)
+      : place.city,
     place.transportScope === "urban"
       ? t.urbanTransport
       : place.transportScope === "regional"

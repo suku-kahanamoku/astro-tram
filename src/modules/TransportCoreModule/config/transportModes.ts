@@ -96,6 +96,18 @@ export const transportModes = {
     background: "#e8e5f6",
     foreground: "#63518d",
   },
+  street: {
+    icon: "map",
+    label: "street",
+    background: "#e5eef6",
+    foreground: "#36536d",
+  },
+  address: {
+    icon: "building",
+    label: "address",
+    background: "#e8e5f6",
+    foreground: "#63518d",
+  },
   location: {
     icon: "locate",
     label: "current",

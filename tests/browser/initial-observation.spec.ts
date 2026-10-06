@@ -93,6 +93,8 @@ for (const width of [375, 1280]) {
 test("HTTP GPS at the origin is drawn in accordion and dialog before departure, with no socket", async ({
   page,
 }) => {
+  const clockInstant = Date.parse("2026-10-06T07:30:00Z");
+  await page.clock.install({ time: new Date(clockInstant) });
   let reads = 0;
   await page.route("**/api/transport/tracking/", (route) =>
     route.fulfill({
@@ -104,7 +106,7 @@ test("HTTP GPS at the origin is drawn in accordion and dialog before departure, 
   );
   await page.route("**/api/transport/observation/**", (route) => {
     reads++;
-    const now = Date.now();
+    const now = clockInstant;
     return route.fulfill({
       json: {
         success: true,
@@ -125,7 +127,7 @@ test("HTTP GPS at the origin is drawn in accordion and dialog before departure, 
     .locator(".journey-time")
     .first()
     .getAttribute("datetime");
-  expect(Date.parse(departure!)).toBeGreaterThan(Date.now());
+  expect(Date.parse(departure!)).toBeGreaterThan(clockInstant);
   await card.locator(".journey-summary-toggle").click();
   const dot = card.locator(".leg [data-trip-vehicle-dot]");
   await expect(dot).toBeVisible();

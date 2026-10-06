@@ -106,6 +106,14 @@ function tripMetadata(value: unknown, operatorValue: unknown): TripMetadata {
 }
 function placeMetadata(p: Record<string, unknown>): PlaceMetadata {
   return {
+    ...(typeof p.kind === "string" &&
+    ["stop", "city", "street", "address"].includes(p.kind)
+      ? { kind: p.kind as PlaceMetadata["kind"] }
+      : {}),
+    ...(typeof p.city_source === "string" &&
+    ["schedule", "osm", "nearest_settlement"].includes(p.city_source)
+      ? { citySource: p.city_source as PlaceMetadata["citySource"] }
+      : {}),
     ...(typeof p.state === "string" && /^[A-Z]{2}$/.test(p.state)
       ? { state: p.state }
       : {}),
@@ -372,6 +380,7 @@ export function createTransportProvider(core: CoreClient) {
                 : {}),
             },
             limit: 20,
+            kinds: query === null ? ["stop"] : ["stop", "street", "address"],
           },
         }),
       );
@@ -392,7 +401,16 @@ export function createTransportProvider(core: CoreClient) {
               city: text(object(p).city, 120) || null,
             };
           })
-          .filter((p) => p.id && p.name),
+          .filter(
+            (p) =>
+              p.id &&
+              p.name &&
+              (!p.kind ||
+                p.kind === "stop" ||
+                (typeof p.lat === "number" &&
+                  typeof p.lon === "number" &&
+                  validCoordinates(p.lat, p.lon))),
+          ),
         partial: raw.partial === true,
       };
     },

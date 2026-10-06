@@ -1,5 +1,16 @@
 # astro-tram
 
+## Statické našeptávání míst (6. 10. 2026)
+
+Java router používá samostatnou Places službu s vyměnitelným backendem
+(nyní Lucene). Astro neobsahuje Lucene ani Photon závislost a PHP zůstává gateway.
+Provider výslovně žádá `kinds: ["stop","street","address"]`, whitelistuje
+`kind/city_source` a odmítá ulice bez platných souřadnic. Zastávka se plánuje
+jejím ID; ulice/adresa jako souřadnicový bod přes existující mapy a URL stav.
+Přibližné přiřazení k nejbližšímu sídlu se v nabídce označuje. Serverové
+`PHP_CORE_*` a veřejná konfigurace se nemění. Nasazení Java služby může
+předcházet nasazení tohoto frontendu: klient bez `kinds` stále dostane jen zastávky.
+
 TRAM frontend postavený z `astro-scaffold`. Astro SSR + React + TypeScript, sdílený serverový klient php-core, OpenLayers načítané až při otevření mapy. Samostatný projekt; výchozí scaffold a Sorry Jako zůstávají beze změn.
 
 ## Spuštění

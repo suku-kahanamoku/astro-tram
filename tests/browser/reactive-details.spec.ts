@@ -165,6 +165,8 @@ test("opening and reopening a trip draws an HTTP position before any websocket m
 test("fresh delay warns before the affected transfer while all timetable times stay static", async ({
   page,
 }) => {
+  const clockInstant = Date.parse("2026-10-06T07:30:00Z");
+  await page.clock.install({ time: new Date(clockInstant) });
   let firstTrip = "",
     reads = 0;
   const pushes = new Map<string, (delay: number) => void>();
@@ -210,7 +212,7 @@ test("fresh delay warns before the affected transfer while all timetable times s
   });
   await page.route("**/api/transport/observation/**", async (route) => {
     reads++;
-    const now = Date.now();
+    const now = clockInstant;
     await route.fulfill({
       json: {
         success: true,
@@ -236,7 +238,7 @@ test("fresh delay warns before the affected transfer while all timetable times s
           status: "available",
           url: "ws://localhost:4328/static-timetable",
           ticket: route.request().postDataJSON().id,
-          expiresAt: new Date(Date.now() + 900000).toISOString(),
+          expiresAt: new Date(clockInstant + 900000).toISOString(),
         },
       },
     }),
@@ -246,7 +248,7 @@ test("fresh delay warns before the affected transfer while all timetable times s
       const m = JSON.parse(String(message));
       if (m.type !== "subscribe") return;
       pushes.set(m.ticket, (delay) => {
-        const now = Date.now();
+        const now = clockInstant;
         ws.send(
           JSON.stringify({
             type: "observation",

@@ -3,6 +3,7 @@ import Combobox from "../../UIModule/components/Combobox";
 import Icon from "../../UIModule/components/TransitIcon";
 import TransportBadge from "../../TransportCoreModule/components/TransportBadge";
 import { placeDetail } from "../../TransportCoreModule/providers/transportPresentation";
+import { selectPlace } from "../../TransportCoreModule/providers/placeSelection";
 import { servedModes } from "../../TransportCoreModule/config/transportModes";
 import { useAsyncOptions } from "../../UIModule/hooks/useAsyncOptions";
 import {
@@ -89,7 +90,7 @@ export default function PlaceField({
     if (!p) return;
     hide();
     setText(p.name);
-    onChange({ type: "stop", id: p.id, label: p.name });
+    onChange(selectPlace(p));
     input.current?.focus();
   };
   const locate = async () => {
@@ -166,14 +167,16 @@ export default function PlaceField({
               ),
               icon: (
                 <span className="place-option-symbols">
-                  {(modes.length ? modes.slice(0, 3) : ["stop"]).map((mode) => (
-                    <TransportBadge
-                      key={mode}
-                      mode={mode}
-                      t={t}
-                      variant="icon"
-                    />
-                  ))}
+                  {(modes.length ? modes.slice(0, 3) : [p.kind ?? "stop"]).map(
+                    (mode) => (
+                      <TransportBadge
+                        key={mode}
+                        mode={mode}
+                        t={t}
+                        variant="icon"
+                      />
+                    ),
+                  )}
                   {modes.length > 3 && <small>+{modes.length - 3}</small>}
                 </span>
               ),
