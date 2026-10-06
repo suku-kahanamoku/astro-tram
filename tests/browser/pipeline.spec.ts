@@ -1,5 +1,73 @@
 import { test, expect } from "@playwright/test";
 
+test("admin states load once per mount, with no timer or focus refresh after mutations", async ({
+  page,
+}) => {
+  const calls = { pipeline: 0, online: 0 };
+  let enabled = true;
+  await page.clock.install();
+  await page.route("**/api/admin/local-pipeline/", (route) => {
+    calls.pipeline++;
+    return route.fulfill({
+      json: {
+        success: true,
+        data: { status: "idle", runner: { online: true } },
+      },
+    });
+  });
+  await page.route("**/api/admin/online-planners/", (route) => {
+    if (route.request().method() === "POST")
+      enabled = route.request().postDataJSON().enabled;
+    else calls.online++;
+    return route.fulfill({ json: { success: true, data: { enabled } } });
+  });
+  await page.goto("/");
+  const controls = page.locator(".pipeline-controls");
+  await expect(
+    controls.getByRole("button", { name: "Sync", exact: true }),
+  ).toBeEnabled();
+  const toggle = controls.locator(".pipeline-buttons button").first();
+  await expect(toggle).toHaveText("Vypnout");
+  expect(calls).toEqual({ pipeline: 1, online: 1 });
+  await page.clock.fastForward(600000);
+  await page.evaluate(() => {
+    document.dispatchEvent(new Event("visibilitychange"));
+    window.dispatchEvent(new Event("focus"));
+  });
+  await toggle.click();
+  await expect(toggle).toHaveText("Zapnout");
+  await page.clock.fastForward(600000);
+  expect(calls).toEqual({ pipeline: 1, online: 1 });
+  await page.reload();
+  await expect(toggle).toHaveText("Zapnout");
+  await expect.poll(() => calls).toEqual({ pipeline: 2, online: 2 });
+});
+
+test("failed initial reads are not retried automatically or when clicking an unknown planner state", async ({
+  page,
+}) => {
+  const calls = { pipeline: 0, online: 0 };
+  await page.clock.install();
+  for (const [endpoint, key] of [
+    ["local-pipeline", "pipeline"],
+    ["online-planners", "online"],
+  ] as const) {
+    await page.route(`**/api/admin/${endpoint}/`, (route) => {
+      calls[key]++;
+      return route.fulfill({ status: 503, json: { success: false } });
+    });
+  }
+  await page.goto("/");
+  const controls = page.locator(".pipeline-controls");
+  const toggle = controls.locator(".pipeline-buttons button").first();
+  await expect(toggle).toBeEnabled();
+  await expect(controls.getByRole("status")).toBeVisible();
+  await page.clock.fastForward(600000);
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await toggle.click();
+  expect(calls).toEqual({ pipeline: 1, online: 1 });
+});
+
 test("header controls remain visible on mobile and require administrator login", async ({
   page,
 }, testInfo) => {
@@ -49,9 +117,17 @@ test("header controls remain visible on mobile and require administrator login",
   ).toBe(true);
 });
 
-test("admin login queues sync and deploy through PHP; receipt and polling show completion", async ({
+test("admin actions update receipts without another GET; completion loads on reload", async ({
   page,
 }) => {
+  let reads = 0;
+  page.on("request", (request) => {
+    if (
+      request.method() === "GET" &&
+      new URL(request.url()).pathname === "/api/admin/local-pipeline/"
+    )
+      reads++;
+  });
   await page.goto("/prihlaseni/");
   await page.locator('input[name="email"]').fill("admin@example.test");
   await page.locator('input[name="password"]').fill("fixture-password");
@@ -61,6 +137,7 @@ test("admin login queues sync and deploy through PHP; receipt and polling show c
     const controls = page.locator(".pipeline-controls");
     const button = controls.getByRole("button", { name: action, exact: true });
     await expect(button).toBeEnabled();
+    const initialReads = reads;
     await button.click();
     await expect(controls.getByRole("status")).toContainText(
       "Čeká na spuštění",
@@ -71,9 +148,15 @@ test("admin login queues sync and deploy through PHP; receipt and polling show c
     await expect(
       controls.getByRole("button", { name: "Deploy", exact: true }),
     ).toBeDisabled();
-    await expect(controls.getByRole("status")).toContainText("Hotovo", {
-      timeout: 15000,
-    });
+    // The mock runner finishes after one second; the UI keeps the POST receipt until reload.
+    await page.waitForTimeout(1100);
+    await expect(controls.getByRole("status")).toContainText(
+      "Čeká na spuštění",
+    );
+    expect(reads).toBe(initialReads);
+    await page.reload();
+    await expect(controls.getByRole("status")).toContainText("Hotovo");
+    expect(reads).toBe(initialReads + 1);
   }
 });
 

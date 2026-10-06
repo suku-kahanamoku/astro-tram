@@ -77,8 +77,14 @@ Původní akci „Najít spojení“ vpravo nahrazují tlačítka **Sync** a **D
 viditelná i na mobilu. Odkaz na vyhledávání v navigaci zůstává. Sync zařadí
 `sync_build` (synchronizace a sestavení grafů na lokálním stroji); Deploy
 zařadí nasazení připravených grafů. Žádná úloha se nespouští načtením stránky.
-Stav se obnovuje po pěti sekundách; čekající/běžící úloha blokuje obě tlačítka.
-Zobrazuje se dokončení, selhání, odpojený runner a nedostatek paměti.
+Stav obou ovládání se načte jedním GET požadavkem při inicializaci komponenty.
+Žádné periodické kontroly, opakování po chybě ani kontroly při návratu do karty
+se neposílají. Potvrzené změny přepínače a zařazení úlohy se zobrazují ihned
+z odpovědi POST, bez dalšího GET požadavku. Čekající/běžící úloha blokuje Sync
+a Deploy; její další průběh, dokončení nebo selhání se zjistí až po obnovení
+stránky nebo nové inicializaci komponenty. Projekt nepoužívá Astro ClientRouter,
+takže běžná navigace na jinou stránku načte nový dokument a ovládání inicializuje
+znovu. Zobrazuje se také odpojený runner a nedostatek paměti.
 
 Ovládání vyžaduje existujícího aktivního uživatele s rolí `admin` v tenantu
 `tram`, přihlášeného přes `/prihlaseni/` (ostatní jazyky používají vlastní URL).

@@ -12,7 +12,6 @@ export default function PipelineControls({ locale }: { locale: Locale }) {
   const [error, setError] = useState("");
   const [needsLogin, setNeedsLogin] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [pollVersion, setPollVersion] = useState(0);
   const submitting = useRef(false);
   const busy = job?.status === "queued" || job?.status === "running";
   const online = useOnlinePlanners();
@@ -50,46 +49,41 @@ export default function PipelineControls({ locale }: { locale: Locale }) {
   };
 
   useEffect(() => {
+    let active = true;
     const controller = new AbortController();
-    let timer: ReturnType<typeof setTimeout>;
-    const poll = async () => {
-      let retry = true;
+    const load = async () => {
       try {
         const response = await fetch("/api/admin/local-pipeline/", {
-          signal: controller.signal,
+          signal: AbortSignal.any([
+            controller.signal,
+            AbortSignal.timeout(15000),
+          ]),
           cache: "no-store",
         });
+        if (!active) return;
         if (!response.ok) {
-          // Public visitors can see the buttons; only an administrator can operate them.
-          if ([401, 403].includes(response.status)) {
-            retry = false;
-            setJob(null);
-          } else reportError(response.status);
+          // Public visitors see the controls; authentication is required for actions.
+          if (![401, 403].includes(response.status))
+            reportError(response.status);
           return;
         }
         const payload = await response.json();
-        if (!controller.signal.aborted) {
-          setJob(payload.data);
-          setError((previous) => (previous === t.unavailable ? "" : previous));
-        }
+        if (active) setJob(payload.data);
       } catch {
-        if (!controller.signal.aborted) setError(t.unavailable);
+        if (active) setError(t.unavailable);
       } finally {
-        if (!controller.signal.aborted) {
-          setLoaded(true);
-          if (retry) timer = setTimeout(poll, 5000);
-        }
+        if (active) setLoaded(true);
       }
     };
-    void poll();
+    void load();
     return () => {
+      active = false;
       controller.abort();
-      clearTimeout(timer);
     };
-  }, [t.unavailable, pollVersion]);
+  }, []);
 
   const submit = async (action: PipelineAction) => {
-    if (submitting.current || busy) return;
+    if (!loaded || submitting.current || busy) return;
     submitting.current = true;
     setPending(action);
     setError("");
@@ -107,7 +101,6 @@ export default function PipelineControls({ locale }: { locale: Locale }) {
       }
       const payload = await response.json();
       setJob(payload.data);
-      setPollVersion((version) => version + 1);
     } catch {
       setError(t.unavailable);
     } finally {
