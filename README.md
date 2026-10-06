@@ -146,7 +146,7 @@ Formulář se zpřístupní po hydrataci a ověření schopností tenantu přes
 nepřipravené země zůstávají označené a neklikatelné. Výpadek načtení pokrytí
 nabízí opakování. Záložky se zalamují i na mobilu a ovládají se šipkami.
 Seznam měst se načítá jen při deklarované podpoře této operace. Přepnutí země
-vymaže město i obě zastávky předchozí země. Primární zdroje se nezastupují
+vymaže město a cílovou zastávku předchozí země; Odkud se vrátí na aktuální polohu. Primární zdroje se nezastupují
 lokálním OTP jen kvůli chybějící integraci. SK/AT/PL záložka není tvrzení,
 že je pro zemi již nasazený online plánovač; AU znamená Austrálii, AT Rakousko.
 
@@ -247,6 +247,22 @@ Po refreshi proběhne nové online vyhledání. Identita detailu se odvozuje ze 
 `coordinates` jsou ručně vybraný bod pro plánování a mohou být v URL. `current_location` je aktuální GPS poloha: URL obsahuje jen tuto volbu, nikdy GPS souřadnice ani čas měření. Po každém obnovení se získá nový fix s `maximumAge: 0`; použije se pouze do 30 sekund a jen v těle POST požadavku. V URL, localStorage ani sessionStorage se GPS neukládá. Při zamítnutí polohy UI vyzve k výběru zastávky. Sdílený odkaz s „mojí polohou“ použije polohu příjemce.
 
 Datum a čas formuláře i výsledků se zobrazují v časovém pásmu zařízení. URL a backendový dotaz nesou jednoznačný časový okamžik. Formulář odmítá neexistující místní čas při jarním přechodu na letní čas.
+
+Odkud i Kam jsou povinné; Odkud má ve výchozím editoru aktuální polohu. GPS
+se pro samotné plánování změří znovu, bez ukládání do URL. Nevybrané napsané
+jméno (`grohova`) se při odeslání vyřeší první položkou téhož seřazeného katalogu
+jako našeptávač. Prázdný vstup zachytí HTML `required`, neexistující shoda zobrazí
+chybu; síťová chyba nevytváří smyšlenou zastávku. Enter bez aktivní položky
+nabídky odešle formulář; šipky a Enter dál umožňují explicitní výběr.
+
+`UIModule/DateTimeField` zapouzdřuje React Datepicker 9 a date-fns; doména používá
+jen `yyyy-MM-dd` a `HH:mm`, locale je předané přes props. Kalendář a časový seznam
+mají společný brand a zůstávají v rámci displeje. Dnešní den a aktuální čas
+se automaticky dopočítají **při každém odeslání**, včetně přechodu přes půlnoc;
+změna dne a času vypíná automatiku nezávisle. URL nese `dayMode=today` a
+`timeMode=now` jen pro dosud automatické části. Uložené `at` se při obnovení
+vyhledá znovu se stejným okamžikem; automatika se uplatní až na nové odeslání.
+Staré URL s `at` bez těchto voleb se zachovávají jako ručně zadané datum/čas.
 
 Výsledky se stránkují po 10 spojeních. Další stránka začíná po posledním
 plánovaném odjezdu, předchozí končí před prvním plánovaným příjezdem;
@@ -387,13 +403,16 @@ stránky načte katalog znovu online; neúspěšný požadavek lze zopakovat ote
 nabídky. Názvy se seřadí a normalizují jednou, psaní pouze filtruje připravený
 index. Toto znovupoužití statických metadat se netýká polohy ani spojů. Nový endpoint
 vyžaduje současné nasazení změn modulu Transport v php-core, bez DB migrace. Stát a vybrané město
-se přenášejí do našeptávání i hledání cest. Prázdné město znamená všechna města daného státu. Bez vybraného města našeptávání automaticky požádá o čerstvou GPS a řadí
-textové shody podle vzdálenosti, pak textové relevance. GPS nezúží nabídku
+se přenášejí do našeptávání i hledání cest. Prázdné město znamená všechna města daného státu. Našeptávání upřednostní zastávky před ulicemi/adresami a přesná jména před částečnými shodami; stejné shody řadí podle čerstvé GPS a textové relevance. GPS nezúží nabídku
 na aktuální město; pro zvolený stát zůstávají zapojené všechny dostupné zdroje.
 Při odmítnutí nebo nedostupnosti GPS (limit 1,5 sekundy) funguje textové hledání
-bez polohy. Výslovné město má přednost a automatickou GPS nepoužívá. GPS našeptávání používá `POST /api/transport/places/` s `q` v těle,
-nikdy souřadnice v URL. Java router vybere nakonfigurovaný country worker; jeho katalogové filtry
-respektují zemi/město a GPS slouží pro řazení. Nejde o globální reverse geocoder.
+bez polohy. Výslovné město má přednost jako filtr; GPS může řadit shody i uvnitř města. GPS našeptávání používá `POST /api/transport/places/` s `q` v těle,
+nikdy souřadnice v URL. Pokud uživatel zemi ani město nevybral, editor má
+`areaMode=gps`: při dostupné GPS neposílá pevný `state`. Java router odvodí
+nejbližší obsluhovanou oblast přes nezávislé katalogy Places, bez probuzení OTP.
+Ruční výběr záložky/města tuto automatiku vypne; při odmítnutí GPS zůstává
+výchozí země. Jde o přibližný odhad dle pokryté dopravní sítě, nikoliv
+administrativní reverse geocoder. Backend stále odpovídá za řazení před limitem.
 
 Volba „Moje aktuální poloha“ nyní nejprve vybere přes backend nejbližší veřejnou
 zastávku (geografická vzdálenost, do 2 km) a plánuje od/k jejímu ID. Nad výsledky

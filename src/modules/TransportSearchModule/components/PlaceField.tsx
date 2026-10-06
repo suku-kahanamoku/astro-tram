@@ -6,10 +6,8 @@ import { placeDetail } from "../../TransportCoreModule/providers/transportPresen
 import { selectPlace } from "../../TransportCoreModule/providers/placeSelection";
 import { servedModes } from "../../TransportCoreModule/config/transportModes";
 import { useAsyncOptions } from "../../UIModule/hooks/useAsyncOptions";
-import {
-  getAutocompleteFix,
-  getFix,
-} from "../../TransportCoreModule/providers/geolocation";
+import { getFix } from "../../TransportCoreModule/providers/geolocation";
+import { placeSuggestions } from "../providers/placeSuggestions";
 import { transportClient } from "../../TransportCoreModule/providers/client";
 import { transportClientConfig as config } from "../../TransportCoreModule/config/client";
 import type { Dictionary } from "../../TransportCoreModule/providers/translations";
@@ -32,7 +30,7 @@ export default function PlaceField({
   value?: Place;
   state: SearchState;
   t: Dictionary;
-  onChange: (place?: Place) => void;
+  onChange: (place?: Place, text?: string, option?: PlaceOption) => void;
   onMap: () => void;
   onError: (message: string) => void;
 }) {
@@ -90,7 +88,7 @@ export default function PlaceField({
     if (!p) return;
     hide();
     setText(p.name);
-    onChange(selectPlace(p));
+    onChange(selectPlace(p), p.name, p);
     input.current?.focus();
   };
   const locate = async () => {
@@ -118,26 +116,10 @@ export default function PlaceField({
     }
     setNearby(false);
     setOpen(true);
-    run(async (signal) => {
-      const fix = !state.city ? await getAutocompleteFix() : undefined;
-      if (signal.aborted) return [];
-      return transportClient.places(
-        {
-          name: { $regex: query.trim() },
-          ...(state.country ? { state: state.country } : {}),
-          ...(state.city ? { city: state.city } : {}),
-          ...(fix
-            ? {
-                latitude: fix.lat,
-                longitude: fix.lon,
-                observed_at: fix.observedAt,
-              }
-            : {}),
-        },
-        signal,
-        !!fix,
-      );
-    }, config.autocompleteDelayMs);
+    run(
+      (signal) => placeSuggestions(query, state, signal),
+      config.autocompleteDelayMs,
+    );
   };
   const showLocation =
     !nearby && text.trim().length < config.minimumQueryLength;
@@ -219,6 +201,7 @@ export default function PlaceField({
         id={`place-${side}`}
         inputRef={input}
         type="text"
+        required
         placeholder={t.placeholder}
         maxLength={160}
         spellCheck={false}
@@ -242,7 +225,7 @@ export default function PlaceField({
           revision.current++;
           editing.current = true;
           setText(query);
-          onChange(undefined);
+          onChange(undefined, query);
           setNearby(false);
           hide();
           setOpen(true);

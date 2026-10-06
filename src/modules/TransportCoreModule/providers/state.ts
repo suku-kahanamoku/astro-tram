@@ -40,6 +40,11 @@ export function readState(params: URLSearchParams): SearchState {
   };
   const at = params.get("at");
   return {
+    ...(params.get("dayMode") === "today"
+      ? ({ dayMode: "today" } as const)
+      : {}),
+    ...(params.get("timeMode") === "now" ? ({ timeMode: "now" } as const) : {}),
+    ...(params.get("areaMode") === "gps" ? ({ areaMode: "gps" } as const) : {}),
     ...(params.get("page") === "earlier" || params.get("page") === "later"
       ? { page: params.get("page") as "earlier" | "later" }
       : {}),
@@ -79,6 +84,9 @@ export function writeState(state: SearchState): URLSearchParams {
   if (state.country) p.set("country", state.country);
   if (state.city) p.set("city", state.city);
   if (state.page) p.set("page", state.page);
+  if (state.dayMode) p.set("dayMode", state.dayMode);
+  if (state.timeMode) p.set("timeMode", state.timeMode);
+  if (state.areaMode) p.set("areaMode", state.areaMode);
   return p;
 }
 export function searchBody(

@@ -97,9 +97,9 @@ export default function Combobox({
               setVisibleCount((count) => Math.max(count, next + 1));
               setActive(next);
             }
-            if (e.key === "Enter") {
+            if (e.key === "Enter" && active >= 0 && active < options.length) {
               e.preventDefault();
-              if (active >= 0 && active < options.length) onChoose(active);
+              onChoose(active);
             }
           }}
         />

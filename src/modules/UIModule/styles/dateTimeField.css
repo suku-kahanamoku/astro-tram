@@ -1,0 +1,81 @@
+.ui-date-time .react-datepicker-wrapper {
+  display: block;
+}
+.ui-date-time {
+  min-width: 0;
+  width: 155px;
+}
+.ui-date-time[data-kind="time"] {
+  width: 110px;
+}
+.ui-date-time .react-datepicker__input-container input {
+  width: 100%;
+  padding-right: 2.3rem;
+}
+.ui-date-time .react-datepicker__calendar-icon {
+  inset: 50% 0.75rem auto auto;
+  transform: translateY(-50%);
+  width: 1.15rem;
+  height: 1.15rem;
+  padding: 0;
+  color: var(--muted);
+  cursor: pointer;
+}
+.ui-date-time-popover {
+  z-index: 35;
+}
+.ui-date-time-calendar {
+  font: inherit;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  box-shadow: 0 12px 36px #17233724;
+  overflow: hidden;
+}
+.ui-date-time-calendar .react-datepicker__header {
+  background: var(--cream);
+  border-bottom-color: var(--line);
+  padding-top: 1rem;
+}
+.ui-date-time-calendar .react-datepicker__current-month,
+.ui-date-time-calendar .react-datepicker-time__header {
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.ui-date-time-calendar .react-datepicker__day {
+  border-radius: 0.5rem;
+  color: var(--ink);
+}
+.ui-date-time-calendar .react-datepicker__day--selected,
+.ui-date-time-calendar .react-datepicker__day--keyboard-selected {
+  background: var(--primary);
+  color: white;
+}
+.ui-date-time-calendar .react-datepicker__day:hover {
+  background: var(--sage);
+  color: var(--ink);
+}
+.ui-date-time-calendar .react-datepicker__time-container {
+  width: 110px;
+  border-left: 0;
+}
+.ui-date-time-calendar
+  .react-datepicker__time-container
+  .react-datepicker__time
+  .react-datepicker__time-box {
+  width: 110px;
+}
+.ui-date-time-calendar .react-datepicker__time {
+  background: var(--paper);
+}
+.ui-date-time-calendar .react-datepicker__time-list-item--selected {
+  background: var(--primary) !important;
+}
+.ui-date-time-calendar .react-datepicker__day:focus-visible,
+.ui-date-time-calendar .react-datepicker__time-list-item:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}

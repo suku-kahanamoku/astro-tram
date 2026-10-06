@@ -29,10 +29,10 @@ test("empty fields open options without GPS, support Escape and reopen by click"
     });
   });
   await page.goto("/");
-  const input = page.locator("#place-from");
+  const input = page.locator("#place-to");
   await expect(input).toBeEnabled();
   await input.click();
-  await expect(page.locator("#suggestions-from")).toBeVisible();
+  await expect(page.locator("#suggestions-to")).toBeVisible();
   await expect(input).toHaveAttribute("aria-expanded", "true");
   expect(await page.evaluate(() => (window as any).gpsCalls)).toBe(0);
   await page.keyboard.press("Escape");
@@ -44,7 +44,7 @@ test("empty fields open options without GPS, support Escape and reopen by click"
   await page.keyboard.press("ArrowDown");
   await expect(input).toHaveAttribute(
     "aria-activedescendant",
-    "suggestions-from-0",
+    "suggestions-to-0",
   );
   await page.keyboard.press("Enter");
   expect(await page.evaluate(() => (window as any).gpsCalls)).toBe(1);

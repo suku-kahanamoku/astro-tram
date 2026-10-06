@@ -75,7 +75,7 @@ function TransportView({
         data-locale={locale}
         data-results={String(results)}
       >
-        <TransportSearchSection t={t} searchUrl={searchUrl} />
+        <TransportSearchSection t={t} searchUrl={searchUrl} locale={locale} />
         <TransportResults
           results={results}
           locale={locale}

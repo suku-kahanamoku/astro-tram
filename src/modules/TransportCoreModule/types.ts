@@ -12,6 +12,9 @@ export interface SearchState {
   country: string;
   city?: string;
   page?: "earlier" | "later";
+  dayMode?: "today";
+  timeMode?: "now";
+  areaMode?: "gps";
 }
 export interface Fix {
   lat: number;

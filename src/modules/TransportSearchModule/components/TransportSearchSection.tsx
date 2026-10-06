@@ -4,9 +4,11 @@ import type { Dictionary } from "../../TransportCoreModule/providers/translation
 export default function TransportSearchSection({
   t,
   searchUrl,
+  locale,
 }: {
   t: Dictionary;
   searchUrl: string;
+  locale: string;
 }) {
   return (
     <>
@@ -17,7 +19,7 @@ export default function TransportSearchSection({
         </div>
         <p>{t.subtitle}</p>
       </div>
-      <SearchForm t={t} searchUrl={searchUrl} />
+      <SearchForm t={t} searchUrl={searchUrl} locale={locale} />
     </>
   );
 }

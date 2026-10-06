@@ -89,7 +89,7 @@ test("map dialogs are local; only the selected search point survives refresh", a
   await page.route("**/*.tile.openstreetmap.org/**", (route) => route.abort());
   await page.route("**/tile.openstreetmap.org/**", (route) => route.abort());
   await page.goto("/");
-  await expect(page.locator('[data-map="from"]')).toBeDisabled();
+  await expect(page.locator('[data-map="from"]')).toBeEnabled();
   await expect(page.locator('[data-map="to"]')).toBeDisabled();
   await page.goto(
     "/?fromKind=coordinates&fromLat=50.07&fromLon=14.42&fromLabel=Vybrany+bod",
@@ -411,7 +411,7 @@ test("switching a supported country clears the old city and places before autoco
   await page.locator("#country-sk").click();
   await expect(page.locator("#travel-country")).toHaveValue("SK");
   await expect(page.locator("#travel-city")).toHaveValue("Všechny jízdní řády");
-  await expect(page.locator("#place-from")).toHaveValue("");
+  await expect(page.locator("#place-from")).toHaveValue("Moje aktuální poloha");
   const request = page.waitForRequest((r) =>
     r.url().includes("/api/transport/places/"),
   );
@@ -475,10 +475,14 @@ test("autocomplete uses fresh GPS automatically in POST only and explicit city t
   );
   await page.locator("#place-from").fill("Muzeum");
   const explicitRequest = await explicit;
-  expect(explicitRequest.method()).toBe("GET");
-  expect(
-    JSON.parse(new URL(explicitRequest.url()).searchParams.get("q")!),
-  ).toEqual({ name: { $regex: "Muzeum" }, city: "Praha", state: "CZ" });
+  expect(explicitRequest.method()).toBe("POST");
+  expect(explicitRequest.postDataJSON().q).toMatchObject({
+    name: { $regex: "Muzeum" },
+    city: "Praha",
+    state: "CZ",
+    latitude: 49.195,
+    longitude: 16.61,
+  });
 });
 
 test("city picker defaults to all and offers online municipalities", async ({
@@ -677,7 +681,7 @@ test("place map buttons require a selection, focus selects the text and city sha
   await page.goto("/");
   const from = page.locator("#place-from"),
     to = page.locator("#place-to");
-  await expect(page.locator('[data-map="from"]')).toBeDisabled();
+  await expect(page.locator('[data-map="from"]')).toBeEnabled();
   await from.fill("Muzeum");
   await expect(page.locator('[data-map="from"]')).toBeDisabled();
   await page.getByRole("option", { name: "Praha, Muzeum" }).click();
