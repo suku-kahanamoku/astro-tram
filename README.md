@@ -356,6 +356,12 @@ v `dist` a SSR funkci v `.netlify/v1/functions/ssr/`. Stránky a API se vykreslu
 za běhu; kořenový `index.html` proto není požadavkem tohoto SSR nasazení.
 Funkce i směrování nasadí Netlify automaticky, nepřidávejte SPA přepis na `index.html`.
 
+`astro.config.mjs` zahrnuje `react-datepicker` do SSR bundlu přes
+`vite.ssr.noExternal`. Verze 9.1.0 exportuje ESM soubor `dist/index.es.js` bez
+`type: module`; jeho přímé načtení v Netlify funkci končí chybou
+`Cannot use import statement outside a module`. Stejné nastavení používá i Node
+adaptér.
+
 V Netlify Project configuration → Environment variables nastavte:
 
 - `PUBLIC_SITE_URL`: skutečný HTTPS origin produkčního webu, dostupný při buildu.

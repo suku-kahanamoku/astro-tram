@@ -72,5 +72,10 @@ export default defineConfig({
   vite: {
     cacheDir: `./node_modules/.vite/${cacheScope}`,
     plugins: [tailwindcss()],
+    ssr: {
+      // Its ESM .js export lacks package type: module. Bundle it so Node
+      // does not load it as CommonJS in the Netlify function.
+      noExternal: ["react-datepicker"],
+    },
   },
 });
