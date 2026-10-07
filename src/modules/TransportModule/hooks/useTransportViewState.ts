@@ -29,7 +29,9 @@ export function useTransportViewState(results: boolean) {
     }));
   const tracking = useTripTracking(
     [
-      ...openedTrips.flatMap((group) => group.ids),
+      ...(search.data?.journeys ?? []).flatMap((journey) =>
+        journey.legs.flatMap((leg) => (leg.tripId ? [leg.tripId] : [])),
+      ),
       ...(modalLeg?.tripId ? [modalLeg.tripId] : []),
     ],
     modalOpen ? modalLeg?.tripId : undefined,

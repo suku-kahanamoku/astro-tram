@@ -605,3 +605,43 @@ test("online trip aliases share one socket and update their own delay and GPS wi
   );
   manager.dispose();
 });
+
+test("GPS-only and delay-only frames keep separate lifetimes over the same socket", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout", "setInterval", "Date"] });
+  let push!: (data: unknown) => void;
+  const store = createTrackingStore();
+  const manager = createTrackingSubscriptions(store, {
+    tracking: async () => ({
+      status: "available",
+      url: "ws://localhost",
+      ticket: "one",
+      expiresAt: new Date(Date.now() + 900000).toISOString(),
+    }),
+    socket: (options) => {
+      push = (data) =>
+        options.onMessage?.({ type: "observation", trip: "trip", data });
+      return { connect() {}, send: () => true, close() {} };
+    },
+  });
+  manager.setIds(["trip"]);
+  await setImmediate();
+  push(point(240));
+  const delayExpiry = store.getSnapshot().trip.delaySample?.validUntil;
+  t.mock.timers.tick(10000);
+  push({ ...point(), delay_seconds: null, cancelled: null });
+  assert.equal(store.getSnapshot().trip.delaySeconds, 240);
+  assert.equal(store.getSnapshot().trip.delaySample?.validUntil, delayExpiry);
+  t.mock.timers.tick(20000);
+  assert.equal(store.getSnapshot().trip.delaySeconds, null);
+  assert.ok(store.getSnapshot().trip.position);
+  push({ ...point(60), position: null });
+  assert.equal(store.getSnapshot().trip.delaySeconds, 60);
+  assert.equal(
+    store.getSnapshot().trip.positionSample?.validUntil,
+    new Date(40000).toISOString(),
+  );
+  t.mock.timers.tick(10000);
+  assert.equal(store.getSnapshot().trip.position, null);
+  assert.equal(store.getSnapshot().trip.delaySeconds, 60);
+  manager.dispose();
+});

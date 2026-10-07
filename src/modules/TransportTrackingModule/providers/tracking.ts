@@ -120,11 +120,12 @@ export function knownDelayMinutes(
     live?.status === "live" &&
     live.delaySeconds !== null &&
     Number.isFinite(live.delaySeconds) &&
-    live.observedAt &&
-    live.validUntil &&
-    Date.parse(live.validUntil) > now &&
-    Date.parse(live.observedAt) + 30000 > now &&
-    Date.parse(live.observedAt) <= now + 5000
+    (live.delaySample?.observedAt ?? live.observedAt) &&
+    (live.delaySample?.validUntil ?? live.validUntil) &&
+    Date.parse((live.delaySample?.validUntil ?? live.validUntil)!) > now &&
+    Date.parse((live.delaySample?.observedAt ?? live.observedAt)!) + 30000 >
+      now &&
+    Date.parse((live.delaySample?.observedAt ?? live.observedAt)!) <= now + 5000
   )
     return Math.max(0, Math.ceil(live.delaySeconds / 60));
   if (
@@ -176,10 +177,14 @@ export function trackedLeg(
       }
     : { ...leg };
   if (live?.status !== "live") return result;
+  if (live.delaySample && Date.parse(live.delaySample.validUntil) <= now)
+    return result;
   if (live.cancelled !== null) result.cancelled = live.cancelled;
   if (live.delaySeconds === null || leg.mode === "walk") return result;
   // Position delay estimates future calls only, not historical stop times.
-  const observed = Date.parse(live.observedAt ?? "");
+  const observed = Date.parse(
+    live.delaySample?.observedAt ?? live.observedAt ?? "",
+  );
   const shift = (scheduled: string, prediction: string | null) => {
     const estimate = Date.parse(scheduled) + live.delaySeconds! * 1000;
     if (Number.isFinite(observed) && estimate < observed) return prediction;

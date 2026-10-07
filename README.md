@@ -47,9 +47,13 @@ Bez dostupné Java služby gateway vrací chybu, ne původní PHP fallback.
 
 Výsledky GPS hledání již nevykreslují zvláštní upozornění o nástupní/cílové
 zastávce ani nezapočítané pěší cestě. Vybrané zastávky zůstávají v datech
-výsledku a trase. Lokální Java backend má vlastní IDS JMK realtime adaptér
-a WebSocket; dialog dostane statické zastávky hned a živá měření upravují
-časovou osu a zpoždění. Historický nebo budoucí spoj nemusí mít živé měření.
+výsledku a trase. Java backend má samostatnou vícezemní Realtime službu
+s jedním WebSocketem nezávislým na OTP. Po nalezení výsledků se odebírají všechny
+jedinečné spoje, otevření accordionu/dialogu navíc požádá o čerstvé měření.
+Statické zastávky, papírové časy a otevřené detaily se realtime zprávou nemění.
+GPS a zpoždění mají vlastní původní platnost: zpráva obsahující jen jednu
+schopnost nesmaže stále platnou druhou. Historický/budoucí spoj či nepodporovaný
+provider nemusí mít živé měření. HTTP gateway kontrakt zůstává beze změny.
 
 - `src/config/site.ts`, `routes.ts`: brand, aktivní moduly a jazykové URL.
 - `LandingModule`: intro, vysvětlení, ilustrace, FAQ.

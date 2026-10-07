@@ -61,15 +61,18 @@ export function freshTripPosition(
   validUntil: string;
 } {
   if (
-    live?.status !== "live" ||
+    !live ||
+    (live?.positionSample?.status ?? live?.status) !== "live" ||
     !live.position ||
     !live.observedAt ||
     !live.validUntil ||
     live.cancelled === true
   )
     return false;
-  const observed = Date.parse(live.observedAt),
-    until = Date.parse(live.validUntil);
+  const observed = Date.parse(
+      live.positionSample?.observedAt ?? live.observedAt,
+    ),
+    until = Date.parse(live.positionSample?.validUntil ?? live.validUntil);
   if (
     !Number.isFinite(observed) ||
     !Number.isFinite(until) ||
@@ -135,15 +138,18 @@ export function lastKnownTripProgress(
   now = Date.now(),
 ): TripProgress | null {
   if (
-    live?.status !== "last_known" ||
+    !live ||
+    (live?.positionSample?.status ?? live?.status) !== "last_known" ||
     !live.position ||
     !live.observedAt ||
     !live.validUntil ||
     live.cancelled === true
   )
     return null;
-  const observed = Date.parse(live.observedAt),
-    until = Date.parse(live.validUntil);
+  const observed = Date.parse(
+      live.positionSample?.observedAt ?? live.observedAt,
+    ),
+    until = Date.parse(live.positionSample?.validUntil ?? live.validUntil);
   if (
     !Number.isFinite(observed) ||
     !Number.isFinite(until) ||

@@ -23,10 +23,12 @@ test("opening and reopening a trip draws an HTTP position before any websocket m
 }) => {
   let reads = 0,
     messages = 0,
-    subscribed = 0;
+    subscribed = 0,
+    firstTrip = "";
   await page.route("**/api/transport/search/**", async (route) => {
     const json = await (await route.fetch()).json();
     const first = json.data.journeys[0];
+    firstTrip = first.legs[0].tripId;
     first.duration = 1020;
     first.legs[0].expectedDeparture = "2026-10-06T08:01:00Z";
     first.legs[0].expectedArrival = "2026-10-06T08:18:00Z";
@@ -84,6 +86,7 @@ test("opening and reopening a trip draws an HTTP position before any websocket m
     ws.onMessage((message) => {
       const m = JSON.parse(String(message));
       if (m.type !== "subscribe") return;
+      if (m.ticket !== firstTrip) return;
       subscribed++;
       push = () => {
         messages++;
@@ -377,6 +380,8 @@ test("several accordions and dialogs multiplex all trips over one socket", async
   await page.goto(path);
   const cards = page.locator(".journey-card");
   await expect(cards).toHaveCount(2);
+  // Search subscribes every result before any card is expanded.
+  await expect.poll(() => subscriptions.size).toBe(2);
   await cards.nth(0).locator(".journey-summary-toggle").click();
   await cards.nth(1).locator(".journey-summary-toggle").click();
   await expect.poll(() => subscriptions.size).toBe(2);
@@ -394,8 +399,10 @@ test("several accordions and dialogs multiplex all trips over one socket", async
   expect(connections).toBe(1);
   await page.keyboard.press("Escape");
   await cards.nth(0).locator(".journey-summary-toggle").click();
-  await expect.poll(() => subscriptions.size).toBe(1);
-  expect(events.at(-1)?.type).toBe("unsubscribe");
+  await expect.poll(() => subscriptions.size).toBe(2);
+  expect(events.filter((event) => event.type === "unsubscribe")).toHaveLength(
+    0,
+  );
   await cards.nth(0).locator(".journey-summary-toggle").click();
   await expect.poll(() => subscriptions.size).toBe(2);
   expect(connections).toBe(1);
@@ -424,7 +431,7 @@ test("legacy detail parameters do not reopen cards; interactions leave URL and h
   await expect(page.locator(".journey-card.is-open")).toHaveCount(0);
   await expect(page.locator("[data-trip-dialog]")).not.toBeVisible();
   expect(trips).toBe(0);
-  expect(tickets).toBe(0);
+  await expect.poll(() => tickets).toBeGreaterThan(0);
   const url = page.url(),
     historyLength = await page.evaluate(() => history.length);
   await page.locator(".journey-summary-toggle").first().click();
@@ -520,7 +527,7 @@ test("static stop rows appear before optional coordinates and never remount when
   }
 });
 
-test("429 waits for Retry-After and closing/reopening obtains a fresh ticket", async ({
+test("429 waits for Retry-After and reopening keeps the result subscription", async ({
   page,
 }) => {
   let requests = 0,
@@ -561,6 +568,7 @@ test("429 waits for Retry-After and closing/reopening obtains a fresh ticket", a
   await page.keyboard.press("Escape");
   await expect(page.locator("[data-trip-dialog]")).not.toBeVisible();
   await badge.click();
-  await expect.poll(() => connections).toBe(2);
+  await page.waitForTimeout(1100);
+  expect(connections).toBe(1);
   expect(requests).toBe(3);
 });

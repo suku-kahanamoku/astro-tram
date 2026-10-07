@@ -157,6 +157,8 @@ export interface TripObservation {
   delaySeconds: number | null;
   cancelled: boolean | null;
   estimatedProgress?: EstimatedTripProgress;
+  positionSample?: { observedAt: string; validUntil: string; status: string };
+  delaySample?: { observedAt: string; validUntil: string };
 }
 export interface EstimatedTripProgress {
   fromIndex: number;

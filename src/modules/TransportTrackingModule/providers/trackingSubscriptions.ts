@@ -5,6 +5,7 @@ import {
 } from "../../TransportCoreModule/providers/client";
 import { observation, unavailableObservation } from "./tracking";
 import { createTrackingStore } from "./trackingStore";
+import { mergeObservation } from "./observationPatch";
 import type {
   TrackingSession,
   TripObservation,
@@ -59,29 +60,36 @@ export function createTrackingSubscriptions(
     const current = currentObservation(id);
     // Temporary missing frames and older HTTP/WS samples cannot erase a fresh
     // delay or GPS sample. Its original source expiry stays unchanged.
-    if (
-      current &&
-      (!value.validUntil ||
-        (current.observedAt &&
-          value.observedAt &&
-          !(current.estimatedProgress && value.position) &&
-          Date.parse(value.observedAt) < Date.parse(current.observedAt)))
-    )
-      return;
+    if (current && !value.validUntil) return;
     if (current?.position && value.estimatedProgress && !value.position) return;
+    value = mergeObservation(current, value);
     // An unavailable frame is not a newer measurement and must not cancel the
     // dialog's pending initial HTTP read of delay and position.
     if (value.validUntil) watch.revision = (watch.revision ?? 0) + 1;
     store.set(id, value);
     clearTimeout(watch.expiry);
-    if (value.validUntil)
+    const deadlines = [
+      value.positionSample?.validUntil,
+      value.delaySample?.validUntil,
+      value.validUntil,
+    ].flatMap((deadline) =>
+      deadline && Date.parse(deadline) > Date.now()
+        ? [Date.parse(deadline)]
+        : [],
+    );
+    if (deadlines.length)
       watch.expiry = setTimeout(
         () => {
           if (active(id, watch)) {
-            store.set(id, unavailableObservation("stale"));
+            const remaining = mergeObservation(
+              store.getSnapshot()[id],
+              unavailableObservation("stale"),
+            );
+            store.set(id, remaining);
+            if (remaining.validUntil) apply(id, watch, remaining);
           }
         },
-        Math.max(0, Date.parse(value.validUntil) - Date.now()),
+        Math.max(1, Math.min(...deadlines) - Date.now()),
       );
   };
   const disconnect = () => {
