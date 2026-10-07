@@ -142,6 +142,7 @@ export function createCoreClient(
           "invalid_date",
           "invalid_place",
           "expired_journey",
+          "stale_resource",
           "not_found",
         ]);
         if (path.startsWith("/transport/v1/")) {
@@ -152,7 +153,7 @@ export function createCoreClient(
           const code = payload?.errors?.code;
           if (typeof code === "string" && transportErrors.has(code))
             throw new HttpError(
-              [404, 422, 429, 503].includes(response.status)
+              [404, 409, 422, 429, 503].includes(response.status)
                 ? response.status
                 : 502,
               code,

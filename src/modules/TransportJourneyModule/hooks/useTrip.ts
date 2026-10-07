@@ -18,8 +18,13 @@ export function useTrip(id?: string | null, coordinates = false) {
         .then((trip) => {
           if (active) setResult({ id, coordinates, trip });
         })
-        .catch(() => {
-          if (active) setResult({ id, coordinates, error: "unavailable" });
+        .catch((error: unknown) => {
+          if (active)
+            setResult({
+              id,
+              coordinates,
+              error: error instanceof Error ? error.message : "unavailable",
+            });
         });
     return () => {
       active = false;

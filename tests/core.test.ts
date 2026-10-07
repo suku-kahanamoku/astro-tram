@@ -233,3 +233,39 @@ test("BFF preserves Retry-After on rate limits without exposing upstream message
     error: "rate_limited",
   });
 });
+
+test("BFF preserves a stale stop snapshot as 409 and never publishes a journey", async () => {
+  let calls = 0;
+  const core = createCoreClient(config, async () => {
+    calls++;
+    return Response.json(
+      {
+        success: false,
+        error: "stale_resource",
+        errors: { code: "stale_resource" },
+        message: "private diagnostic",
+      },
+      { status: 409 },
+    );
+  });
+  let failure: unknown;
+  try {
+    await core.request("/transport/v1/journeys/search", {
+      method: "POST",
+      body: {},
+    });
+  } catch (error) {
+    failure = error;
+  }
+  const response = errorResponse(failure);
+  assert.equal(response.status, 409);
+  assert.deepEqual(await response.json(), {
+    success: false,
+    error: "stale_resource",
+  });
+  assert.equal(
+    calls,
+    1,
+    "A snapshot conflict must never be retried as an upstream outage",
+  );
+});

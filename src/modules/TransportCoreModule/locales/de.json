@@ -39,6 +39,8 @@
   "unsupported": "Diese Strecke ist noch nicht abgedeckt.",
   "unsupportedHelp": "Versuche ein anderes Gebiet oder konkrete Haltestellen. Manche Quellen unterstützen noch keine Kartenpunkte.",
   "invalid": "Prüfe Orte, Datum und Uhrzeit.",
+  "staleResource": "Der Fahrplan hat sich geändert.",
+  "staleResourceHelp": "Wähle die Haltestellen erneut aus den Vorschlägen und suche eine neue Verbindung.",
   "retry": "Erneut versuchen",
   "partial": "Die Ergebnisse können unvollständig sein. Einige Quellen sind eingeschränkt oder nicht verfügbar.",
   "fallback": "Ersatzfahrplan",

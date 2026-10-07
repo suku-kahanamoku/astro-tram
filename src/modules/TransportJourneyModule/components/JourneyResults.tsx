@@ -210,7 +210,11 @@ function JourneyDetail({
                         aria-live="polite"
                       >
                         {tripError ? (
-                          <li>{t.tripError}</li>
+                          <li>
+                            {tripError === "stale_resource"
+                              ? t.staleResourceHelp
+                              : t.tripError}
+                          </li>
                         ) : !trip ? (
                           <li>{t.loadingTrip}</li>
                         ) : !segment ? (

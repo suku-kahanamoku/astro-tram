@@ -114,7 +114,13 @@ export default function TripDialog({
               {!trip && !error && (
                 <span className="spinner" aria-hidden="true" />
               )}
-              {error ? t.tripError : !trip ? t.loadingTrip : t.noTripStops}
+              {error
+                ? error === "stale_resource"
+                  ? t.staleResourceHelp
+                  : t.tripError
+                : !trip
+                  ? t.loadingTrip
+                  : t.noTripStops}
             </li>
           </ul>
         )}

@@ -39,6 +39,8 @@
   "unsupported": "This journey is outside our current coverage.",
   "unsupportedHelp": "Try another area or specific stops. Some sources cannot yet plan from a map point.",
   "invalid": "Check your places, date and time.",
+  "staleResource": "The timetable has changed.",
+  "staleResourceHelp": "Select your stops from the suggestions again and search for a new connection.",
   "retry": "Try again",
   "partial": "Results may be incomplete. Some sources have limited search or are unavailable.",
   "fallback": "Backup timetable",

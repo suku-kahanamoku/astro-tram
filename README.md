@@ -681,3 +681,11 @@ nikoli Astro/PHP. `GOLEMIO_API_KEY` je privátní Java env/Worker secret;
 nepřidávat jej do Netlify ani `PUBLIC_*`. Stránka licence uvádí PID/ROPID/OICT
 v `supplementaryDataLicenses`; manifest aktivního grafu popisuje statické vstupy.
 Údaj o licenci vlastního PID webu se nevydává za licenci všech Golemio API.
+
+Zastávková ID vlastního OTP obsahují také otisk jízdního řádu. Frontend
+je předává neprůhledně, bez rozbalování či odstranění verze. Když se
+jízdní řád změní nebo se Places index rozchází s grafem, Java vrací
+`409 stale_resource`; PHP a BFF tento stav zachovají. Formulář a dialog
+vyzvou k novému výběru zastávek. Staré ID se nesmí automaticky použít
+pro jinou zastávku se stejným externím číslem. Detail cache se klíčuje
+celým ID, takže se data různých verzí nemíchají.

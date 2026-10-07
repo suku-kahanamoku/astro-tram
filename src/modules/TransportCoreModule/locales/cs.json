@@ -39,6 +39,8 @@
   "unsupported": "Tato cesta zatím není v našem pokrytí.",
   "unsupportedHelp": "Zkus jinou oblast nebo konkrétní zastávky. Některé zdroje zatím neumí hledat od bodu na mapě.",
   "invalid": "Zkontroluj místa, datum a čas cesty.",
+  "staleResource": "Jízdní řád se změnil.",
+  "staleResourceHelp": "Vyber zastávky z nabídky znovu a vyhledej nové spojení.",
   "retry": "Zkusit znovu",
   "partial": "Výsledky nemusí být úplné. Některé zdroje mají omezené vyhledávání nebo nejsou dostupné.",
   "fallback": "Záložní jízdní řád",

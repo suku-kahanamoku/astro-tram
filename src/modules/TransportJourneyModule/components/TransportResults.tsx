@@ -14,6 +14,7 @@ type SearchState = ReturnType<typeof useJourneySearch>;
 type TripState = ReturnType<typeof useTrip>;
 
 function searchError(code: string, t: Dictionary) {
+  if (code === "stale_resource") return [t.staleResource, t.staleResourceHelp];
   if (code === "search_prompt") return [t.searchPrompt, ""];
   if (["unsupported_coverage", "unsupported_capability"].includes(code))
     return [t.unsupported, t.unsupportedHelp];

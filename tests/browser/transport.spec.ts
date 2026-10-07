@@ -15,6 +15,47 @@ const query = (extra: Record<string, string> = {}) =>
     country: "CZ",
     ...extra,
   }).toString();
+test("snapshot-bound stops survive the URL and stale selections cannot display another journey", async ({
+  page,
+}) => {
+  const revision = "a".repeat(64);
+  const snapshotId = (external: string) =>
+    Buffer.from(
+      JSON.stringify(["tram", "otp", "stop", external, null, revision]),
+    ).toString("base64url");
+  const from = snapshotId("cz:S12689");
+  const to = snapshotId("cz:S12929");
+  let searches = 0;
+  await page.route("**/api/transport/search/**", async (route) => {
+    const body = route.request().postDataJSON();
+    expect(body["from-dest"].id).toBe(from);
+    expect(body["to-dest"].id).toBe(to);
+    searches++;
+    await route.fulfill({
+      status: 409,
+      contentType: "application/json",
+      body: JSON.stringify({ success: false, error: "stale_resource" }),
+    });
+  });
+  const params = query({
+    from,
+    to,
+    fromLabel: "Brno, Grohova",
+    toLabel: "Brno, Tábor",
+    city: "Brno",
+  });
+  await page.goto("/spojeni/?" + params);
+  for (let refresh = 0; refresh < 2; refresh++) {
+    await expect(
+      page.getByRole("heading", { name: "Jízdní řád se změnil.", exact: true }),
+    ).toBeVisible();
+    await expect(page.locator(".journey-card")).toHaveCount(0);
+    await expect(page.locator("#place-from")).toHaveValue("Brno, Grohova");
+    await expect(page.locator("#place-to")).toHaveValue("Brno, Tábor");
+    if (refresh === 0) await page.reload();
+  }
+  expect(searches).toBe(2);
+});
 test("search URL survives refresh; details are local and start closed", async ({
   page,
 }) => {
