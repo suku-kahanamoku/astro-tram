@@ -184,6 +184,39 @@ test("an unavailable socket frame cannot block the dialog's initial delay-only r
   manager.dispose();
 });
 
+test("a delay-only socket update leaves room for pending HTTP GPS without replacing the delay", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout", "setInterval", "Date"] });
+  let finish!: (value: unknown) => void;
+  let push!: (data: unknown) => void;
+  const store = createTrackingStore();
+  const manager = createTrackingSubscriptions(store, {
+    tracking: async () => ({
+      status: "available",
+      url: "ws://localhost",
+      ticket: "one",
+      expiresAt: new Date(Date.now() + 900000).toISOString(),
+    }),
+    observation: () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    socket: (options) => {
+      push = (data) =>
+        options.onMessage?.({ type: "observation", trip: "trip", data });
+      return { connect() {}, send: () => true, close() {} };
+    },
+  });
+  manager.setIds(["trip"]);
+  manager.refresh("trip");
+  await setImmediate();
+  push({ ...point(240), position: null });
+  finish(point(120));
+  await setImmediate();
+  assert.ok(store.getSnapshot().trip.position);
+  assert.equal(store.getSnapshot().trip.delaySeconds, 240);
+  manager.dispose();
+});
+
 test("temporary missing and older socket samples preserve fresh delay until its original expiry", async (t) => {
   t.mock.timers.enable({ apis: ["setTimeout", "setInterval", "Date"] });
   let push!: (data: unknown) => void;
@@ -625,7 +658,7 @@ test("GPS-only and delay-only frames keep separate lifetimes over the same socke
   });
   manager.setIds(["trip"]);
   await setImmediate();
-  push(point(240));
+  push({ ...point(240), cancelled: null });
   const delayExpiry = store.getSnapshot().trip.delaySample?.validUntil;
   t.mock.timers.tick(10000);
   push({ ...point(), delay_seconds: null, cancelled: null });

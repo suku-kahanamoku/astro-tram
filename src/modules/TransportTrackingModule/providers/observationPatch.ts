@@ -40,6 +40,8 @@ export function mergeObservation(
     !usePosition &&
     !useDelay &&
     (fresh(oldPosition) || fresh(oldDelay)) &&
+    (!previous.position || fresh(oldPosition)) &&
+    (previous.delaySeconds === null || fresh(oldDelay)) &&
     (incoming.cancelled === null || incoming.cancelled === previous.cancelled)
   )
     return previous;

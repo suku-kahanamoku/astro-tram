@@ -296,10 +296,29 @@ export function createTrackingSubscriptions(
           if (
             active(id, watch) &&
             !controller.signal.aborted &&
-            watch.snapshot === controller &&
-            (watch.revision ?? 0) === revision
+            watch.snapshot === controller
           ) {
-            apply(id, watch, observation(raw));
+            const value = observation(raw);
+            if ((watch.revision ?? 0) !== revision) {
+              const current = currentObservation(id);
+              const fresh = (until?: string | null) =>
+                !!until && Date.parse(until) > Date.now();
+              // A newer WS delay must not suppress the pending HTTP GPS (and
+              // conversely). Already received fields keep precedence.
+              if (
+                current?.position &&
+                fresh(current.positionSample?.validUntil ?? current.validUntil)
+              )
+                value.position = null;
+              if (
+                current?.delaySeconds != null &&
+                fresh(current.delaySample?.validUntil ?? current.validUntil)
+              )
+                value.delaySeconds = null;
+              value.cancelled = null;
+              delete value.estimatedProgress;
+            }
+            apply(id, watch, value);
           }
         })
         // A failed initial read must not tear down the socket or erase a received point.

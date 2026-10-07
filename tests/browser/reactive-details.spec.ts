@@ -568,7 +568,9 @@ test("429 waits for Retry-After and reopening keeps the result subscription", as
   await page.keyboard.press("Escape");
   await expect(page.locator("[data-trip-dialog]")).not.toBeVisible();
   await badge.click();
+  // Three distinct result trips plus the one rejected ticket attempt.
+  await expect.poll(() => requests).toBe(4);
   await page.waitForTimeout(1100);
   expect(connections).toBe(1);
-  expect(requests).toBe(3);
+  expect(requests).toBe(4);
 });
