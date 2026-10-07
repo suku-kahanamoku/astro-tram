@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { collectJourneyPage } from "../src/modules/TransportModule/server/journeyPage";
 import { adjacentJourneyPage } from "../src/modules/TransportCoreModule/providers/journeyPaging";
+import { journeyIdentity } from "../src/modules/TransportCoreModule/providers/journeyIdentity";
 import {
   readState,
   writeState,
@@ -111,4 +112,103 @@ test("an empty timetable stops within the bounded scan and returns no invented r
   });
   assert.equal(calls, 24);
   assert.equal(result.journeys.length, 0);
+});
+
+function walking(departure: number, key: string): Journey {
+  const candidate = journey(0, 0);
+  return {
+    ...candidate,
+    key,
+    duration: 853,
+    legs: [
+      {
+        ...candidate.legs[0],
+        mode: "walk",
+        tripId: null,
+        line: "",
+        scheduledDeparture: instant(departure),
+        scheduledArrival: instant(departure + 853000),
+        geometry: {
+          type: "LineString",
+          coordinates: [
+            [14, 50],
+            [14.01, 50.01],
+          ],
+        },
+      },
+    ],
+  };
+}
+
+for (const arrive of [false, true]) {
+  test(`one walking route is returned once without repeated queries (${arrive ? "arrival" : "departure"})`, async () => {
+    let calls = 0;
+    const candidates = Array.from({ length: 10 }, (_, i) =>
+      walking(start + (arrive ? -853000 - i * 1000 : i * 1000), String(i)),
+    );
+    const result = await collectJourneyPage(
+      searchBody({ ...state, arrive }),
+      async () => {
+        calls++;
+        return { journeys: candidates, partial: false };
+      },
+    );
+    assert.equal(calls, 1);
+    assert.deepEqual(result.journeys, [candidates[0]]);
+    assert.equal(result.partial, false);
+  });
+}
+
+test("walking routes with genuinely different paths remain separate", async () => {
+  const a = walking(start, "a"),
+    b = walking(start, "b");
+  b.legs[0].geometry!.coordinates = [
+    [14, 50],
+    [14.02, 50.02],
+    [14.01, 50.01],
+  ];
+  const result = await collectJourneyPage(searchBody(state), async () => ({
+    journeys: [a, b],
+    partial: false,
+  }));
+  assert.equal(result.journeys.length, 2);
+});
+
+test("mixed pages keep one walking option, collect distinct departures and use transit cursor boundaries", async () => {
+  let calls = 0;
+  const result = await collectJourneyPage(searchBody(state), async (body) => {
+    const cursor = Date.parse(String(body["from-date"]));
+    if (calls) assert.equal(cursor, start + (calls - 1) * 300000 + 1000);
+    const trip = journey(calls, calls * 5);
+    calls++;
+    return {
+      journeys: [
+        walking(cursor, `walk-${calls}`),
+        trip,
+        { ...trip, key: `duplicate-${calls}` },
+      ],
+      partial: false,
+    };
+  });
+  assert.equal(calls, 9);
+  assert.equal(result.journeys.length, 10);
+  assert.equal(
+    result.journeys.filter((j) => j.legs[0].mode === "walk").length,
+    1,
+  );
+  assert.equal(result.journeys[0].legs[0].scheduledDeparture, instant(start));
+});
+
+test("journey identity retains different vehicles, boarding stops and scheduled departures, ignoring live updates", () => {
+  const a = journey(0, 0);
+  const live = structuredClone(a);
+  live.key = "new-provider-key";
+  live.legs[0].delaySeconds = 300;
+  live.legs[0].expectedDeparture = instant(start + 300000);
+  assert.equal(journeyIdentity(a), journeyIdentity(live));
+  for (const changed of [journey(1, 0), journey(0, 5)])
+    assert.notEqual(journeyIdentity(a), journeyIdentity(changed));
+  const boarding = structuredClone(a);
+  boarding.legs[0].from.id = "different-stop";
+  assert.notEqual(journeyIdentity(a), journeyIdentity(boarding));
 });

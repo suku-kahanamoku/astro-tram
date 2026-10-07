@@ -26,6 +26,7 @@
 }
 .ui-date-time-calendar {
   font: inherit;
+  line-height: 1.5;
   background: var(--paper);
   color: var(--ink);
   border: 1px solid var(--line);
@@ -43,7 +44,18 @@
   color: var(--ink);
   font: inherit;
   font-weight: 700;
+  line-height: 2rem;
   margin-bottom: 0.5rem;
+}
+.ui-date-time-calendar .react-datepicker__current-month {
+  padding-inline: 2.5rem;
+}
+.ui-date-time-calendar .react-datepicker__navigation {
+  top: 1rem;
+  height: 2rem;
+}
+.ui-date-time-calendar .react-datepicker__navigation-icon {
+  line-height: 1;
 }
 .ui-date-time-calendar .react-datepicker__day {
   border-radius: 0.5rem;

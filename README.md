@@ -285,6 +285,12 @@ odpovědi do 10 unikátních spojení; limity jsou společně v
 `TransportCoreModule/config/journeyPaging.ts` (24 požadavků, horizont 24 hodin,
 celkem 25 sekund). Při výpadku, neúplné odpovědi zdroje nebo dosažení limitu
 zachová dostupná spojení a označí neúplné výsledky.
+Identitu cesty sdílí generování klíče i slučování stránek. Pěší cesta se
+stejnými místy, délkou a geometrií se zobrazuje jednou bez ohledu na posun
+času odchodu. Čistě pěší odpověď se nedoplňuje dalšími časovými dotazy;
+ve smíšené odpovědi posouvají stránkování pouze dopravní spojení.
+Různé spoje, plánované odjezdy, nástupní/výstupní zastávky i jiné pěší
+trasy zůstávají samostatné. Pravidlo je společné pro všechny země a zdroje.
 
 ## Veřejná serverová vrstva
 

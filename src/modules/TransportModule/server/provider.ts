@@ -6,6 +6,7 @@ import {
 import { createHash } from "node:crypto";
 import { staticCatalogCache } from "./staticCatalogCache";
 import { collectJourneyPage } from "./journeyPage";
+import { journeyIdentity } from "../../TransportCoreModule/providers/journeyIdentity";
 import type { CoreClient } from "../../CoreModule/server/php-core";
 import { HttpError } from "../../CoreModule/server/errors";
 import { projectAttributions } from "../../TransportCoreModule/providers/attributions";
@@ -441,18 +442,7 @@ export function createTransportProvider(core: CoreClient) {
           const legs = j.legs.map(leg);
           return {
             key: createHash("sha256")
-              .update(
-                JSON.stringify(
-                  legs.map((l) => [
-                    l.tripId,
-                    l.mode,
-                    l.scheduledDeparture,
-                    l.scheduledArrival,
-                    l.from.id,
-                    l.to.id,
-                  ]),
-                ),
-              )
+              .update(journeyIdentity({ legs }))
               .digest("hex")
               .slice(0, 24),
             duration: Math.max(0, Number(j.duration_seconds) || 0),

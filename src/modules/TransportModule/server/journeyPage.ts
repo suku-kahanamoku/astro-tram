@@ -1,5 +1,9 @@
 import { journeyPaging } from "../../TransportCoreModule/config/journeyPaging";
 import { journeyPageTime } from "../../TransportCoreModule/providers/journeyPaging";
+import {
+  isWalkingJourney,
+  journeyIdentity,
+} from "../../TransportCoreModule/providers/journeyIdentity";
 import type { Journey, SearchResult } from "../../TransportCoreModule/types";
 
 /** Fill a count-based page even when an upstream planner returns a short time window. */
@@ -17,6 +21,7 @@ export async function collectJourneyPage<T extends SearchResult>(
   let cursor = start;
   let result: T | undefined;
   let partial = false;
+  let walkingOnly = false;
   for (let request = 0; request < journeyPaging.maxRequests; request++) {
     const remaining = deadline - now();
     if (remaining <= 0) break;
@@ -42,16 +47,25 @@ export async function collectJourneyPage<T extends SearchResult>(
     partial ||= batch.partial;
     for (const journey of batch.journeys) {
       const time = journeyPageTime(journey, arrive);
-      if (!Number.isFinite(start) || (time - start) * direction >= 0)
-        found.set(journey.key, journey);
+      const identity = journeyIdentity(journey);
+      if (
+        (!Number.isFinite(start) || (time - start) * direction >= 0) &&
+        !found.has(identity)
+      )
+        found.set(identity, journey);
     }
+    // A walking-only response cannot fill a timetable page by advancing the clock.
+    walkingOnly =
+      batch.journeys.length > 0 && batch.journeys.every(isWalkingJourney);
     if (
       found.size >= journeyPaging.size ||
+      walkingOnly ||
       batch.partial ||
       !Number.isFinite(start)
     )
       break;
     const times = batch.journeys
+      .filter((journey) => !isWalkingJourney(journey))
       .map((journey) => journeyPageTime(journey, arrive))
       .filter(Number.isFinite);
     const edge = times.length
@@ -76,6 +90,9 @@ export async function collectJourneyPage<T extends SearchResult>(
     ...result!,
     journeys,
     partial:
-      partial || (!result?.partial && journeys.length < journeyPaging.size),
+      partial ||
+      (!walkingOnly &&
+        !result?.partial &&
+        journeys.length < journeyPaging.size),
   };
 }
