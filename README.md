@@ -222,6 +222,14 @@ backendové barvy, HTML, interní metadata ani neznámá pole. API frontendu pou
 text pod názvem obsahuje všechny dodané typy. Chybějící mód znamená neutrální
 ikonu zastávky; frontend jej nehádá ze jména, města ani neprůhledného ID.
 
+Našeptávač zastávek, ulic, adres a výběr měst sdílejí geografický podtitulek
+`země · region · okres · město`. BFF propouští volitelné textové `region`
+a `district` ze statického Java Places indexu; objekty či interní údaje
+nepropustí. Chybějící hodnoty a stejné názvy v podtitulku se vynechají.
+Řešení platí pro všechny země a jazyky, nepřidává geocoder ani další
+požadavek při psaní. Backend doplní hranice při novém sestavení indexu;
+samotný frontend neodvozuje okres z názvu ani nejbližšího města.
+
 Java katalog nyní dodává skutečně obsluhující módy ze vztahů GTFS
 `stop_times → trips → routes.route_type`. Rodičovská stanice obsahuje sjednocení
 módů svých nástupišť, konkrétní nástupiště si ponechá vlastní módy. Stejná pole

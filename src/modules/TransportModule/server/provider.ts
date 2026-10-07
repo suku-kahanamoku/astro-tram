@@ -118,6 +118,12 @@ function placeMetadata(p: Record<string, unknown>): PlaceMetadata {
       ? { state: p.state }
       : {}),
     ...(typeof p.city === "string" ? { city: text(p.city, 120) || null } : {}),
+    ...(typeof p.region === "string"
+      ? { region: text(p.region, 250) || null }
+      : {}),
+    ...(typeof p.district === "string"
+      ? { district: text(p.district, 250) || null }
+      : {}),
     ...(Array.isArray(p.modes)
       ? {
           modes: [
@@ -345,6 +351,7 @@ export function createTransportProvider(core: CoreClient) {
           const data = raw.data.map((p) => {
             const row = object(p);
             return {
+              ...placeMetadata(row),
               id: text(row.id),
               name: text(row.name, 120),
               state: text(row.state, 2),

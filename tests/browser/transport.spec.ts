@@ -541,6 +541,11 @@ test("city picker defaults to all and offers online municipalities", async ({
       .locator("#city-options")
       .getByRole("option", { name: "Brno", exact: true }),
   ).toBeVisible();
+  await expect(
+    page
+      .locator("#city-options")
+      .getByRole("option", { name: "Brno", exact: true }),
+  ).toContainText("Česká republika · Jihomoravský kraj · okres Brno-město");
   await page.locator("#travel-city").fill("Brn");
   await page
     .locator("#city-options")
@@ -551,6 +556,11 @@ test("city picker defaults to all and offers online municipalities", async ({
   await expect(
     page.getByRole("option", { name: "Brno, Grohova" }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("option", { name: "Brno, Grohova" }),
+  ).toContainText(
+    "Česká republika · Jihomoravský kraj · okres Brno-město · Brno",
+  );
 });
 
 test("search auto selects one city and resets intercity routes to all timetables", async ({

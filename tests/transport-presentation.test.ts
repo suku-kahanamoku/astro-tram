@@ -5,7 +5,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import TransportBadge from "../src/modules/TransportCoreModule/components/TransportBadge";
 import { transportModes } from "../src/modules/TransportCoreModule/config/transportModes";
 import { dictionary } from "../src/modules/TransportCoreModule/providers/translations";
-import { placeDetail } from "../src/modules/TransportCoreModule/providers/transportPresentation";
+import {
+  placeDetail,
+  placeLocationDetail,
+} from "../src/modules/TransportCoreModule/providers/transportPresentation";
 import { createCoreClient } from "../src/modules/CoreModule/server/php-core";
 import { createTransportProvider } from "../src/modules/TransportModule/server/provider";
 
@@ -26,6 +29,8 @@ test("place metadata projection accepts only public country, served modes and ex
               name: "Test stop",
               state: "CZ",
               city: "Brno",
+              region: "Jihomoravský kraj",
+              district: "okres Brno-město",
               modes: [
                 "tram",
                 "bus",
@@ -45,6 +50,8 @@ test("place metadata projection accepts only public country, served modes and ex
               state: "invalid",
               modes: "tram",
               transport_scope: ["urban"],
+              region: { private_token: "secret" },
+              district: ["invalid"],
             },
           ],
         },
@@ -54,10 +61,58 @@ test("place metadata projection accepts only public country, served modes and ex
   assert.deepEqual(result.data[0].modes, ["tram", "bus"]);
   assert.equal(result.data[0].state, "CZ");
   assert.equal(result.data[0].transportScope, "urban");
+  assert.equal(result.data[0].region, "Jihomoravský kraj");
+  assert.equal(result.data[0].district, "okres Brno-město");
   assert.equal(result.data[1].modes, undefined);
   assert.equal(result.data[1].state, undefined);
   assert.equal(result.data[1].transportScope, undefined);
+  assert.equal(result.data[1].region, undefined);
+  assert.equal(result.data[1].district, undefined);
   assert.ok(!JSON.stringify(result).includes("secret"));
+});
+
+test("same-name places and cities share country, region and district descriptions in every language", async () => {
+  for (const state of ["CZ", "SK", "AT", "PL", "DE"]) {
+    const raw = {
+      id: `city_${state}`,
+      name: "Same name",
+      state,
+      region: "Region A",
+      district: "District A",
+      city: "Same name",
+      source_mode: "index",
+    };
+    const provider = createTransportProvider(
+      createCoreClient(
+        {
+          baseUrl: "https://core.test/api",
+          apiKey: "secret",
+          tenantHost: "tram.test",
+        },
+        async () => Response.json({ success: true, data: { data: [raw] } }),
+      ),
+    );
+    const city = (await provider.cities(state)).data[0];
+    const place = (await provider.places("same", state)).data[0];
+    assert.equal(city.region, "Region A");
+    assert.equal(city.district, "District A");
+    for (const lang of ["cs", "en", "de"] as const) {
+      const t = dictionary(lang);
+      assert.match(placeDetail(place, t), /Region A · District A · Same name/);
+      assert.match(placeLocationDetail(city, t), /Region A · District A/);
+      assert.notEqual(
+        placeDetail(place, t),
+        placeDetail({ ...place, district: "District B" }, t),
+      );
+    }
+  }
+  assert.equal(
+    placeLocationDetail(
+      { state: "DE", region: "Berlin", district: "Berlin", city: "Berlin" },
+      dictionary("cs"),
+    ),
+    "Německo · Berlin",
+  );
 });
 
 test("Java stop metadata reaches the same Astro shape in autocomplete, search and details", async () => {

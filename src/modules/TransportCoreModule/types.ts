@@ -26,6 +26,8 @@ export interface PlaceMetadata {
   citySource?: "schedule" | "osm" | "nearest_settlement";
   state?: string | null;
   city?: string | null;
+  region?: string | null;
+  district?: string | null;
   modes?: string[];
   transportScope?: "urban" | "regional" | "mixed";
 }
@@ -126,7 +128,7 @@ export interface Trip {
   sourceMode: string;
 }
 
-export interface CityOption {
+export interface CityOption extends PlaceMetadata {
   id: string;
   name: string;
   state: string;

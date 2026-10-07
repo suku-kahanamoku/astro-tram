@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Combobox from "../../UIModule/components/Combobox";
 import TransportBadge from "../../TransportCoreModule/components/TransportBadge";
-import { countryLabel } from "../../TransportCoreModule/providers/transportPresentation";
+import {
+  countryLabel,
+  placeLocationDetail,
+} from "../../TransportCoreModule/providers/transportPresentation";
 import { useCityCatalog } from "../hooks/useCityCatalog";
 import type { Dictionary } from "../../TransportCoreModule/providers/translations";
 const normalize = (value: string) =>
@@ -56,7 +59,7 @@ export default function CityPicker({
         label: city.name,
         detail: [
           t.city,
-          countryLabel(city.state, t),
+          placeLocationDetail({ ...city, city: null }, t),
           city.sourceMode === "fallback" ? t.fallback : null,
         ]
           .filter(Boolean)

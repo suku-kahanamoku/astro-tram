@@ -33,6 +33,33 @@ export function countryLabel(
       : (state ?? "");
 }
 
+export function placeLocationDetail(
+  place: Pick<
+    PlaceOption,
+    "state" | "city" | "citySource" | "region" | "district"
+  >,
+  t: Dictionary,
+): string {
+  const values = [
+    countryLabel(place.state, t),
+    place.region,
+    place.district,
+    place.citySource === "nearest_settlement" && place.city
+      ? t.nearCity.replace("{city}", place.city)
+      : place.city,
+  ];
+  const seen = new Set<string>();
+  return values
+    .filter((value): value is string => {
+      if (!value?.trim()) return false;
+      const key = value.trim().normalize("NFC").toLocaleLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .join(" · ");
+}
+
 export function placeDetail(place: PlaceOption, t: Dictionary): string {
   return [
     place.kind === "street"
@@ -44,10 +71,7 @@ export function placeDetail(place: PlaceOption, t: Dictionary): string {
           : place.modes?.length && place.modes.every((mode) => mode === "train")
             ? t.station
             : t.stopName,
-    countryLabel(place.state, t),
-    place.citySource === "nearest_settlement" && place.city
-      ? t.nearCity.replace("{city}", place.city)
-      : place.city,
+    placeLocationDetail(place, t),
     place.transportScope === "urban"
       ? t.urbanTransport
       : place.transportScope === "regional"

@@ -20,6 +20,9 @@ const brnoStop = {
   id: encode("stop", "S4"),
   name: "Brno, Grohova",
   city: "Brno",
+  state: "CZ",
+  region: "Jihomoravský kraj",
+  district: "okres Brno-město",
 };
 const shift = (at, min) =>
   new Date(Date.parse(at) + min * 60000).toISOString().replace(".000Z", "Z");
@@ -178,6 +181,9 @@ http
           id: encode("city", String(i)),
           name,
           state: query.q.state,
+          ...(name === "Brno"
+            ? { region: "Jihomoravský kraj", district: "okres Brno-město" }
+            : {}),
           source_mode: "live",
         })),
         partial: false,
