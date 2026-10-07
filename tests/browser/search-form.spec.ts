@@ -121,7 +121,7 @@ test("opening the map keeps an automatic-clock search snapshot and does not sear
   expect(searches).toBe(before);
 });
 
-test("GPS scope is automatic only when no area has been explicitly selected", async ({
+test("country scope stays explicit while GPS ranks matches and the selected city filters them", async ({
   page,
   context,
 }) => {
@@ -133,7 +133,7 @@ test("GPS scope is automatic only when no area has been explicitly selected", as
   );
   await page.locator("#place-to").fill("grohova");
   const automatic = (await pending).postDataJSON().q;
-  expect(automatic.state).toBeUndefined();
+  expect(automatic.state).toBe("CZ");
   expect(automatic.city).toBeUndefined();
   expect(automatic.latitude).toBe(49.2);
   await page.locator("#travel-city").click();

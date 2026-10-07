@@ -15,7 +15,7 @@ test("editor defaults to current location and automatic clock without changing a
   const state = searchDraft(new URLSearchParams());
   assert.equal(state.from?.type, "current_location");
   assert.equal(state.to, undefined);
-  assert.equal(state.areaMode, "gps");
+  assert.equal(state.areaMode, undefined);
   assert.equal(state.timeMode, "now");
   assert.equal(readState(new URLSearchParams()).from, undefined);
   assert.equal(

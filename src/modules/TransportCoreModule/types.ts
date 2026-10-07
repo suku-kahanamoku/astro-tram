@@ -1,8 +1,9 @@
 import type { TripFeature, ReservationKind } from "./config/tripFeatures";
-export type Place =
+export type Place = (
   | { type: "stop"; id: string; label: string }
   | { type: "coordinates"; lat: number; lon: number; label: string }
-  | { type: "current_location"; label: string };
+  | { type: "current_location"; label: string }
+) & { state?: string };
 export interface SearchState {
   from?: Place;
   to?: Place;

@@ -4,10 +4,10 @@ import {
   readState,
   writeState,
   requiresLocation,
-  searchBody,
 } from "../../TransportCoreModule/providers/state";
 import { getFix } from "../../TransportCoreModule/providers/geolocation";
 import { transportClient } from "../../TransportCoreModule/providers/client";
+import { journeySubmission } from "../providers/journeySubmission";
 import type { SearchResult } from "../../TransportCoreModule/types";
 export function useJourneySearch(enabled: boolean) {
   const { url, navigate } = useUrlNavigation();
@@ -34,7 +34,7 @@ export function useJourneySearch(enabled: boolean) {
         const fix = requiresLocation(state) ? await getFix() : undefined;
         if (abort.signal.aborted) return;
         const data = await transportClient.search(
-          searchBody(state, fix),
+          await journeySubmission(state, abort.signal, fix),
           abort.signal,
         );
         if (abort.signal.aborted) return;
@@ -43,7 +43,7 @@ export function useJourneySearch(enabled: boolean) {
           url.origin,
         );
         // Unknown area metadata must not erase the user's selection.
-        if (data.journeys.length) {
+        if (state.country && data.journeys.length) {
           if (data.intercity) next.searchParams.delete("city");
           else if (!state.city && data.city)
             next.searchParams.set("city", data.city);

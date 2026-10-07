@@ -477,7 +477,7 @@ test("an unsupported country URL does not load catalogues or allow a search and 
     }),
   ).toBeVisible();
   await expect(page.locator("#place-from")).toBeDisabled();
-  await expect(page.locator("#country-cz")).toHaveAttribute("tabindex", "0");
+  await expect(page.locator("#country-world")).toHaveAttribute("tabindex", "0");
   expect(lookups).toEqual([]);
   await page.locator("#country-cz").click();
   await expect(page.locator("#place-from")).toBeEnabled();
@@ -492,8 +492,11 @@ test("autocomplete uses fresh GPS automatically in POST only and explicit city t
   await context.setGeolocation({ latitude: 49.195, longitude: 16.61 });
   await page.goto("/");
   await expect(page.locator("[data-scope-location]")).toHaveCount(0);
-  const pending = page.waitForRequest((r) =>
-    r.url().includes("/api/transport/places/"),
+  const pending = page.waitForRequest(
+    (r) =>
+      r.url().includes("/api/transport/places/") &&
+      r.method() === "POST" &&
+      r.postDataJSON()?.q?.name?.$regex === "Muzeum",
   );
   await page.locator("#place-from").fill("Muzeum");
   const request = await pending;
@@ -511,8 +514,11 @@ test("autocomplete uses fresh GPS automatically in POST only and explicit city t
     .locator("#city-options")
     .getByRole("option", { name: "Praha", exact: true })
     .click();
-  const explicit = page.waitForRequest((r) =>
-    r.url().includes("/api/transport/places/"),
+  const explicit = page.waitForRequest(
+    (r) =>
+      r.url().includes("/api/transport/places/") &&
+      r.method() === "POST" &&
+      r.postDataJSON()?.q?.name?.$regex === "Muzeum",
   );
   await page.locator("#place-from").fill("Muzeum");
   const explicitRequest = await explicit;
@@ -530,7 +536,7 @@ test("city picker defaults to all and offers online municipalities", async ({
   page,
 }) => {
   await page.goto("/");
-  await expect(page.getByRole("tab")).toHaveCount(5);
+  await expect(page.getByRole("tab")).toHaveCount(6);
   await expect(page.locator("#country-cz")).toBeEnabled();
   for (const country of ["sk", "at", "pl", "de"])
     await expect(page.locator(`#country-${country}`)).toBeDisabled();

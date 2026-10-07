@@ -398,7 +398,17 @@ a bez JS page errors. Provozní konfigurace je v
 
 ## Oblast online hledání
 
-Formulář nabízí záložky Česko, Slovensko, Rakousko, Polsko a Německo. Povolí se pouze
+Formulář nabízí nejprve záložku **Svět**, potom Česko, Slovensko, Rakousko,
+Polsko a Německo. Svět nemá pole Město / jízdní řády; sdílený provider
+našeptávání paralelně osloví dostupné národní katalogy přes stejné veřejné API
+a sloučí výsledky podle druhu místa, shody názvu a čerstvé GPS. Nepřipojuje
+pevný seznam zemí ani nový backend. Nedostupnost jednoho katalogu neodstraní
+výsledky ostatních. Výběr Světa zachovává URL `scope=world`, země zvolených
+míst se ukládají jako `fromState`/`toState`, bez ukládání GPS. Hledání
+používá stávající národní router podle země výchozího místa; u aktuální
+polohy ji odvodí z nejbližší zastávky. Svět sám nepřidává skládání tras
+mezi národními grafy. Výchozí česká záložka i dříve uložené odkazy zůstávají
+české. Povolí se pouze
 země, pro které běžící backend v `/api/transport/coverage/` potvrzuje hledání.
 Samotný příklad zdroje nebo katalog měst nestačí. Lokální Java zapojení a
 skutečný rozsah zahraničních feedů popisuje
@@ -425,12 +435,12 @@ se přenášejí do našeptávání i hledání cest. Prázdné město znamená 
 na aktuální město; pro zvolený stát zůstávají zapojené všechny dostupné zdroje.
 Při odmítnutí nebo nedostupnosti GPS (limit 1,5 sekundy) funguje textové hledání
 bez polohy. Výslovné město má přednost jako filtr; GPS může řadit shody i uvnitř města. GPS našeptávání používá `POST /api/transport/places/` s `q` v těle,
-nikdy souřadnice v URL. Pokud uživatel zemi ani město nevybral, editor má
-`areaMode=gps`: při dostupné GPS neposílá pevný `state`. Java router odvodí
-nejbližší obsluhovanou oblast přes nezávislé katalogy Places, bez probuzení OTP.
-Ruční výběr záložky/města tuto automatiku vypne; při odmítnutí GPS zůstává
-výchozí země. Jde o přibližný odhad dle pokryté dopravní sítě, nikoliv
-administrativní reverse geocoder. Backend stále odpovídá za řazení před limitem.
+nikdy souřadnice v URL. Každá národní záložka posílá pevný `state` do
+měst, zastávek i ulic, také při dostupné GPS a u starších odkazů
+`areaMode=gps`. GPS pouze řadí výsledky ve zvolené zemi. Výběr města
+přidá pevný filtr `city`; ve Světě se město neodesílá ani automaticky
+nedoplňuje po hledání. Backend stále odpovídá za řazení v národním katalogu
+před jeho limitem; společné výsledky Světa se pak sloučí a omezí na 20 míst.
 
 Volba „Moje aktuální poloha“ nyní nejprve vybere přes backend nejbližší veřejnou
 zastávku (geografická vzdálenost, do 2 km) a plánuje od/k jejímu ID. Nad výsledky

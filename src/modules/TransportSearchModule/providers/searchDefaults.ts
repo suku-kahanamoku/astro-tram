@@ -12,9 +12,7 @@ export function searchDraft(params: URLSearchParams): SearchState {
     ...state,
     from: state.from ?? { type: "current_location", label: "" },
     ...(!state.at ? ({ dayMode: "today", timeMode: "now" } as const) : {}),
-    ...(!params.has("country") && !params.has("city")
-      ? ({ areaMode: "gps" } as const)
-      : {}),
+    ...(!state.country ? ({ areaMode: "gps" } as const) : {}),
   };
 }
 

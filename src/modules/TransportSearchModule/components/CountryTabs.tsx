@@ -15,6 +15,7 @@ export default function CountryTabs({
   onChange: (country: string) => void;
 }) {
   const labels: Record<string, string> = {
+    "": t.world,
     CZ: t.cz,
     SK: t.sk,
     AT: t.at,
@@ -24,6 +25,7 @@ export default function CountryTabs({
   };
   const codes = [
     ...new Set([
+      "",
       "CZ",
       "SK",
       "AT",
@@ -34,7 +36,9 @@ export default function CountryTabs({
     ]),
   ];
   const available = (code: string) =>
-    !loading && countries.some((c) => c.state === code && c.searchAvailable);
+    !loading &&
+    countries.some((c) => (!code || c.state === code) && c.searchAvailable);
+  const tabId = (code: string) => code.toLowerCase() || "world";
   return (
     <div className="country-tabs" role="tablist" aria-label={t.country}>
       {codes.map((code) => {
@@ -45,11 +49,11 @@ export default function CountryTabs({
             key={code}
             type="button"
             role="tab"
-            id={`country-${code.toLowerCase()}`}
+            id={`country-${tabId(code)}`}
             aria-label={labels[code] ?? code}
             aria-selected={selected}
             aria-controls={
-              selected ? `country-search-${code.toLowerCase()}` : undefined
+              selected ? `country-search-${tabId(code)}` : undefined
             }
             disabled={!enabled}
             title={
@@ -81,16 +85,18 @@ export default function CountryTabs({
                           choices.length) %
                           choices.length
                       ];
-              if (!next) return;
+              if (next === undefined) return;
               e.preventDefault();
               onChange(next);
-              document.getElementById(`country-${next.toLowerCase()}`)?.focus();
+              document.getElementById(`country-${tabId(next)}`)?.focus();
             }}
           >
             <span aria-hidden="true">
-              {String.fromCodePoint(
-                ...[...code].map((c) => 127397 + c.charCodeAt(0)),
-              )}
+              {code
+                ? String.fromCodePoint(
+                    ...[...code].map((c) => 127397 + c.charCodeAt(0)),
+                  )
+                : "🌐"}
             </span>
             <span className="country-tab-label">{labels[code] ?? code}</span>
           </button>

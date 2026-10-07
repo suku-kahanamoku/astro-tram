@@ -3,8 +3,12 @@ import { validCoordinates } from "./state";
 
 /** Wire geography kinds are independent of the backend (Lucene, Photon or online API). */
 export function selectPlace(option: PlaceOption): Place | undefined {
+  const country =
+    option.state && /^[A-Z]{2}$/.test(option.state)
+      ? { state: option.state }
+      : {};
   if (!option.kind || option.kind === "stop")
-    return { type: "stop", id: option.id, label: option.name };
+    return { type: "stop", id: option.id, label: option.name, ...country };
   if (
     typeof option.lat !== "number" ||
     typeof option.lon !== "number" ||
@@ -16,5 +20,6 @@ export function selectPlace(option: PlaceOption): Place | undefined {
     lat: option.lat,
     lon: option.lon,
     label: option.name,
+    ...country,
   };
 }

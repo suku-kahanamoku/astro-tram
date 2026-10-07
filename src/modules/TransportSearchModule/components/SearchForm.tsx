@@ -49,7 +49,14 @@ export default function SearchForm({
   const coverage = useCountryCoverage();
   const country = coverage.countries.find((c) => c.state === draft.country);
   const searchAvailable =
-    !coverage.loading && !coverage.error && country?.searchAvailable === true;
+    !coverage.loading &&
+    !coverage.error &&
+    (draft.country
+      ? country?.searchAvailable === true
+      : coverage.countries.some((c) => c.searchAvailable));
+  const countries = coverage.countries
+    .filter((c) => c.searchAvailable)
+    .map((c) => c.state);
   const persistentSearch = writeState(readState(url.searchParams)).toString();
   useEffect(() => {
     pending.current?.abort();
@@ -75,7 +82,7 @@ export default function SearchForm({
     }));
   };
   const scope = `${draft.country}:${draft.city ?? ""}`;
-  const countryId = draft.country.toLowerCase();
+  const countryId = draft.country.toLowerCase() || "world";
   return (
     <>
       <CountryTabs
@@ -124,13 +131,11 @@ export default function SearchForm({
                   typed[side],
                   state,
                   controller.signal,
+                  countries,
                 );
                 controller.signal.throwIfAborted();
                 if (resolved) {
                   state[side] = resolved.place;
-                  if (state.areaMode === "gps" && resolved.option.state) {
-                    state.country = resolved.option.state;
-                  }
                 }
               }
               if (!state.from || !state.to) {
@@ -158,7 +163,7 @@ export default function SearchForm({
             style={{ display: "contents" }}
           >
             <input type="hidden" id="travel-country" value={draft.country} />
-            {country?.citiesAvailable && (
+            {draft.country && country?.citiesAvailable && (
               <CityPicker
                 value={draft.city ?? ""}
                 country={draft.country}
@@ -173,8 +178,9 @@ export default function SearchForm({
                   side={side}
                   value={draft[side]}
                   state={draft}
+                  countries={countries}
                   t={t}
-                  onChange={(place, text, option) => {
+                  onChange={(place, text) => {
                     pending.current?.abort();
                     setTyped((s) => ({
                       ...s,
@@ -183,11 +189,6 @@ export default function SearchForm({
                     setDraft((s) => ({
                       ...s,
                       [side]: place,
-                      ...(s.areaMode === "gps" && option?.state
-                        ? {
-                            country: option.state,
-                          }
-                        : {}),
                     }));
                   }}
                   onError={setError}

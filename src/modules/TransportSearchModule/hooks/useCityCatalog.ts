@@ -44,7 +44,12 @@ export function useCityCatalog(country: string) {
       (options) => {
         if (request.current !== current || current.abort.signal.aborted) return;
         current.status = "ready";
-        setState({ country, options, loading: false, error: false });
+        setState({
+          country,
+          options: options.filter((city) => city.state === country),
+          loading: false,
+          error: false,
+        });
       },
       () => {
         if (request.current !== current || current.abort.signal.aborted) return;

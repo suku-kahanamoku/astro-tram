@@ -8,7 +8,7 @@ import { servedModes } from "../../TransportCoreModule/config/transportModes";
 import { useAsyncOptions } from "../../UIModule/hooks/useAsyncOptions";
 import { getFix } from "../../TransportCoreModule/providers/geolocation";
 import { placeSuggestions } from "../providers/placeSuggestions";
-import { transportClient } from "../../TransportCoreModule/providers/client";
+import { scopedPlaces } from "../providers/placeScope";
 import { transportClientConfig as config } from "../../TransportCoreModule/config/client";
 import type { Dictionary } from "../../TransportCoreModule/providers/translations";
 import type {
@@ -21,6 +21,7 @@ export default function PlaceField({
   side,
   value,
   state,
+  countries,
   t,
   onChange,
   onMap,
@@ -29,6 +30,7 @@ export default function PlaceField({
   side: "from" | "to";
   value?: Place;
   state: SearchState;
+  countries: readonly string[];
   t: Dictionary;
   onChange: (place?: Place, text?: string, option?: PlaceOption) => void;
   onMap: () => void;
@@ -66,16 +68,7 @@ export default function PlaceField({
     run(async (signal) => {
       const p = fix ?? (await getFix());
       if (signal.aborted) return [];
-      return transportClient.places(
-        {
-          latitude: p.lat,
-          longitude: p.lon,
-          observed_at: p.observedAt,
-          state: state.country,
-        },
-        signal,
-        true,
-      );
+      return scopedPlaces(null, state, countries, signal, p);
     });
   };
   const select = (index: number) => {
@@ -117,7 +110,7 @@ export default function PlaceField({
     setNearby(false);
     setOpen(true);
     run(
-      (signal) => placeSuggestions(query, state, signal),
+      (signal) => placeSuggestions(query, state, signal, countries),
       config.autocompleteDelayMs,
     );
   };

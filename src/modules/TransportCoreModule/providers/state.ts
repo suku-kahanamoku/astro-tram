@@ -24,6 +24,8 @@ export function validObservationInstant(value: unknown): value is string {
 }
 export function readState(params: URLSearchParams): SearchState {
   const read = (side: string): Place | undefined => {
+    const state = params.get(`${side}State`);
+    const country = state && /^[A-Z]{2}$/.test(state) ? { state } : {};
     const kind = params.get(`${side}Kind`),
       label = (params.get(`${side}Label`) ?? "").slice(0, 160);
     if (kind === "current_location") return { type: kind, label };
@@ -31,12 +33,18 @@ export function readState(params: URLSearchParams): SearchState {
       const la = params.get(`${side}Lat`),
         lo = params.get(`${side}Lon`);
       if (la && lo && validCoordinates(Number(la), Number(lo)))
-        return { type: kind, lat: Number(la), lon: Number(lo), label };
+        return {
+          type: kind,
+          lat: Number(la),
+          lon: Number(lo),
+          label,
+          ...country,
+        };
       return;
     }
     const id = params.get(side);
     if (id && /^[A-Za-z0-9_-]{1,2048}$/.test(id))
-      return { type: "stop", id, label };
+      return { type: "stop", id, label, ...country };
   };
   const at = params.get("at");
   return {
@@ -48,7 +56,7 @@ export function readState(params: URLSearchParams): SearchState {
     ...(params.get("page") === "earlier" || params.get("page") === "later"
       ? { page: params.get("page") as "earlier" | "later" }
       : {}),
-    ...(params.get("city")?.trim()
+    ...(params.get("scope") !== "world" && params.get("city")?.trim()
       ? { city: params.get("city")!.trim().slice(0, 120) }
       : {}),
     from: read("from"),
@@ -56,9 +64,12 @@ export function readState(params: URLSearchParams): SearchState {
     at: validInstant(at) ? at : undefined,
     arrive: params.get("arrive") === "1",
     direct: params.get("direct") === "1",
-    country: /^[A-Z]{2}$/.test(params.get("country") ?? "")
-      ? params.get("country")!
-      : "CZ",
+    country:
+      params.get("scope") === "world"
+        ? ""
+        : /^[A-Z]{2}$/.test(params.get("country") ?? "")
+          ? params.get("country")!
+          : "CZ",
   };
 }
 /** GPS coordinates and observation times never enter URLs or browser storage. */
@@ -68,6 +79,12 @@ export function writeState(state: SearchState): URLSearchParams {
     const place = state[side];
     if (!place) continue;
     p.set(`${side}Kind`, place.type);
+    if (
+      place.type !== "current_location" &&
+      place.state &&
+      /^[A-Z]{2}$/.test(place.state)
+    )
+      p.set(`${side}State`, place.state);
     if (place.type === "stop") {
       p.set(side, place.id);
       p.set(`${side}Label`, place.label);
@@ -82,7 +99,8 @@ export function writeState(state: SearchState): URLSearchParams {
   if (state.arrive) p.set("arrive", "1");
   if (state.direct) p.set("direct", "1");
   if (state.country) p.set("country", state.country);
-  if (state.city) p.set("city", state.city);
+  else p.set("scope", "world");
+  if (state.country && state.city) p.set("city", state.city);
   if (state.page) p.set("page", state.page);
   if (state.dayMode) p.set("dayMode", state.dayMode);
   if (state.timeMode) p.set("timeMode", state.timeMode);
@@ -113,14 +131,15 @@ export function searchBody(
     };
   };
   if (!validInstant(state.at)) throw new Error("invalid");
+  const country = state.country || state.from?.state || state.to?.state;
   return {
     "from-dest": place(state.from),
     "to-dest": place(state.to),
     [(state.page ? state.page === "earlier" : state.arrive)
       ? "to-date"
       : "from-date"]: state.at,
-    ...(state.country ? { state: state.country } : {}),
-    ...(state.city ? { city: state.city } : {}),
+    ...(country ? { state: country } : {}),
+    ...(state.country && state.city ? { city: state.city } : {}),
     "max-transfers": state.direct ? 0 : 5,
     limit: journeyPaging.size,
   };
