@@ -44,6 +44,13 @@ export default function PlaceField({
     [locating, setLocating] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const editing = useRef(false);
+  const choicesOpen = useRef(false);
+  const restoringFocus = useRef(false);
+  const focusInput = () => {
+    restoringFocus.current = true;
+    input.current?.focus();
+    restoringFocus.current = false;
+  };
   const revision = useRef(0);
   useEffect(
     () => () => {
@@ -60,10 +67,12 @@ export default function PlaceField({
   }, [label]);
   const hide = () => {
     cancel();
+    choicesOpen.current = false;
     setOpen(false);
   };
   const nearest = (fix?: Fix) => {
     setNearby(true);
+    choicesOpen.current = true;
     setOpen(true);
     run(async (signal) => {
       const p = fix ?? (await getFix());
@@ -82,7 +91,7 @@ export default function PlaceField({
     hide();
     setText(p.name);
     onChange(selectPlace(p), p.name, p);
-    input.current?.focus();
+    focusInput();
   };
   const locate = async () => {
     hide();
@@ -93,7 +102,7 @@ export default function PlaceField({
       if (version !== revision.current) return;
       setText(t.current);
       onChange({ type: "current_location", label: t.current });
-      input.current?.focus();
+      focusInput();
       nearest(fix);
     } catch {
       if (version === revision.current) onError(t.locationError);
@@ -104,10 +113,12 @@ export default function PlaceField({
   const searchPlaces = (query: string) => {
     if (query.trim().length < config.minimumQueryLength) {
       setNearby(false);
+      choicesOpen.current = true;
       setOpen(true);
       return;
     }
     setNearby(false);
+    choicesOpen.current = true;
     setOpen(true);
     run(
       (signal) => placeSuggestions(query, state, signal, countries),
@@ -160,6 +171,7 @@ export default function PlaceField({
     [showLocation, options, state.country, t],
   );
   const openChoices = () => {
+    if (choicesOpen.current || restoringFocus.current || locating) return;
     if (value?.type === "current_location") nearest();
     else searchPlaces(text);
   };
@@ -212,7 +224,7 @@ export default function PlaceField({
           openChoices();
         }}
         onClick={() => {
-          if (!open) openChoices();
+          openChoices();
         }}
         onText={(query) => {
           revision.current++;
@@ -221,6 +233,7 @@ export default function PlaceField({
           onChange(undefined, query);
           setNearby(false);
           hide();
+          choicesOpen.current = true;
           setOpen(true);
           searchPlaces(query);
         }}

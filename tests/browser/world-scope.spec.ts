@@ -40,7 +40,7 @@ test("World is first, hides the city field and searches every advertised country
       json: {
         success: true,
         data:
-          query.state === "DE"
+          query.scope === "world"
             ? [
                 {
                   id: "de_stop",
@@ -66,14 +66,24 @@ test("World is first, hides the city field and searches every advertised country
   await expect(
     page.getByRole("option", { name: "Berlin, Alexanderplatz", exact: true }),
   ).toBeVisible();
-  expect(queries.map((query) => query.state).sort()).toEqual(
-    [...countries].sort(),
-  );
+  expect(queries).toHaveLength(1);
+  expect(queries[0].scope).toBe("world");
+  expect(queries[0].state).toBeUndefined();
+  await page.locator("#place-to").click();
+  await page.waitForTimeout(400);
+  expect(queries).toHaveLength(1);
   expect(
     queries.every(
       (query) => query.city === undefined && query.latitude === 49.2,
     ),
   ).toBe(true);
+  await page.locator("#place-from").click();
+  await expect.poll(() => queries.length).toBe(2);
+  await page.locator("#place-from").click();
+  await page.waitForTimeout(400);
+  expect(queries).toHaveLength(2);
+  expect(queries[1].scope).toBe("world");
+  expect(queries[1].name).toBeUndefined();
   expect(cityRequests).toBe(0);
   await page.locator("#country-cz").click();
   await expect(page.locator("#travel-city")).toBeVisible();
@@ -200,7 +210,7 @@ test("World routes selected German endpoints to Germany and survives search and 
       json: {
         success: true,
         data:
-          query.state === "DE"
+          query.scope === "world"
             ? [
                 {
                   id: origin ? "de_from" : "de_to",

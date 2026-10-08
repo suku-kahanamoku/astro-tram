@@ -91,19 +91,12 @@ test("country and city stay strict even with GPS and a legacy automatic area mod
   }
 });
 
-test("World uses advertised countries only and retains healthy results if one country fails", async () => {
+test("World makes one explicit request without a city or GPS-inferred country filter", async () => {
   const old = transportClient.places;
   const queries: Record<string, unknown>[] = [];
   transportClient.places = async (q) => {
     queries.push(q);
-    if (q.state === "SK") throw new Error("unavailable");
-    return [
-      option(
-        String(q.state),
-        String(q.state),
-        q.state === "DE" ? "street" : "stop",
-      ),
-    ];
+    return [option("CZ", "CZ"), option("DE", "DE", "street")];
   };
   try {
     const result = await scopedPlaces(
@@ -112,18 +105,12 @@ test("World uses advertised countries only and retains healthy results if one co
       ["CZ", "DE", "SK", "DE"],
       new AbortController().signal,
     );
-    assert.deepEqual(
-      queries.map((q) => q.state),
-      ["CZ", "DE", "SK"],
-    );
-    assert.ok(queries.every((q) => q.city === undefined));
+    assert.deepEqual(queries, [
+      { name: { $regex: "Grohova" }, scope: "world" },
+    ]);
     assert.deepEqual(
       result.map((p) => p.id),
       ["CZ", "DE"],
-    );
-    await assert.rejects(
-      scopedPlaces("Grohova", world, ["SK"], new AbortController().signal),
-      /unavailable/,
     );
   } finally {
     transportClient.places = old;

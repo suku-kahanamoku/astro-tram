@@ -135,6 +135,7 @@ export const places: APIRoute = async ({ url, request, locals }) => {
           ![
             "name",
             "state",
+            "scope",
             "city",
             "latitude",
             "longitude",
@@ -159,6 +160,11 @@ export const places: APIRoute = async ({ url, request, locals }) => {
     if (
       typeof country !== "string" ||
       (country !== "" && !/^[A-Z]{2}$/.test(country))
+    )
+      fail();
+    if (
+      q.scope !== undefined &&
+      (q.scope !== "world" || country !== "" || q.city !== undefined)
     )
       fail();
     const city = q.city ?? "";
@@ -187,13 +193,19 @@ export const places: APIRoute = async ({ url, request, locals }) => {
       };
     }
     if (query === null && !location) fail();
-    const result = await locals.providers.transport.places(
-      query,
-      country,
-      city.trim(),
-      location,
+    const result =
+      q.scope === "world"
+        ? await locals.providers.transport.worldPlaces(query, location)
+        : await locals.providers.transport.places(
+            query,
+            country,
+            city.trim(),
+            location,
+          );
+    return Response.json(
+      { success: true, ...result },
+      { headers: { "Cache-Control": "no-store" } },
     );
-    return Response.json({ success: true, ...result });
   } catch (error) {
     return errorResponse(error);
   }

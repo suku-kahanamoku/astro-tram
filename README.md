@@ -406,9 +406,12 @@ a bez JS page errors. Provozní konfigurace je v
 
 Formulář nabízí nejprve záložku **Svět**, potom Česko, Slovensko, Rakousko,
 Polsko a Německo. Svět nemá pole Město / jízdní řády; sdílený provider
-našeptávání paralelně osloví dostupné národní katalogy přes stejné veřejné API
+našeptávání posílá jediný požadavek s `q.scope: "world"` do veřejného API.
+Server podle backendového coverage paralelně osloví dostupné národní katalogy
 a sloučí výsledky podle druhu místa, shody názvu a čerstvé GPS. Nepřipojuje
-pevný seznam zemí ani nový backend. Nedostupnost jednoho katalogu neodstraní
+pevný seznam zemí ani nový backend. Současný limit federace je 32 zemí.
+Národní `q.state` a `q.city` nelze kombinovat s `q.scope: "world"`.
+Opakovaný klik do otevřeného pole a návrat fokusu po výběru nespouštějí další dotaz. Nedostupnost jednoho katalogu neodstraní
 výsledky ostatních. Výběr Světa zachovává URL `scope=world`, země zvolených
 míst se ukládají jako `fromState`/`toState`, bez ukládání GPS. Hledání
 používá stávající národní router podle země výchozího místa; u aktuální

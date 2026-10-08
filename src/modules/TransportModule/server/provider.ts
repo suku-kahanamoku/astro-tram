@@ -3,6 +3,7 @@ import {
   reservationLabels,
   type TripFeature,
 } from "../../TransportCoreModule/config/tripFeatures";
+import { rankWorldPlaces } from "../../TransportCoreModule/providers/placeRanking";
 import { createHash } from "node:crypto";
 import { staticCatalogCache } from "./staticCatalogCache";
 import { collectJourneyPage } from "./journeyPage";
@@ -364,6 +365,39 @@ export function createTransportProvider(core: CoreClient) {
           return { data, partial: raw.partial === true };
         },
       );
+    },
+    async worldPlaces(
+      query: string | null,
+      location?: { lat: number; lon: number; observedAt: string },
+    ) {
+      const countries = (await this.coverage()).filter(
+        (c) => c.searchAvailable && c.capabilities.includes("places"),
+      );
+      if (!countries.length || countries.length > 32)
+        throw new HttpError(503, "places_not_configured");
+      const results = await Promise.allSettled(
+        countries.map(async ({ state }) => {
+          const result = await this.places(query, state, "", location);
+          return {
+            ...result,
+            data: result.data
+              .filter((p) => !p.state || p.state === state)
+              .map((p) => ({ ...p, state })),
+          };
+        }),
+      );
+      const healthy = results.filter((r) => r.status === "fulfilled");
+      if (!healthy.length) throw (results[0] as PromiseRejectedResult).reason;
+      return {
+        data: rankWorldPlaces(
+          healthy.flatMap((r) => r.value.data),
+          query,
+          location,
+        ),
+        partial:
+          healthy.length !== results.length ||
+          healthy.some((r) => r.value.partial),
+      };
     },
     async places(
       query: string | null,
