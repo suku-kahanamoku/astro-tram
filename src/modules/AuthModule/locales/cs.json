@@ -12,6 +12,8 @@
     "account": "Váš účet",
     "accountDescription": "Váš osobní prostor.",
     "logout": "Odhlásit se",
-    "eyebrow": "Můj účet"
+    "eyebrow": "Můj účet",
+    "accountLoading": "Načítám údaje účtu…",
+    "accountUnavailable": "Údaje účtu se nepodařilo načíst. Zkus stránku obnovit."
   }
 }

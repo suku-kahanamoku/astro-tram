@@ -54,7 +54,12 @@ export default function LanguagePicker({
         {items.map((item) => (
           <a
             key={item.code}
-            href={item.href}
+            href={ready ? item.href.split("?")[0] + location.search : item.href}
+            onClick={(event) => {
+              // Search navigation can change history without remounting this island.
+              event.currentTarget.href =
+                item.href.split("?")[0] + location.search;
+            }}
             lang={item.code}
             hrefLang={item.code}
             aria-current={item.code === locale ? "true" : undefined}

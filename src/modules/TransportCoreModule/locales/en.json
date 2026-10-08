@@ -199,5 +199,6 @@
   "dataSupplementaryGtfsScope": "Separately downloaded GTFS sources not listed among the inputs of the currently active graphs. Their presence here does not mean that journey search is currently using them.",
   "street": "Street",
   "address": "Address",
-  "nearCity": "Near {city}"
+  "nearCity": "Near {city}",
+  "dataAttributionsLoading": "Loading data sources…"
 }

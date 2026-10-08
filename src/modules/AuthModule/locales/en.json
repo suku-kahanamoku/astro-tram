@@ -12,6 +12,8 @@
     "account": "Your account",
     "accountDescription": "Your personal space.",
     "logout": "Sign out",
-    "eyebrow": "My account"
+    "eyebrow": "My account",
+    "accountLoading": "Loading account details…",
+    "accountUnavailable": "Account details could not be loaded. Please reload this page."
   }
 }

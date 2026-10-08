@@ -12,6 +12,7 @@ import type { User } from "../types";
  * relace (401) se cookie smaže a vrátí se `null`, jiné chyby se propagateří.
  */
 export const sessionHook = defineMiddleware(async (context, next) => {
+  if (context.isPrerendered) return next();
   context.locals.sessionToken = readToken(context.cookies);
   let userPromise: Promise<User | null> | undefined;
   context.locals.getUser = () =>

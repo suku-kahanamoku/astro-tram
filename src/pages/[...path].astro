@@ -12,8 +12,16 @@ import "../modules/TransportModule/styles/attributions.css";
 import { dictionary as authDictionary } from "../modules/AuthModule/providers/translations";
 import { dictionary } from "../modules/LandingModule/providers/translations";
 import { dictionary as transportDictionary } from "../modules/TransportCoreModule/providers/translations";
-import { resolveRoute, url } from "../config/routes";
+import { locales, pages, resolveRoute, url } from "../config/routes";
 import { localeFromPath } from "../modules/LangModule/providers/locale";
+export const prerender = true;
+export function getStaticPaths() {
+  return locales.flatMap((locale) =>
+    pages.map((page) => ({
+      params: { path: url(locale, page).slice(1, -1) || undefined },
+    })),
+  );
+}
 const route = resolveRoute(Astro.url.pathname),
   locale = route?.locale ?? localeFromPath(Astro.url.pathname),
   page = route?.page;
@@ -22,8 +30,6 @@ const t = dictionary(locale),
 const error = !route;
 const auth = authDictionary(locale);
 const licenses = siteDictionary(locale).licenses;
-const user = page === "account" ? await Astro.locals.getUser() : null;
-if (page === "account" && !user) return Astro.redirect(url(locale, "login"));
 if (error) Astro.response.status = 404;
 if (page === "search" || page === "account" || page === "login") {
   Astro.locals.privatePage = true;
@@ -64,8 +70,8 @@ if (page === "search" || page === "account" || page === "login") {
     </section>
   ) : page === "login" ? (
     <Login {locale} />
-  ) : page === "account" && user ? (
-    <Account {locale} {user} />
+  ) : page === "account" ? (
+    <Account {locale} />
   ) : page === "licenses" ? (
     <section class="shell simple-page licenses-page">
       <span class="eyebrow">TRAM</span>

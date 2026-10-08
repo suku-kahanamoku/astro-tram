@@ -11,7 +11,26 @@ Přibližné přiřazení k nejbližšímu sídlu se v nabídce označuje. Serve
 Dopravní serverové proměnné jsou `JAVA_TRAM_URL` a `JAVA_TRAM_SERVICE_TOKEN`. Nasazení Java služby může
 předcházet nasazení tohoto frontendu: klient bez `kinds` stále dostane jen zastávky.
 
-TRAM frontend postavený z `astro-scaffold`. Astro SSR + React + TypeScript, sdílený serverový HTTP klient s oddělenými Java a PHP adaptéry, OpenLayers načítané až při otevření mapy. Samostatný projekt; výchozí scaffold a Sorry Jako zůstávají beze změn.
+TRAM frontend postavený z `astro-scaffold`. Astro + React + TypeScript, statické HTML stránek a samostatné serverové API se sdíleným HTTP klientem a oddělenými Java a PHP adaptéry. OpenLayers se načítá až při otevření mapy. Samostatný projekt; výchozí scaffold a Sorry Jako zůstávají beze změn.
+
+## Okamžité načtení HTML
+
+Všech šest stránek ve všech třech jazycích se vykreslí při buildu přes
+`getStaticPaths()` v `src/pages/[...path].astro`. Netlify servíruje hotové HTML
+z CDN bez volání SSR funkce a bez čekání na Java či PHP backend. React se
+hydratuje přes `client:load`; coverage, hledání, licence, účet i administrace
+pak volají `/api/` asynchronně z prohlížeče. Výpadek API neblokuje HTML.
+
+Účet načítá veřejná uživatelská pole přes `/api/auth/me/` s HttpOnly relací;
+401 přesměruje na přihlášení. HTML účtu neobsahuje osobní údaje ani token.
+Bez JavaScriptu zůstává dostupný přihlašovací formulář a místní licenční notices;
+aktivní backendové licence, profil a chybové zprávy z URL potřebují JavaScript.
+Parametry hledání čte prohlížeč ze skutečné URL a zachová je při změně jazyka.
+
+API zůstává serverové, s validací a autorizací. Statické stránky vyhledávání,
+přihlášení a účtu zachovávají `private, no-store` a příslušný `Referrer-Policy`:
+Netlify dostává vygenerovaný `_headers`, Node adaptér používá `staticHeaders`.
+Starší aliasy generuje konfigurace tras jako 308 přesměrování.
 
 ## Spuštění
 
@@ -267,9 +286,11 @@ trasy zůstávají samostatné. Pravidlo je společné pro všechny země a zdro
 - `GET /api/transport/attributions/`: veřejná licenční metadata skutečných GTFS a OSM vstupů aktivního Java grafu, přes php-core `/transport/v1/attributions`. Nejde o seznam všech nakonfigurovaných zdrojů; endpoint nepřijímá filtry ani stránkování.
 
 Patička odkazuje na `/licence/`, `/en/licenses/` a `/de/lizenzen/`.
-Stránka načítá atribuce přes serverový provider a `TransportAttributions`
-je vykreslí už v HTML, včetně přesných licenčních odkazů, povinných poznámek
-a dostupných dat publikace/aktualizace. Výpadek backendu zobrazí zprávu;
+Stránka načítá aktivní atribuce z prohlížeče přes `/api/transport/attributions/`
+a `TransportAttributions` je vykreslí po odpovědi API, včetně přesných licenčních
+odkazů, povinných poznámek a dostupných dat publikace/aktualizace.
+Místní doplňkové licence a software jsou už ve statickém HTML.
+Výpadek backendu zobrazí zprávu a neblokuje stránku;
 nepoužívá vymyšlený náhradní seznam. Shodné duplicitní atribuce z federace
 zemí se slučují podle ID; konfliktní atribuce se nadále odmítají.
 Při rozdílných datech publikace/aktualizace se ponechá nejnovější datum.

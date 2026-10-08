@@ -199,5 +199,6 @@
   "dataSupplementaryGtfsScope": "Samostatně stažené GTFS zdroje, které nejsou uvedeny mezi vstupy aktuálně aktivních grafů. Jejich přítomnost v tomto seznamu neznamená, že je vyhledávání právě používá.",
   "street": "Ulice",
   "address": "Adresa",
-  "nearCity": "V okolí: {city}"
+  "nearCity": "V okolí: {city}",
+  "dataAttributionsLoading": "Načítám datové zdroje…"
 }

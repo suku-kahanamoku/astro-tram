@@ -31,7 +31,8 @@ export function createRequestHook(
       }
     }
     const response = await next();
-    response.headers.set("X-Request-Id", context.locals.requestId);
+    if (!context.isPrerendered)
+      response.headers.set("X-Request-Id", context.locals.requestId);
     response.headers.set("X-Content-Type-Options", "nosniff");
     response.headers.set(
       "Referrer-Policy",

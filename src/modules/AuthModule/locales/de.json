@@ -12,6 +12,8 @@
     "account": "Ihr Konto",
     "accountDescription": "Ihr persönlicher Bereich.",
     "logout": "Abmelden",
-    "eyebrow": "Mein Konto"
+    "eyebrow": "Mein Konto",
+    "accountLoading": "Kontodaten werden geladen…",
+    "accountUnavailable": "Die Kontodaten konnten nicht geladen werden. Bitte lade diese Seite neu."
   }
 }

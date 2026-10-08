@@ -54,7 +54,7 @@ test("licence page renders active backend sources, exact credits, update dates a
   ).toHaveCount(2);
 });
 
-test("licence credits are present in server HTML without JavaScript", async ({
+test("static licence notices are present without JavaScript and active sources load separately", async ({
   browser,
 }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
@@ -67,7 +67,7 @@ test("licence credits are present in server HTML without JavaScript", async ({
     );
     await expect(
       page.locator('[data-attribution-source="fixture-timetable"]'),
-    ).toBeVisible();
+    ).toHaveCount(0);
     await expect(
       page.locator('[data-attribution-source="realtime:idsjmk-traffic"]'),
     ).toContainText("NonCommercial");
@@ -104,7 +104,18 @@ test("footer licence links are localized and other pages do not fetch the data l
     ["/en/", "/en/licenses/", "Licences and sources"],
     ["/de/", "/de/lizenzen/", "Lizenzen und Quellen"],
   ]) {
+    const before = requests.filter((value) =>
+      value.includes("/api/transport/attributions/"),
+    ).length;
     await page.goto(home);
+    await expect(
+      page.locator("[data-transport] fieldset").first(),
+    ).toBeEnabled();
+    expect(
+      requests.filter((value) =>
+        value.includes("/api/transport/attributions/"),
+      ),
+    ).toHaveLength(before);
     await page.locator(`footer a[href="${link}"]`).click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
     await expect(
@@ -113,5 +124,5 @@ test("footer licence links are localized and other pages do not fetch the data l
   }
   expect(
     requests.filter((url) => url.includes("/api/transport/attributions/")),
-  ).toEqual([]);
+  ).toHaveLength(3);
 });

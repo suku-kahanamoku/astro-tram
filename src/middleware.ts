@@ -24,7 +24,7 @@ export const onRequest = sequence(
   }),
   createRequestHook(isPublicTransportRead),
   defineMiddleware(async (context, next) => {
-    context.locals.providers = createProviders();
+    if (!context.isPrerendered) context.locals.providers = createProviders();
     return next();
   }),
   sessionHook,

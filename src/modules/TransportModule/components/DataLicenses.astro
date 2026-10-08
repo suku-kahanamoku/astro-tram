@@ -1,52 +1,10 @@
 ---
-import TransportAttributions from "./TransportAttributions";
-import { dictionary } from "../../TransportCoreModule/providers/translations";
+import DataLicenses from "./DataLicenses";
 import type { Locale } from "../../LangModule/config";
-import type { DataAttribution } from "../../TransportCoreModule/types";
-import {
-  supplementaryDataLicenses,
-  supplementaryGtfsLicenses,
-} from "../config/data-licenses";
 interface Props {
   locale: Locale;
 }
 const { locale } = Astro.props;
-const t = dictionary(locale);
-let sources: DataAttribution[] = [];
-let unavailable = false;
-try {
-  sources = await Astro.locals.providers.transport.attributions();
-} catch {
-  unavailable = true;
-  Astro.response.headers.set("Cache-Control", "no-store");
-}
 ---
 
-{sources.length > 0 ? (
-  <TransportAttributions {locale} {sources} />
-) : (
-  <section class="transport-attributions" data-attributions-status>
-    <h2>{t.dataAttributionsTitle}</h2>
-    <p>
-      {unavailable ? t.dataAttributionsUnavailable : t.dataAttributionsEmpty}
-    </p>
-  </section>
-)}
-
-<TransportAttributions
-  {locale}
-  sources={supplementaryGtfsLicenses.filter(
-    (source) => !sources.some((active) => active.feed_id === source.feed_id),
-  )}
-  title={t.dataSupplementaryGtfsTitle}
-  headingId="supplementary-gtfs-title"
-/>
-<p class="license-supplementary-note">{t.dataSupplementaryGtfsScope}</p>
-
-<TransportAttributions
-  {locale}
-  sources={supplementaryDataLicenses}
-  title={t.dataSupplementaryTitle}
-  headingId="supplementary-attributions-title"
-/>
-<p class="license-supplementary-note">{t.dataSupplementaryScope}</p>
+<DataLicenses {locale} client:load />

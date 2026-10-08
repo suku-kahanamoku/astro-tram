@@ -5,7 +5,8 @@ import netlify from "@astrojs/netlify";
 import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 import { loadEnv } from "vite";
-import { locales, publicPages, url } from "./src/config/routes";
+import { locales, pages, publicPages, url } from "./src/config/routes";
+import { withStaticPageHeaders } from "./scripts/static-page-headers";
 
 const env = loadEnv(
   process.env.NODE_ENV ?? "development",
@@ -27,10 +28,30 @@ export default defineConfig({
   site,
   output: "server",
   devToolbar: { enabled: false },
-  adapter:
-    process.env.NETLIFY === "true" ? netlify() : node({ mode: "standalone" }),
+  adapter: withStaticPageHeaders(
+    process.env.NETLIFY === "true"
+      ? netlify()
+      : node({ mode: "standalone", staticHeaders: true }),
+    process.env.NETLIFY === "true",
+  ),
   server: { port: 4321 },
+  build: { redirects: false },
   trailingSlash: "always",
+  // Netlify handles aliases at the CDN; Node retains the query-aware middleware.
+  redirects:
+    process.env.NETLIFY === "true"
+      ? Object.fromEntries(
+          locales.flatMap((locale) =>
+            pages.flatMap((page) => {
+              const alias = `${url(locale)}${page === "home" ? "" : `${page}/`}`;
+              const destination = url(locale, page);
+              return alias === destination
+                ? []
+                : [[alias, { destination, status: 308 }]];
+            }),
+          ),
+        )
+      : {},
   i18n: {
     defaultLocale: "cs",
     locales: [...locales],

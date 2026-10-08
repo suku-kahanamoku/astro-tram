@@ -1,43 +1,11 @@
 ---
+import AccountProfile from "./AccountProfile";
+import type { Locale } from "../../LangModule/config";
 import "../styles/components.css";
-import { dictionary } from "../providers/translations";
-import { type Locale } from "../../LangModule/providers/locale";
-import type { User } from "../types";
-
-/**
- * Soukromá stránka profilu s veřejnými údaji přihlášeného uživatele
- * a formulářem pro odhlášení, který se bez JavaScriptu odešle
- * na `POST /api/auth/logout/`.
- */
 interface Props {
-  /** Jazyk textů stránky a návratové adresy po odhlášení. */
   locale: Locale;
-  /** Veřejné údaje uživatele, které sem předalo `locals.getUser()`. */
-  user: User;
 }
-const { locale, user } = Astro.props;
-const t = dictionary(locale);
-// Relace se čte jen na serveru, takže `user` je vždy vyplněný a neobsahuje
-// žádné interní údaje; stav odhlášení se předává dotazním parametrem.
+const { locale } = Astro.props;
 ---
 
-<section class="shell auth-section">
-  <div class="card auth-card">
-    <p class="eyebrow">{t.auth.account}</p>
-    <h1>
-      {user.first_name} {user.last_name}
-    </h1>
-    <p>{user.email}</p>
-    {Astro.url.searchParams.get("error") === "logout" && (
-      <p class="alert alert-error" role="alert">
-        {t.auth.logoutError}
-      </p>
-    )}
-    <form method="post" action="/api/auth/logout/">
-      <input type="hidden" name="locale" value={locale} />
-      <button class="btn btn-outline" type="submit">
-        {t.auth.logout}
-      </button>
-    </form>
-  </div>
-</section>
+<AccountProfile {locale} client:load />

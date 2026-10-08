@@ -199,5 +199,6 @@
   "dataSupplementaryGtfsScope": "Separat heruntergeladene GTFS-Quellen, die nicht unter den Eingaben der aktuell aktiven Graphen aufgeführt sind. Ihre Aufnahme in diese Liste bedeutet nicht, dass die Verbindungssuche sie derzeit verwendet.",
   "street": "Straße",
   "address": "Adresse",
-  "nearCity": "In der Nähe von {city}"
+  "nearCity": "In der Nähe von {city}",
+  "dataAttributionsLoading": "Datenquellen werden geladen…"
 }
