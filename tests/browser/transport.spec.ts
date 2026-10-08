@@ -1363,7 +1363,11 @@ test("unsupported tracking keeps static stops without inventing GPS or an on-tim
   await page.locator("[data-summary-trip]").first().click();
   const dialog = page.locator("[data-trip-dialog]");
   await expect(dialog.locator("[data-trip-point]")).toHaveCount(3);
-  await expect(dialog.locator("[data-trip-vehicle-dot]")).toHaveCount(0);
+  await expect(dialog.locator("[data-trip-vehicle-dot]")).toBeVisible();
+  await expect(dialog.locator("[data-trip-vehicle-dot]")).toHaveAttribute(
+    "data-estimated",
+    "true",
+  );
   await expect(dialog.locator("[data-delay-badge]")).toHaveCount(0);
   await expect(
     dialog.getByText(

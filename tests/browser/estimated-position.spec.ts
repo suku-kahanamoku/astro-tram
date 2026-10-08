@@ -144,7 +144,9 @@ for (const width of [375, 1280]) {
     expect(coordinateReads).toBe(0);
     expect(reads).toBe(2);
     await page.clock.fastForward(31000);
-    await expect(dot).toHaveCount(0);
-    await expect(compactDot).toHaveCount(0);
+    await expect(dot).toBeVisible();
+    await expect(dot).toHaveAttribute("data-estimated", "true");
+    await expect(dot).toHaveAttribute("data-from", "2");
+    await expect(compactDot).toBeVisible();
   });
 }

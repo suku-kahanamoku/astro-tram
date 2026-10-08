@@ -1,6 +1,7 @@
 import type { Trip, TripObservation } from "../../TransportCoreModule/types";
 import { transportClientConfig as config } from "../../TransportCoreModule/config/client";
 import { validCoordinates } from "../../TransportCoreModule/providers/state";
+import { timetableTripProgress } from "./timetableProgress";
 
 export interface TripProgress {
   from: number;
@@ -86,7 +87,7 @@ export function freshTripPosition(
   return true;
 }
 
-/** Schematic placement from measured GPS only. Timetable times never move the dot. */
+/** Schematic placement from measured GPS only, independent of timetable predictions. */
 export function tripProgress(
   trip: Trip,
   live?: TripObservation,
@@ -161,6 +162,26 @@ export function lastKnownTripProgress(
   )
     return null;
   return projectPosition(trip, live.position);
+}
+
+/** Measured positions take priority; a timetable prediction keeps the axis populated. */
+export function displayTripProgress(
+  trip: Trip,
+  live?: TripObservation,
+  remembered: TripProgress | null = null,
+  now = Date.now(),
+) {
+  const current = tripProgress(trip, live, now);
+  const known = lastKnownTripProgress(trip, live, now) ?? remembered;
+  const backendEstimate = estimatedTripProgress(trip, live, now);
+  const timetable = !current && !known && !backendEstimate;
+  return {
+    progress:
+      current ?? known ?? backendEstimate ?? timetableTripProgress(trip, now),
+    retained: !current && !!known,
+    estimated: !current && !known,
+    timetable,
+  };
 }
 
 function projectPosition(

@@ -57,7 +57,7 @@ function Position({
   );
 }
 
-/** Fetch stop coordinates only for an opened leg with an actual measured position. */
+/** Load the static timetable for opened legs; coordinates are only needed for GPS. */
 export default function JourneyLegPosition({
   leg,
   t,
@@ -71,10 +71,7 @@ export default function JourneyLegPosition({
 }) {
   const root = useRef<HTMLDivElement>(null);
   const live = useTripObservation(leg.tripId);
-  const { trip } = useTrip(
-    live?.position || live?.estimatedProgress ? leg.tripId : undefined,
-    !!live?.position,
-  );
+  const { trip } = useTrip(leg.tripId, !!live?.position);
   const lastTrip = useRef<{ id: string; trip: Trip } | undefined>(undefined);
   if (trip && leg.tripId) lastTrip.current = { id: leg.tripId, trip };
   const coordinateTrip =

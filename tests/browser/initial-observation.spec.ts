@@ -65,7 +65,12 @@ for (const width of [375, 1280]) {
     await expect(cards.first().locator("[data-position-status]")).toHaveText(
       "Aktuální poloha není dostupná.",
     );
-    await expect(page.locator("[data-trip-vehicle-dot]")).toHaveCount(0);
+    await expect(
+      cards.first().locator("[data-trip-vehicle-dot]"),
+    ).toBeVisible();
+    await expect(
+      cards.first().locator("[data-trip-vehicle-dot]"),
+    ).toHaveAttribute("data-estimated", "true");
     await cards.last().locator(".journey-summary-toggle").click();
     await expect.poll(() => reads).toBe(2);
     await cards.first().locator(".journey-summary-toggle").click();
@@ -75,7 +80,11 @@ for (const width of [375, 1280]) {
     const dialog = page.locator("[data-trip-dialog]");
     await expect.poll(() => reads).toBe(4);
     await expect(dialog.locator(".delay-badge")).toHaveText("Zpoždění 6 min");
-    await expect(dialog.locator("[data-trip-vehicle-dot]")).toHaveCount(0);
+    await expect(dialog.locator("[data-trip-vehicle-dot]")).toBeVisible();
+    await expect(dialog.locator("[data-trip-vehicle-dot]")).toHaveAttribute(
+      "data-estimated",
+      "true",
+    );
     delay = 0;
     await page.keyboard.press("Escape");
     await cards.first().locator("[data-summary-trip]").click();
@@ -185,7 +194,11 @@ test("failed HTTP observation displays unknown delay and unavailable GPS instead
   await expect(card.locator("[data-delay-status]")).toHaveText(
     "Zpoždění neznámé",
   );
-  await expect(card.locator("[data-trip-vehicle-dot]")).toHaveCount(0);
+  await expect(card.locator("[data-trip-vehicle-dot]")).toBeVisible();
+  await expect(card.locator("[data-trip-vehicle-dot]")).toHaveAttribute(
+    "data-estimated",
+    "true",
+  );
   await card.locator("[data-summary-trip]").click();
   await expect(
     page.locator("[data-trip-dialog] [data-delay-status]"),

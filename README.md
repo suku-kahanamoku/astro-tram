@@ -583,9 +583,17 @@ přebírá backendový poměr i bez souřadnic; nezískává ani nevytváří fa
 GPS. Accordion a dialog používají společný bod s tooltipem a přístupným
 popiskem „Odhad podle jízdního řádu; nejde o skutečnou polohu vozidla.“
 Čerstvé potvrzené zpoždění může backend použít k posunu odhadu, samotný
-odhad ale zpoždění ani predikce nepotvrzuje. Po expiraci se odhad skryje,
-neuchovává se jako poslední známé měření. Platná skutečná GPS má přednost
-před odhadem; HTTP i WS mají stejnou validaci.
+odhad ale zpoždění ani predikce nepotvrzuje. Po expiraci backendového odhadu
+se osa přepne na lokální odhad ze statických časů zastávek. Před odjezdem
+je červený bod na výchozí zastávce, při stání u zastávky, mezi odjezdem a
+příjezdem se plynule posouvá mezi sousedními body a po dojezdu zůstane na
+konečné. Funguje i bez souřadnic a online služby; při chybějících časech
+zůstává na posledním časově určeném bodě (bez jediného času na výchozím).
+Lokální odhad aktualizuje pouze osu jednou za sekundu, nemění časy,
+zpoždění ani výsledky hledání a není označen jako měřená GPS.
+Platná skutečná GPS má přednost, stejně jako poslední jednoznačně měřený
+bod při krátkém výpadku nebo nejednoznačném přiřazení. HTTP i WS mají
+stejnou validaci; odhad se nikdy neuchovává jako poslední známé měření.
 
 ### Stabilní výsledky při živých aktualizacích
 

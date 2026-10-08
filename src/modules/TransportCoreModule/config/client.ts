@@ -8,6 +8,7 @@ export const transportClientConfig = {
   gpsTimeoutMs: 12_000,
   autocompleteGpsTimeoutMs: 1_500,
   timeline: {
+    predictionTickMs: 1_000,
     atStopMeters: 35,
     maxOffsetMeters: 120,
     ambiguityMeters: 25,

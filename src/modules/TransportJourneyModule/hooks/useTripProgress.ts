@@ -1,29 +1,52 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   tripProgress,
   lastKnownTripProgress,
-  estimatedTripProgress,
+  displayTripProgress,
   type TripProgress,
 } from "../providers/tripProgress";
 import type { Trip, TripObservation } from "../../TransportCoreModule/types";
+import { transportClientConfig as config } from "../../TransportCoreModule/config/client";
 
 /** Hold the last resolved point of this trip while the dialog remains mounted. */
 export function useTripProgress(trip: Trip, live?: TripObservation) {
   const [last, setLast] = useState<{
-    trip: Trip;
+    identity: string;
     progress: TripProgress;
   } | null>(null);
   const [, refresh] = useState(0);
-  const current = tripProgress(trip, live);
-  const known = lastKnownTripProgress(trip, live);
-  const estimated = estimatedTripProgress(trip, live);
-  const remembered = last?.trip === trip ? last.progress : null;
+  // Optional coordinate enrichment must not discard the last unambiguous position.
+  const identity = useMemo(
+    () =>
+      JSON.stringify(
+        trip.stops.map(({ stop, arrival, departure }) => [
+          stop.id,
+          arrival,
+          departure,
+        ]),
+      ),
+    [trip],
+  );
+  const remembered = last?.identity === identity ? last.progress : null;
+  const display = displayTripProgress(trip, live, remembered);
   useEffect(() => {
     const progress =
       tripProgress(trip, live) ?? lastKnownTripProgress(trip, live);
-    if (progress) setLast({ trip, progress });
-    else setLast((previous) => (previous?.trip === trip ? previous : null));
-  }, [trip, live]);
+    if (progress) setLast({ identity, progress });
+    else
+      setLast((previous) =>
+        previous?.identity === identity ? previous : null,
+      );
+  }, [trip, identity, live]);
+  useEffect(() => {
+    if (!display.timetable) return;
+    // Only the small timeline component ticks; static stop rows are memoized.
+    const timer = setInterval(
+      () => refresh((value) => value + 1),
+      config.timeline.predictionTickMs,
+    );
+    return () => clearInterval(timer);
+  }, [display.timetable]);
   useEffect(() => {
     const deadline = live?.estimatedProgress?.validUntil ?? live?.validUntil;
     if (!deadline) return;
@@ -32,9 +55,5 @@ export function useTripProgress(trip: Trip, live?: TripObservation) {
     const timer = setTimeout(() => refresh((value) => value + 1), remaining);
     return () => clearTimeout(timer);
   }, [live]);
-  return {
-    progress: current ?? known ?? estimated ?? remembered,
-    retained: !current && !estimated && !!(known ?? remembered),
-    estimated: !current && !known && !!estimated,
-  };
+  return display;
 }
