@@ -26,7 +26,6 @@ const brnoStop = {
 };
 const shift = (at, min) =>
   new Date(Date.parse(at) + min * 60000).toISOString().replace(".000Z", "Z");
-const pipelineJobs = new Map();
 let onlinePlannersEnabled = true;
 http
   .createServer(async (req, res) => {
@@ -44,7 +43,15 @@ http
     };
     const url = new URL(req.url, "http://mock.test");
     if (url.pathname === "/health") return send(200, null);
-    if (
+    const transport = url.pathname.startsWith("/transport/v1/");
+    if (transport) {
+      if (
+        req.headers.authorization !== "Bearer test-only-java-service-token" ||
+        req.headers["x-internal-key"] ||
+        req.headers["x-forwarded-host"]
+      )
+        return send(403, null);
+    } else if (
       req.headers["x-internal-key"] !== "test-only-secret" ||
       req.headers["x-forwarded-host"] !== "tram.test"
     )
@@ -90,32 +97,6 @@ http
         onlinePlannersEnabled = data.enabled;
       }
       return send(200, { enabled: onlinePlannersEnabled });
-    }
-    if (url.pathname === "/transport-admin/local-pipeline") {
-      if (!authenticated) return send(401, null);
-      if (!admin) return send(403, null);
-      if (req.method === "GET") {
-        const job = pipelineJobs.get(bearer);
-        return send(200, {
-          ...(job
-            ? {
-                ...job,
-                status: Date.now() - job.at > 1000 ? "ready" : "queued",
-              }
-            : { status: "idle" }),
-          runner: { online: true },
-        });
-      }
-      const action = JSON.parse(body).action;
-      if (!["sync_build", "deploy"].includes(action)) return send(422, null);
-      const job = {
-        id: "00000000-0000-0000-0000-000000000001",
-        action,
-        status: "queued",
-        at: Date.now(),
-      };
-      pipelineJobs.set(bearer, job);
-      return send(202, job);
     }
     if (url.pathname === "/transport/v1/attributions")
       return send(200, [

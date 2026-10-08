@@ -38,6 +38,16 @@ export default defineConfig({
   },
   env: {
     schema: {
+      JAVA_TRAM_URL: envField.string({
+        context: "server",
+        access: "secret",
+        optional: true,
+      }),
+      JAVA_TRAM_SERVICE_TOKEN: envField.string({
+        context: "server",
+        access: "secret",
+        optional: true,
+      }),
       PHP_CORE_URL: envField.string({
         context: "server",
         access: "secret",

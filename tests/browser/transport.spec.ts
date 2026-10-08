@@ -1099,7 +1099,13 @@ test("trip equipment is visible below stops and technical timetable codes need e
 test("live vehicle tracking shares the selected journey, shows delay and removes expired GPS", async ({
   page,
 }) => {
+  await page.route("**/api/transport/search/**", async (route) => {
+    const json = await (await route.fetch()).json();
+    json.data.journeys = json.data.journeys.slice(0, 1);
+    await route.fulfill({ json });
+  });
   let pushDelay: (seconds: number) => void = () => {};
+  const subscribed = new Set<string>();
   let sessions = 0,
     closed = 0;
   await page.route("**/api/transport/tracking/", async (route) => {
@@ -1124,22 +1130,24 @@ test("live vehicle tracking shares the selected journey, shows delay and removes
     ws.onMessage((message) => {
       const m = JSON.parse(String(message));
       if (m.type !== "subscribe") return;
+      subscribed.add(m.ticket);
       pushDelay = (seconds) => {
         const now = Date.now();
-        ws.send(
-          JSON.stringify({
-            type: "observation",
-            trip: m.ticket,
-            data: {
-              status: "live",
-              position: { lat: 50.08, lon: 14.42 },
-              observed_at: new Date(now).toISOString(),
-              valid_until: new Date(now + 4000).toISOString(),
-              delay_seconds: seconds,
-              cancelled: false,
-            },
-          }),
-        );
+        for (const trip of subscribed)
+          ws.send(
+            JSON.stringify({
+              type: "observation",
+              trip,
+              data: {
+                status: "live",
+                position: { lat: 50.08, lon: 14.42 },
+                observed_at: new Date(now).toISOString(),
+                valid_until: new Date(now + 4000).toISOString(),
+                delay_seconds: seconds,
+                cancelled: false,
+              },
+            }),
+          );
       };
       pushDelay(480);
     });
@@ -1195,6 +1203,9 @@ test("live vehicle tracking shares the selected journey, shows delay and removes
   await expect(badge).toHaveAttribute("data-status", "delayed");
   await page.locator("[data-close-trip]").click();
   await page.locator(".journey-summary").first().click();
+  // Search results stay subscribed even when the accordion is collapsed.
+  expect(closed).toBe(0);
+  await page.goto("/");
   await expect.poll(() => closed).toBe(1);
 });
 
@@ -1203,6 +1214,13 @@ for (const width of [390, 1280]) {
     page,
   }, testInfo) => {
     await page.setViewportSize({ width, height: 900 });
+    await page.route("**/api/transport/search/**", async (route) => {
+      const json = await (await route.fetch()).json();
+      json.data.journeys = json.data.journeys.slice(0, 1);
+      await route.fulfill({ json });
+    });
+
+    const subscribed = new Set<string>();
     let push: (lat: number, lon: number, ttl?: number) => void = () => {};
     await page.route("**/api/transport/tracking/", async (route) => {
       const { id } = route.request().postDataJSON();
@@ -1222,22 +1240,24 @@ for (const width of [390, 1280]) {
       ws.onMessage((message) => {
         const m = JSON.parse(String(message));
         if (m.type !== "subscribe") return;
+        subscribed.add(m.ticket);
         push = (lat, lon, ttl = 30000) => {
           const now = Date.now();
-          ws.send(
-            JSON.stringify({
-              type: "observation",
-              trip: m.ticket,
-              data: {
-                status: "live",
-                position: { lat, lon },
-                observed_at: new Date(now).toISOString(),
-                valid_until: new Date(now + ttl).toISOString(),
-                delay_seconds: 480,
-                cancelled: false,
-              },
-            }),
-          );
+          for (const trip of subscribed)
+            ws.send(
+              JSON.stringify({
+                type: "observation",
+                trip,
+                data: {
+                  status: "live",
+                  position: { lat, lon },
+                  observed_at: new Date(now).toISOString(),
+                  valid_until: new Date(now + ttl).toISOString(),
+                  delay_seconds: 480,
+                  cancelled: false,
+                },
+              }),
+            );
         };
         push(50.0775, 14.4255);
       });
@@ -1772,6 +1792,11 @@ test("last-known GPS initialises the timeline and reopening redeems a new single
   let details = 0;
   page.on("request", (request) => {
     if (request.url().includes("/api/transport/trip/")) details++;
+  });
+  await page.route("**/api/transport/search/**", async (route) => {
+    const json = await (await route.fetch()).json();
+    json.data.journeys = json.data.journeys.slice(0, 1);
+    await route.fulfill({ json });
   });
   await page.goto(`/spojeni/?${query()}`);
   await page.locator("[data-summary-trip]").first().click();

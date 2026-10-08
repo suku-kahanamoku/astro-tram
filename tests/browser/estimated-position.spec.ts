@@ -51,6 +51,7 @@ for (const width of [375, 1280]) {
     };
     await page.route("**/api/transport/search/**", async (route) => {
       const json = await (await route.fetch()).json();
+      json.data.journeys = json.data.journeys.slice(0, 1);
       for (const journey of json.data.journeys)
         for (const leg of journey.legs)
           Object.assign(leg, {

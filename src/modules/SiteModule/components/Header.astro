@@ -1,7 +1,7 @@
 ---
 import BrandMark from "./BrandMark.astro";
 import LanguagePicker from "../../LangModule/components/LanguagePicker.astro";
-import PipelineControls from "./PipelineControls";
+import OnlinePlannerControls from "./OnlinePlannerControls";
 import { dictionary } from "../providers/translations";
 import { url, type PageId, type Locale } from "../../../config/routes";
 interface Props {
@@ -39,6 +39,6 @@ const { locale, page = "home" } = Astro.props,
       locale={locale}
       href={(code) => url(code, page) + Astro.url.search}
     />
-    <PipelineControls {locale} client:load />
+    <OnlinePlannerControls {locale} client:load />
   </div>
 </header>

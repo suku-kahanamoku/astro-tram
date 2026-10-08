@@ -19,8 +19,11 @@ export function mergeObservation(
       : undefined;
   const oldPosition =
     previous?.positionSample ??
-    (old ? { ...old, status: previous!.status } : undefined);
-  const oldDelay = previous?.delaySample ?? old;
+    (old && previous?.position
+      ? { ...old, status: previous.status }
+      : undefined);
+  const oldDelay =
+    previous?.delaySample ?? (previous?.delaySeconds != null ? old : undefined);
   const newer = (candidate: typeof sample, current: typeof sample) =>
     fresh(candidate) &&
     (!fresh(current) ||

@@ -3,15 +3,15 @@
 ## Statické našeptávání míst (6. 10. 2026)
 
 Java router používá samostatnou Places službu s vyměnitelným backendem
-(nyní Lucene). Astro neobsahuje Lucene ani Photon závislost a PHP zůstává gateway.
+(nyní Lucene). Astro neobsahuje Lucene ani Photon závislost a doprava používá přímý serverový Java klient.
 Provider výslovně žádá `kinds: ["stop","street","address"]`, whitelistuje
 `kind/city_source` a odmítá ulice bez platných souřadnic. Zastávka se plánuje
 jejím ID; ulice/adresa jako souřadnicový bod přes existující mapy a URL stav.
 Přibližné přiřazení k nejbližšímu sídlu se v nabídce označuje. Serverové
-`PHP_CORE_*` a veřejná konfigurace se nemění. Nasazení Java služby může
+Dopravní serverové proměnné jsou `JAVA_TRAM_URL` a `JAVA_TRAM_SERVICE_TOKEN`. Nasazení Java služby může
 předcházet nasazení tohoto frontendu: klient bez `kinds` stále dostane jen zastávky.
 
-TRAM frontend postavený z `astro-scaffold`. Astro SSR + React + TypeScript, sdílený serverový klient php-core, OpenLayers načítané až při otevření mapy. Samostatný projekt; výchozí scaffold a Sorry Jako zůstávají beze změn.
+TRAM frontend postavený z `astro-scaffold`. Astro SSR + React + TypeScript, sdílený serverový HTTP klient s oddělenými Java a PHP adaptéry, OpenLayers načítané až při otevření mapy. Samostatný projekt; výchozí scaffold a Sorry Jako zůstávají beze změn.
 
 ## Spuštění
 
@@ -28,7 +28,9 @@ Bez nastaveného backendu funguje landing a formulář; vyhledávání přizná 
 Serverové proměnné:
 
 - `PUBLIC_SITE_URL`: kanonická adresa webu; v produkci musí být shodná s originem zápisových POST požadavků. Při `npm run dev` kontrolujeme skutečný origin běžícího serveru. Veřejné čtecí POST `/api/transport/places/` a `/api/transport/search/` origin nevyžadují; vstupy, velikost těla a backendové limity se stále ověřují. Přihlášení, změny účtu a vytváření tracking ticketu nadále vyžadují shodný origin.
-- `PHP_CORE_URL`: kořen php-core API včetně `/api`, bez `/transport/v1`.
+- `JAVA_TRAM_URL`: kořen Java API (produkce `https://194.163.136.34`); bez `/transport/v1`.
+- `JAVA_TRAM_SERVICE_TOKEN`: Java servisní Bearer, výhradně na serveru.
+- `PHP_CORE_URL`: pro přihlášení a administraci; kořen php-core API včetně `/api`, bez `/transport/v1`.
 - `PHP_CORE_API_KEY`: interní klíč backendu, pouze na serveru.
 - `PHP_CORE_TENANT_HOST`: pevný host mapovaný v php-core na `tram`, např. `tram.localhost`.
 
@@ -64,68 +66,31 @@ provider nemusí mít živé měření. HTTP gateway kontrakt zůstává beze zm
 - `TransportTrackingModule`: transportní realtime pozorování, zpoždění a tracking subscriptions.
 - `TransportMapModule`: transportní mapový dialog a adapter pro obecný `MapModule`.
 - `MapModule`: znovupoužitelné OpenLayers jádro, lifecycle mapy, route rendering a GPS picking.
-- `CoreModule/server/php-core.ts`: jediný HTTP klient k php-core. Klíč i pevný tenant zůstávají na serveru; žádný univerzální proxy endpoint.
+- `CoreModule/server/backend-client.ts`: sdílený HTTP transport. `java-tram.ts` volá přímo Java dopravu; `php-core.ts` přihlášení a administraci. Klíč i pevný tenant zůstávají na serveru; žádný univerzální proxy endpoint.
 - `UIModule`: theme, základní ovládací prvky a ikony.
 - `LangModule`: čeština, angličtina, němčina; společné komponenty pro všechny jazyky.
 - `SiteModule`: hlavička, patička, SEO.
 
 Auth je zapnutý pro administrační ovládání Sync/Deploy. Ads a Realtime ze scaffoldu jsou zachované pro další vývoj a vypnuté. Frontend neprodává jízdenky ani netvrdí dostupnost nativních mobilních aplikací.
 
-### Sync a Deploy v hlavičce
+### Administrace online plánovačů
 
-Před Sync a Deploy je administrační přepínač **Vypnout / Zapnout** všech online
-plánovačů. Popisek vychází z potvrzeného serverového stavu; před načtením nebo
-bez přihlášení je neutrální „Online“. `GET/POST /api/admin/online-planners/`
-vede na oddělený php-core `/transport-admin/online-planners`; POST přijímá
-pouze `{"enabled":true}` nebo `{"enabled":false}`. Platí stejný admin/tenant,
-origin, velikostní limit a `private, no-store` jako pro úlohy. Změna je okamžitá,
-nezadává sync/build/deploy a nevyžaduje připojený lokální runner.
-Cloudflare ji ukládá v Durable Object i přes restart/nasazení; výchozí stav
-je zapnuto. Lokální router sdílí tento stav s obnovou do pěti sekund.
-Vypnutí používá vlastní grafy pro nové našeptávání, katalogy a hledání.
-Existující online výsledky/detaily mají původního vlastníka; realtime zdroje
-a sběr statických GTFS se nevypínají. Změna není prohlášení úplného pokrytí zemí.
-Pro nasazení tohoto ovládání je potřeba aktualizovat Astro, PHP admin gateway,
-Java router image a Cloudflare Worker; nové secrets ani DB migrace nejsou potřeba.
+V hlavičce zůstává pouze zapnutí/vypnutí online plánovačů. Přihlášení a role
+admin se ověřují v php-core. Jediný GET se načte při inicializaci komponenty;
+POST změní politiku a zobrazí potvrzenou odpověď. Žádné pravidelné dotazování.
+`GET/POST /api/admin/online-planners/` → PHP `/transport-admin/online-planners`
+→ Java `/admin/online-planners`. Interní klíč, tenant a uživatelská HttpOnly relace
+zůstávají pouze na serveru; Java admin token má pouze PHP.
 
-Původní akci „Najít spojení“ vpravo nahrazují tlačítka **Sync** a **Deploy**,
-viditelná i na mobilu. Odkaz na vyhledávání v navigaci zůstává. Sync zařadí
-`sync_build` (synchronizace a sestavení grafů na lokálním stroji); Deploy
-zařadí nasazení připravených grafů. Žádná úloha se nespouští načtením stránky.
-Stav obou ovládání se načte jedním GET požadavkem při inicializaci komponenty.
-Žádné periodické kontroly, opakování po chybě ani kontroly při návratu do karty
-se neposílají. Potvrzené změny přepínače a zařazení úlohy se zobrazují ihned
-z odpovědi POST, bez dalšího GET požadavku. Čekající/běžící úloha blokuje Sync
-a Deploy; její další průběh, dokončení nebo selhání se zjistí až po obnovení
-stránky nebo nové inicializaci komponenty. Projekt nepoužívá Astro ClientRouter,
-takže běžná navigace na jinou stránku načte nový dokument a ovládání inicializuje
-znovu. Zobrazuje se také odpojený runner a nedostatek paměti.
+Ruční tlačítka i endpoint `/api/admin/local-pipeline/` byly odstraněné.
+Sync/build/deploy zajišťuje VPS týdenní úloha v sobotu 02:00 Europe/Prague.
+Po dobu obnovy jsou TRAM kontejnery vypnuté kvůli RAM; provoz se obnoví až po
+kontrole grafů a příslušných indexů, při selhání se zachovají předchozí pointery.
+Viz [provoz na VPS](../../java-tram/deployment/vps/README.md).
 
-Ovládání vyžaduje existujícího aktivního uživatele s rolí `admin` v tenantu
-`tram`, přihlášeného přes `/prihlaseni/` (ostatní jazyky používají vlastní URL).
-Relace je pouze v HttpOnly cookie. Nepřihlášené tlačítko nabídne přihlášení;
-php-core ověřuje tenant a roli u každého požadavku. Účty se automaticky nevytvářejí.
-
-`GET/POST /api/admin/local-pipeline/` vede přes CoreModule klienta na oddělený
-php-core `GET/POST /transport-admin/local-pipeline`. POST přijímá pouze
-`{"action":"sync_build"}` nebo `{"action":"deploy"}`, vyžaduje stejný origin
-a má společný limit těla 16 KiB. Odpovědi jsou `private, no-store`; frontend
-publikuje jen stav úlohy a dostupnost runneru.
-
-Na PHP serveru nastavte vedle běžného interního klíče a mapování tenantu:
-
-```dotenv
-TRANSPORT_LOCAL_PIPELINE_ENABLED=1
-TRANSPORT_JAVA_TENANT=tram
-TRANSPORT_LOCAL_PIPELINE_URL=https://tram-api.collegas.workers.dev
-TRANSPORT_LOCAL_PIPELINE_TOKEN=<Cloudflare ADMIN_TOKEN, pouze na PHP serveru>
-```
-
-Oddělená URL umožňuje ponechat lokální vyhledávání na `TRANSPORT_JAVA_URL`.
-Na buildovacím PC musí běžet `java-tram/runner.sh`; viz
-[lokální pipeline](../../java-tram/LOCAL_PIPELINE.md). Nový administrační
-entrypoint vyžaduje také aktualizovaný PHP `api/.htaccess` a nasazení změn
-php-core. Cloudflare Admin token nepatří do Astro prostředí ani prohlížeče.
+PHP konfigurace: `TRANSPORT_ONLINE_CONTROL_ENABLED=1`,
+`TRANSPORT_ONLINE_CONTROL_URL=https://194.163.136.34`,
+`TRANSPORT_ONLINE_CONTROL_TOKEN` (privátní Java admin token), `TRANSPORT_JAVA_TENANT=tram`.
 
 ## React a klientský stav
 
@@ -375,12 +340,14 @@ adaptér.
 V Netlify Project configuration → Environment variables nastavte:
 
 - `PUBLIC_SITE_URL`: skutečný HTTPS origin produkčního webu, dostupný při buildu.
-- `PHP_CORE_URL`: veřejně nebo z Netlify dostupný HTTPS kořen php-core API včetně
+- `JAVA_TRAM_URL`: `https://194.163.136.34`, přímo Java API na Contabu.
+- `JAVA_TRAM_SERVICE_TOKEN`: serverový servisní token; žádný `PUBLIC_` prefix.
+- `PHP_CORE_URL`: pro přihlášení a přepínač plánovačů; veřejně nebo z Netlify dostupný HTTPS kořen php-core API včetně
   `/api`; lokální `127.0.0.1` není adresa backendu pro Netlify.
 - `PHP_CORE_API_KEY`: interní klíč, pouze serverová proměnná.
 - `PHP_CORE_TENANT_HOST`: pevný host existujícího TRAM tenantu v php-core.
 
-Proměnné `PHP_CORE_*` musí být dostupné SSR funkci (scope Functions), nejen buildu.
+Proměnné `JAVA_TRAM_*` i `PHP_CORE_*` musí být dostupné SSR funkci (scope Functions), nejen buildu.
 Změna proměnných vyžaduje nové nasazení. Deploy preview s přihlášením či jinými
 mutacemi potřebuje vlastní odpovídající `PUBLIC_SITE_URL` při buildu.
 
@@ -390,7 +357,7 @@ Lokální kontrolu Netlify výstupu spustíte `npm run build:netlify`. Běžné
 automaticky vybírá také jeho proměnná `NETLIFY=true`, takže funguje i samotné
 `npm run build` v jeho build prostředí. Lokální vývoj zůstává `npm run dev`.
 
-Produkce propojena 4. 10. 2026: `https://astro-tram.netlify.app` →
+Historické zapojení před migrací na Contabo (4. 10. 2026): `https://astro-tram.netlify.app` →
 `https://www.charter-agency.com/api` → Cloudflare Java TRAM. Netlify deployment
 `6ac230430dc0baa2ff73a357` vznikl z produkční větve a převzal nastavené
 produkční proměnné. Existující správný `PHP_CORE_API_KEY` zůstal beze změny;

@@ -1,4 +1,4 @@
 export {
   onlinePlannersHandler as GET,
   onlinePlannersHandler as POST,
-} from "../../../modules/SiteModule/server/pipeline";
+} from "../../../modules/SiteModule/server/onlinePlanners";

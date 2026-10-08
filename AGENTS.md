@@ -3,8 +3,8 @@
 - Měňte pouze tento projekt, pokud není výslovně zadáno jinak.
 - Značka a zapnutí modulů patří do `src/config/site.ts`, reklamní jednotky do `src/config/ads.ts`, trasy do `src/config/routes.ts`.
 - Texty UI udržujte v `src/modules/<Name>Module/locales/{cs,en,de}.json`; všechny jazyky používají stejné komponenty a helper `url()`.
-- Backendové kontrakty nejprve ověřte v `../../php/php-core/API.md` a skutečné implementaci. Nepředpokládejte dostupnost nového endpointu ani WebSocket serveru.
-- Veškeré HTTP požadavky na php-core vedou přes `src/modules/CoreModule/server/php-core.ts` a modulový serverový provider. Žádný otevřený proxy endpoint.
+- Dopravní kontrakty ověřte v `../../java-tram/OTP/API.md` a skutečné Java implementaci; přihlášení/administraci v `../../php/php-core/API.md`. Nepředpokládejte dostupnost nového endpointu ani WebSocket serveru.
+- Dopravní komunikace vede přímo na Java API přes `CoreModule/server/java-tram.ts`; nesmí se vracet k PHP gateway. Přihlášení a přepínač online plánovačů používají php-core přes `src/modules/CoreModule/server/php-core.ts` a modulový serverový provider. Žádný otevřený proxy endpoint.
 - `PHP_CORE_API_KEY`, pevný tenant a uživatelský Bearer patří pouze do serverové vrstvy. Nikdy nepřebírejte klientské `X-Forwarded-Host`, API klíč či role jako důvěryhodné údaje.
 - Provider mapuje odpověď backendu; veřejná API vrstva vrací jen záměrně vybraná pole. Autorizaci nad daty vždy ověřuje php-core.
 - Nové mutace musí projít kontrolou originu, validací vstupu a limity velikosti. Soukromé odpovědi nejsou cacheovatelné.

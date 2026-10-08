@@ -8,7 +8,7 @@ import { createHash } from "node:crypto";
 import { staticCatalogCache } from "./staticCatalogCache";
 import { collectJourneyPage } from "./journeyPage";
 import { journeyIdentity } from "../../TransportCoreModule/providers/journeyIdentity";
-import type { CoreClient } from "../../CoreModule/server/php-core";
+import type { BackendClient } from "../../CoreModule/server/backend-client";
 import { HttpError } from "../../CoreModule/server/errors";
 import { projectAttributions } from "../../TransportCoreModule/providers/attributions";
 import { projectEstimatedProgress } from "../../TransportCoreModule/providers/estimatedProgress";
@@ -225,7 +225,7 @@ function leg(value: unknown): Leg {
     geometry: geometry(l.geometry),
   };
 }
-export function createTransportProvider(core: CoreClient) {
+export function createTransportProvider(core: BackendClient) {
   return {
     async attributions() {
       const raw = await core.request("/transport/v1/attributions");

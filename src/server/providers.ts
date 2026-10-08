@@ -1,12 +1,15 @@
 import {
+  JAVA_TRAM_URL,
+  JAVA_TRAM_SERVICE_TOKEN,
   PHP_CORE_URL,
   PHP_CORE_API_KEY,
   PHP_CORE_TENANT_HOST,
 } from "astro:env/server";
+import { createJavaTramClient } from "../modules/CoreModule/server/java-tram";
 import { createCoreClient } from "../modules/CoreModule/server/php-core";
 import { createTransportProvider } from "../modules/TransportModule/server/provider";
 import { createAuthProvider } from "../modules/AuthModule/server/provider";
-import { createPipelineProvider } from "../modules/SiteModule/server/pipelineProvider";
+import { createOnlinePlannerProvider } from "../modules/SiteModule/server/onlinePlannerProvider";
 
 /**
  * Sestaví poskytovatele serverové vrstvy pro jeden požadavek.
@@ -25,8 +28,13 @@ export function createProviders() {
   });
   return {
     auth: createAuthProvider(core),
-    transport: createTransportProvider(core),
-    pipeline: createPipelineProvider(core),
+    transport: createTransportProvider(
+      createJavaTramClient({
+        baseUrl: JAVA_TRAM_URL ?? "",
+        serviceToken: JAVA_TRAM_SERVICE_TOKEN ?? "",
+      }),
+    ),
+    onlinePlanners: createOnlinePlannerProvider(core),
   };
 }
 
