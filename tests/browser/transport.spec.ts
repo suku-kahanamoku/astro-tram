@@ -1744,7 +1744,7 @@ test("terminal stop displays arrival while intermediate stops display departure"
   );
 });
 
-test("last-known GPS initialises the timeline and reopening redeems a new single-use ticket", async ({
+test("last-known GPS initialises the timeline and reopening keeps the existing journey subscription", async ({
   page,
 }) => {
   const issued = new Map<string, string>();
@@ -1814,8 +1814,8 @@ test("last-known GPS initialises the timeline and reopening redeems a new single
   await page.locator("[data-close-trip]").click();
   await expect(dialog).not.toBeVisible();
   await page.locator("[data-summary-trip]").first().click();
-  await expect.poll(() => requests).toBe(2);
-  await expect.poll(() => redeemed.size).toBe(2);
+  await expect.poll(() => requests).toBe(1);
+  await expect.poll(() => redeemed.size).toBe(1);
   await expect(dot).toBeVisible();
   await expect(dot).toHaveAttribute("data-retained", "true");
   expect(details).toBe(loaded);
