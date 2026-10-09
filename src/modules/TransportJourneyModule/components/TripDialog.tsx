@@ -1,9 +1,7 @@
-import DelayBadge from "./DelayBadge";
-import TripObservationStatus from "./TripObservationStatus";
+import TripServiceBadge from "./TripServiceBadge";
 import type { TripObservation } from "../../TransportCoreModule/types";
 import Dialog from "../../UIModule/components/Dialog";
 import Icon from "../../UIModule/components/TransitIcon";
-import TransportBadge from "../../TransportCoreModule/components/TransportBadge";
 import { hasStopDetails } from "../providers/render";
 import TripTimeline from "./TripTimeline";
 import TripLegend from "./TripLegend";
@@ -44,13 +42,13 @@ export default function TripDialog({
     >
       <div className="map-header trip-sticky-header">
         <div>
-          <span className="eyebrow">TRAM / {t.tripStops}</span>
           <h2 id="trip-title">
             {leg ? (
               <>
-                <TransportBadge
-                  mode={leg.mode}
-                  line={leg.line}
+                <TripServiceBadge
+                  leg={leg}
+                  trip={trip}
+                  live={live}
                   t={t}
                   className="trip-title-service"
                 />
@@ -64,8 +62,6 @@ export default function TripDialog({
               t.tripStops
             )}
           </h2>
-          {leg && <DelayBadge leg={leg} live={live} t={t} />}
-          {leg && <TripObservationStatus leg={leg} live={live} t={t} />}
         </div>
         <button
           className="icon-button"
@@ -74,7 +70,7 @@ export default function TripDialog({
           aria-label={t.close}
           onClick={onClose}
         >
-          <Icon name="close" />
+          <Icon name="close" size={25} />
         </button>
       </div>
       <div className="trip-body" aria-busy={!trip && !error}>

@@ -10,7 +10,9 @@ export function searchDraft(params: URLSearchParams): SearchState {
   const state = readState(params);
   return {
     ...state,
-    from: state.from ?? { type: "current_location", label: "" },
+    from:
+      state.from ??
+      (state.fromText ? undefined : { type: "current_location", label: "" }),
     ...(!state.at ? ({ dayMode: "today", timeMode: "now" } as const) : {}),
     ...(!state.country ? ({ areaMode: "gps" } as const) : {}),
   };

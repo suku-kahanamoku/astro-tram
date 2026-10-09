@@ -61,6 +61,12 @@ export function readState(params: URLSearchParams): SearchState {
       : {}),
     from: read("from"),
     to: read("to"),
+    ...(!read("from") && params.get("fromText")?.trim()
+      ? { fromText: params.get("fromText")!.trim().slice(0, 160) }
+      : {}),
+    ...(!read("to") && params.get("toText")?.trim()
+      ? { toText: params.get("toText")!.trim().slice(0, 160) }
+      : {}),
     at: validInstant(at) ? at : undefined,
     arrive: params.get("arrive") === "1",
     direct: params.get("direct") === "1",
@@ -77,7 +83,11 @@ export function writeState(state: SearchState): URLSearchParams {
   const p = new URLSearchParams();
   for (const side of ["from", "to"] as const) {
     const place = state[side];
-    if (!place) continue;
+    if (!place) {
+      const text = state[`${side}Text`]?.trim().slice(0, 160);
+      if (text) p.set(`${side}Text`, text);
+      continue;
+    }
     p.set(`${side}Kind`, place.type);
     if (
       place.type !== "current_location" &&

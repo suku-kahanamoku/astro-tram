@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getAutocompleteFix } from "../../TransportCoreModule/providers/geolocation";
 import { transportClient } from "../../TransportCoreModule/providers/client";
 import type { CityOption } from "../../TransportCoreModule/types";
 
@@ -13,6 +14,8 @@ type CatalogRequest = {
   country: string;
   abort: AbortController;
   status: "loading" | "ready" | "error";
+  rankingStarted: boolean;
+  ranked: boolean;
 };
 
 /** Preload static metadata once per country/form, sharing in-flight requests with focus. */
@@ -37,12 +40,19 @@ export function useCityCatalog(country: string) {
       country,
       abort: new AbortController(),
       status: "loading",
+      rankingStarted: false,
+      ranked: false,
     };
     request.current = current;
     setState({ country, options: emptyOptions, loading: true, error: false });
     void transportClient.cities(country, current.abort.signal).then(
       (options) => {
-        if (request.current !== current || current.abort.signal.aborted) return;
+        if (
+          request.current !== current ||
+          current.abort.signal.aborted ||
+          current.ranked
+        )
+          return;
         current.status = "ready";
         setState({
           country,
@@ -52,7 +62,12 @@ export function useCityCatalog(country: string) {
         });
       },
       () => {
-        if (request.current !== current || current.abort.signal.aborted) return;
+        if (
+          request.current !== current ||
+          current.abort.signal.aborted ||
+          current.ranked
+        )
+          return;
         current.status = "error";
         setState({
           country,
@@ -63,6 +78,36 @@ export function useCityCatalog(country: string) {
       },
     );
   }, [country]);
+  const ensureRanked = useCallback(() => {
+    ensureLoaded();
+    const current = request.current;
+    if (!current || current.country !== country || current.rankingStarted)
+      return;
+    current.rankingStarted = true;
+    // Request optional GPS only when the city picker is used, once per catalogue.
+    void getAutocompleteFix().then(async (fix) => {
+      if (!fix || request.current !== current || current.abort.signal.aborted)
+        return;
+      try {
+        const options = await transportClient.cities(
+          country,
+          current.abort.signal,
+          fix,
+        );
+        if (request.current !== current || current.abort.signal.aborted) return;
+        current.ranked = true;
+        current.status = "ready";
+        setState({
+          country,
+          options: options.filter((city) => city.state === country),
+          loading: false,
+          error: false,
+        });
+      } catch {
+        /* Keep the working static catalogue when optional GPS ranking fails. */
+      }
+    });
+  }, [country, ensureLoaded]);
   useEffect(() => {
     ensureLoaded();
     return () => request.current?.abort.abort();
@@ -73,5 +118,6 @@ export function useCityCatalog(country: string) {
     loading: state.country !== country || state.loading,
     error: state.country === country && state.error,
     ensureLoaded,
+    ensureRanked,
   };
 }

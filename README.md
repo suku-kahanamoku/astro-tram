@@ -246,8 +246,11 @@ Datum a čas formuláře i výsledků se zobrazují v časovém pásmu zařízen
 
 Odkud i Kam jsou povinné; Odkud má ve výchozím editoru aktuální polohu. GPS
 se pro samotné plánování změří znovu, bez ukládání do URL. Nevybrané napsané
-jméno (`grohova`) se při odeslání vyřeší první položkou téhož seřazeného katalogu
-jako našeptávač. Prázdný vstup zachytí HTML `required`, neexistující shoda zobrazí
+jméno (`grohova`) se předá v `fromText` / `toText` do URL výsledků. Odeslání ihned
+přejde na lokalizovanou stránku spojení s kotvou `#results`; scroll na výsledkovou
+část nečeká na GPS, katalog ani plánovač. Až tato stránka v prohlížeči dohledá
+první položku téhož katalogu jako našeptávač, nahradí text v URL identitou místa
+a odešle dotaz na spojení. Prázdný vstup zachytí HTML `required`, neexistující shoda zobrazí
 chybu; síťová chyba nevytváří smyšlenou zastávku. Enter bez aktivní položky
 nabídky odešle formulář; šipky a Enter dál umožňují explicitní výběr.
 
@@ -722,3 +725,11 @@ jízdní řád změní nebo se Places index rozchází s grafem, Java vrací
 vyzvou k novému výběru zastávek. Staré ID se nesmí automaticky použít
 pro jinou zastávku se stejným externím číslem. Detail cache se klíčuje
 celým ID, takže se data různých verzí nemíchají.
+
+Seznam měst zachovává společné pořadí z Java Places: centrum aktuálního regionu
+(GPS), ostatní regionální centra, ostatní města abecedně. Katalog načítá ihned
+bez GPS a při prvním otevření jej jednou upřesní privátním `POST /api/transport/cities/` s kompletní
+čerstvou polohou v těle `q`; focus nevyvolává opakované čtení. GPS ani její
+pořadí se nesdílí ve statické serverové cache. Zamítnutá GPS neblokuje formulář.
+Změna vyžaduje novou Java Places službu a index se správními centry; OTP grafy
+se kvůli pořadí měst nepřestavují.

@@ -84,7 +84,7 @@ export function useTransportNavigation({
       lon,
       label: `${t.mapPoint} (${lat.toFixed(4)}, ${lon.toFixed(4)})`,
     };
-    navigate(`${url.pathname}?${writeState(state)}`, true);
+    navigate(`${url.pathname}?${writeState(state)}${url.hash}`, true);
   };
 
   return { resultsHeading, root, closeMap, closeTrip, selectPoint };

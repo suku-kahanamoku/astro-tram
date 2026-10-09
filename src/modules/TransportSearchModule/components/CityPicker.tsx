@@ -24,7 +24,7 @@ export default function CityPicker({
   const [text, setText] = useState(value || t.allTimetables),
     [open, setOpen] = useState(false);
   const input = useRef<HTMLInputElement>(null);
-  const { options, loading, error, ensureLoaded } = useCityCatalog(country);
+  const { options, loading, error, ensureRanked } = useCityCatalog(country);
   useEffect(() => {
     setText(value || t.allTimetables);
     setOpen(false);
@@ -32,13 +32,11 @@ export default function CityPicker({
   const load = () => {
     setQuery("");
     setOpen(true);
-    ensureLoaded();
+    ensureRanked();
   };
   const index = useMemo(() => {
-    const collator = new Intl.Collator("cs");
-    return options
-      .map((city) => ({ city, searchName: normalize(city.name) }))
-      .sort((a, b) => collator.compare(a.city.name, b.city.name));
+    // The shared Java policy already ranks the complete country catalogue.
+    return options.map((city) => ({ city, searchName: normalize(city.name) }));
   }, [options]);
   const choices = useMemo(() => {
     const term = normalize(query);

@@ -9,7 +9,38 @@ import {
   readState,
   writeState,
   localFields,
+  searchBody,
 } from "../src/modules/TransportCoreModule/providers/state";
+
+test("unselected names survive navigation and never become backend place identities", () => {
+  const draft = searchDraft(
+    new URLSearchParams(
+      "fromText=Brno&toText=Letovice&country=CZ&at=2026-10-09T08:00:00Z",
+    ),
+  );
+  assert.equal(draft.from, undefined);
+  assert.equal(draft.fromText, "Brno");
+  assert.equal(draft.toText, "Letovice");
+  const replay = readState(writeState(draft));
+  assert.equal(replay.fromText, "Brno");
+  assert.equal(replay.toText, "Letovice");
+  assert.throws(() => searchBody(replay), /invalid/);
+  const resolved = {
+    ...draft,
+    from: { type: "stop" as const, id: "resolved", label: "Brno" },
+  };
+  assert.equal(writeState(resolved).has("fromText"), false);
+  assert.equal(
+    readState(new URLSearchParams("from=resolved&fromText=ignored")).fromText,
+    undefined,
+  );
+  assert.equal(
+    readState(
+      new URLSearchParams({ fromText: " ".repeat(5) + "a".repeat(180) }),
+    ).fromText?.length,
+    160,
+  );
+});
 
 test("editor defaults to current location and automatic clock without changing a replayed search", () => {
   const state = searchDraft(new URLSearchParams());

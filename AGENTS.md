@@ -27,3 +27,19 @@ The project code graph is at `graphify-out/graph.json`. It is a navigation aid; 
 - If code may have changed since the graph was built, run `graphify update .` before relying on graph results. After every completed code change, including additions, deletions, and renames, run `graphify update .` before another graph query or the final response. Do not leave changed code with a stale graph.
 - Generated files in `graphify-out/` may change after updates; this is expected. If `graphify-out/wiki/index.md` exists, use it for broad navigation. Read `graphify-out/GRAPH_REPORT.md` for broad architecture review or when targeted queries are insufficient.
 - If the task concerns a wrong or stale graph, diagnose the graph against source files. If the user explicitly asks not to use Graphify, follow that request.
+
+## Nabídka měst pro všechny země
+
+- Pořadí měst určuje společná Java Places politika: regionální centrum kraje
+  aktuální GPS, ostatní regionální centra abecedně, ostatní města abecedně.
+  React zachovává pořadí API i při textovém filtrování; nevytvářej vlastní seznam
+  center ani nepřerovnávej nabídku podle české abecedy pro každý stát.
+- Výslovná země je pevný filtr. „Všechny jízdní řády“ zůstává první ovládací
+  možností. Bez GPS se řadí všechna doložená centra před ostatními městy.
+- GPS pro cities se předává pouze privátním POST tělem, nikdy v URL nebo cache.
+  Statický katalog načti ihned, při prvním otevření jej jednou upřesni dostupnou GPS; další focus
+  nesmí opakovat žádný z těchto požadavků. Nedostupná GPS neblokuje katalog.
+- Nový stát/zdroj vyžaduje odpovídající správní metadata v Java importu
+  (`administrative_levels`, `city_ranking.locale`, `regional_capital`,
+  `capital_regions`) a nový Places index. Přidání státu nesmí vyžadovat
+  další větvení nebo seznam měst v Reactu. Nezaměňuj hlavní a krajské město.

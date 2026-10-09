@@ -1190,7 +1190,7 @@ test("live vehicle tracking shares the selected journey, shows delay and removes
   ).toHaveCount(0);
   expect(
     await badge.evaluate((el) =>
-      el.previousElementSibling?.matches("[data-trip-open]"),
+      el.parentElement?.previousElementSibling?.matches("[data-trip-open]"),
     ),
   ).toBe(true);
   pushDelay(0);

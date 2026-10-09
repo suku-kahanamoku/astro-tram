@@ -120,6 +120,13 @@ function placeMetadata(p: Record<string, unknown>): PlaceMetadata {
       ? { state: p.state }
       : {}),
     ...(typeof p.city === "string" ? { city: text(p.city, 120) || null } : {}),
+    ...(typeof p.regional_capital === "boolean"
+      ? { regionalCapital: p.regional_capital }
+      : {}),
+    ...(Array.isArray(p.capital_regions) &&
+    p.capital_regions.every((v) => typeof v === "string")
+      ? { capitalRegions: p.capital_regions.map((v) => text(v, 250)) }
+      : {}),
     ...(typeof p.region === "string"
       ? { region: text(p.region, 250) || null }
       : {}),
@@ -329,42 +336,54 @@ export function createTransportProvider(core: BackendClient) {
         ...(tripId ? { tripId } : {}),
       };
     },
-    async cities(country: string) {
-      return staticCatalogCache.get(
-        `${core.cacheScope}:cities:${country}`,
-        async () => {
-          const raw = object(
-            await core.request("/transport/v1/cities/search", {
-              method: "POST",
-              body: {
-                q: { state: country },
-                limit: 10000,
-                page: 1,
-                sort: [{ name: 1 }],
+    async cities(
+      country: string,
+      location?: { lat: number; lon: number; observedAt: string },
+    ) {
+      const load = async () => {
+        const raw = object(
+          await core.request("/transport/v1/cities/search", {
+            method: "POST",
+            body: {
+              q: {
+                state: country,
+                ...(location
+                  ? {
+                      latitude: location.lat,
+                      longitude: location.lon,
+                      observed_at: location.observedAt,
+                    }
+                  : {}),
               },
-            }),
-          );
-          if (
-            !Array.isArray(raw.data) ||
-            raw.data.length > 10000 ||
-            raw.has_more === true
-          )
-            throw new HttpError(502, "invalid_backend_response");
-          const data = raw.data.map((p) => {
-            const row = object(p);
-            return {
-              ...placeMetadata(row),
-              id: text(row.id),
-              name: text(row.name, 120),
-              state: text(row.state, 2),
-              sourceMode: text(row.source_mode),
-            };
-          });
-          if (data.some((p) => !p.id || !p.name || p.state !== country))
-            throw new HttpError(502, "invalid_backend_response");
-          return { data, partial: raw.partial === true };
-        },
-      );
+              limit: 10000,
+              page: 1,
+            },
+          }),
+        );
+        if (
+          !Array.isArray(raw.data) ||
+          raw.data.length > 10000 ||
+          raw.has_more === true
+        )
+          throw new HttpError(502, "invalid_backend_response");
+        const data = raw.data.map((p) => {
+          const row = object(p);
+          return {
+            ...placeMetadata(row),
+            id: text(row.id),
+            name: text(row.name, 120),
+            state: text(row.state, 2),
+            sourceMode: text(row.source_mode),
+          };
+        });
+        if (data.some((p) => !p.id || !p.name || p.state !== country))
+          throw new HttpError(502, "invalid_backend_response");
+        return { data, partial: raw.partial === true };
+      };
+      // A private GPS request never enters the shared static catalogue cache.
+      return location
+        ? load()
+        : staticCatalogCache.get(`${core.cacheScope}:cities:${country}`, load);
     },
     async worldPlaces(
       query: string | null,

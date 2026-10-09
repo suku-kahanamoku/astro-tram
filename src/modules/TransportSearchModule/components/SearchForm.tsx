@@ -1,5 +1,5 @@
 import { useHydrated } from "../../UIModule/hooks/useHydrated";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useUrlNavigation } from "../../UIModule/hooks/useUrlNavigation";
 import Icon from "../../UIModule/components/TransitIcon";
 import DateTimeField from "../../UIModule/components/DateTimeField";
@@ -8,7 +8,7 @@ import {
   searchDraft,
   submissionInstant,
 } from "../providers/searchDefaults";
-import { resolveTypedPlace } from "../providers/placeSuggestions";
+import { dismissMobileKeyboard } from "../../UIModule/providers/mobileKeyboard";
 import PlaceField from "./PlaceField";
 import CityPicker from "./CityPicker";
 import CountryTabs from "./CountryTabs";
@@ -35,16 +35,6 @@ export default function SearchForm({
   const [fields, setFields] = useState({ day: "", time: "" });
   const [error, setError] = useState("");
   const [typed, setTyped] = useState({ from: "", to: "" });
-  const [submitting, setSubmitting] = useState(false);
-  const pending = useRef<AbortController | null>(null);
-  const missingSide = useRef<"from" | "to" | null>(null);
-  useEffect(() => () => pending.current?.abort(), []);
-  useEffect(() => {
-    if (!submitting && missingSide.current) {
-      document.getElementById(`place-${missingSide.current}`)?.focus();
-      missingSide.current = null;
-    }
-  }, [submitting]);
   const ready = useHydrated();
   const coverage = useCountryCoverage();
   const country = coverage.countries.find((c) => c.state === draft.country);
@@ -59,16 +49,16 @@ export default function SearchForm({
     .map((c) => c.state);
   const persistentSearch = writeState(readState(url.searchParams)).toString();
   useEffect(() => {
-    pending.current?.abort();
     const state = searchDraft(url.searchParams);
     setDraft(state);
     setFields(editorFields(state));
-    setTyped({ from: state.from?.label ?? "", to: state.to?.label ?? "" });
-    setSubmitting(false);
+    setTyped({
+      from: state.from?.label ?? state.fromText ?? "",
+      to: state.to?.label ?? state.toText ?? "",
+    });
     setError("");
   }, [persistentSearch]);
   const changeScope = (patch: Partial<SearchState>) => {
-    pending.current?.abort();
     setTyped({ from: "", to: "" });
     setDraft((s) => ({
       ...s,
@@ -79,6 +69,8 @@ export default function SearchForm({
         : {}),
       from: { type: "current_location", label: "" },
       to: undefined,
+      fromText: undefined,
+      toText: undefined,
     }));
   };
   const scope = `${draft.country}:${draft.city ?? ""}`;
@@ -113,53 +105,32 @@ export default function SearchForm({
           action={searchUrl}
           method="get"
           autoComplete="off"
-          aria-busy={submitting}
-          onSubmit={async (e) => {
+          onSubmit={(e) => {
             e.preventDefault();
-            if (!searchAvailable || submitting) return;
-            pending.current?.abort();
-            const controller = new AbortController();
-            pending.current = controller;
-            setSubmitting(true);
+            if (!searchAvailable) return;
             setError("");
             try {
               const state = { ...draft, page: undefined };
-              // Resolve both fields through the same ranked catalogue used by the dropdown.
               for (const side of ["from", "to"] as const) {
-                if (state[side]) continue;
-                const resolved = await resolveTypedPlace(
-                  typed[side],
-                  state,
-                  controller.signal,
-                  countries,
-                );
-                controller.signal.throwIfAborted();
-                if (resolved) {
-                  state[side] = resolved.place;
+                state[`${side}Text`] = state[side]
+                  ? undefined
+                  : typed[side].trim();
+                if (!state[side] && !state[`${side}Text`]) {
+                  setError(t.choose);
+                  document.getElementById(`place-${side}`)?.focus();
+                  return;
                 }
               }
-              if (!state.from || !state.to) {
-                setError(t.choose);
-                missingSide.current = !state.from ? "from" : "to";
-                return;
-              }
-              // Timestamp comes after resolving text, immediately before navigation/submission.
               state.at = submissionInstant(state, fields);
-              location.assign(`${searchUrl}?${writeState(state)}`);
-            } catch (failure) {
-              if (!controller.signal.aborted)
-                setError(
-                  failure instanceof Error && failure.message === "invalid"
-                    ? t.invalid
-                    : t.placesError,
-                );
-            } finally {
-              if (pending.current === controller) setSubmitting(false);
+              dismissMobileKeyboard();
+              location.assign(`${searchUrl}?${writeState(state)}#results`);
+            } catch {
+              setError(t.invalid);
             }
           }}
         >
           <fieldset
-            disabled={!ready || !searchAvailable || submitting}
+            disabled={!ready || !searchAvailable}
             style={{ display: "contents" }}
           >
             <input type="hidden" id="travel-country" value={draft.country} />
@@ -181,7 +152,6 @@ export default function SearchForm({
                   countries={countries}
                   t={t}
                   onChange={(place, text) => {
-                    pending.current?.abort();
                     setTyped((s) => ({
                       ...s,
                       [side]: text ?? place?.label ?? "",
@@ -189,6 +159,7 @@ export default function SearchForm({
                     setDraft((s) => ({
                       ...s,
                       [side]: place,
+                      [`${side}Text`]: undefined,
                     }));
                   }}
                   onError={setError}
@@ -201,7 +172,7 @@ export default function SearchForm({
                         at: draft.at ?? submissionInstant(draft, fields),
                       });
                       params.set("map", side);
-                      navigate(url.pathname + "?" + params);
+                      navigate(url.pathname + "?" + params + url.hash);
                     } catch {
                       setError(t.invalid);
                     }
@@ -214,7 +185,13 @@ export default function SearchForm({
                 data-swap
                 aria-label={t.swap}
                 onClick={() => {
-                  setDraft((s) => ({ ...s, from: s.to, to: s.from }));
+                  setDraft((s) => ({
+                    ...s,
+                    from: s.to,
+                    to: s.from,
+                    fromText: s.toText,
+                    toText: s.fromText,
+                  }));
                   setTyped((s) => ({ from: s.to, to: s.from }));
                 }}
               >

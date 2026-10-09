@@ -240,25 +240,55 @@ export const stop: APIRoute = async ({ url, locals }) => {
 };
 
 /** Complete provider city catalogue, scoped to the selected country. */
-export const cities: APIRoute = async ({ url, locals }) => {
+export const cities: APIRoute = async ({ url, locals, request }) => {
   try {
     if (url.search.length > 300) fail();
     let q: Record<string, unknown>;
     try {
-      q = plain(JSON.parse(url.searchParams.get("q") ?? "{}"));
+      q =
+        request.method === "POST"
+          ? plain((await readFields(request)).q)
+          : plain(JSON.parse(url.searchParams.get("q") ?? "{}"));
     } catch {
       return fail();
     }
     if (
-      Object.keys(q).some((k) => k !== "state") ||
+      Object.keys(q).some(
+        (k) => !["state", "latitude", "longitude", "observed_at"].includes(k),
+      ) ||
       typeof q.state !== "string" ||
       !/^[A-Z]{2}$/.test(q.state)
     )
       fail();
-    return Response.json({
-      success: true,
-      ...(await locals.providers.transport.cities(q.state as string)),
-    });
+    let location: { lat: number; lon: number; observedAt: string } | undefined;
+    if ("latitude" in q || "longitude" in q || "observed_at" in q) {
+      if (
+        request.method !== "POST" ||
+        typeof q.latitude !== "number" ||
+        typeof q.longitude !== "number" ||
+        !validCoordinates(q.latitude, q.longitude) ||
+        !validInstant(q.observed_at)
+      )
+        fail();
+      const age = Date.now() - Date.parse(q.observed_at);
+      if (age > 30000 || age < -5000)
+        throw new HttpError(422, "stale_location");
+      location = {
+        lat: q.latitude,
+        lon: q.longitude,
+        observedAt: q.observed_at,
+      };
+    }
+    return Response.json(
+      {
+        success: true,
+        ...(await locals.providers.transport.cities(
+          q.state as string,
+          location,
+        )),
+      },
+      { headers: { "Cache-Control": "no-store" } },
+    );
   } catch (error) {
     return errorResponse(error);
   }

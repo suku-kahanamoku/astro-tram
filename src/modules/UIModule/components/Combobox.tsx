@@ -6,6 +6,11 @@ import {
   type ReactNode,
   type Ref,
 } from "react";
+import {
+  dismissMobileKeyboard,
+  isKeyboardScrollDismissal,
+  usesTouchKeyboard,
+} from "../providers/mobileKeyboard";
 export interface ComboOption {
   key: string;
   label: string;
@@ -41,6 +46,7 @@ export default function Combobox({
   hint,
   hintAttributes,
   onKeyDown,
+  onBlur,
   ...props
 }: Props) {
   const [active, setActive] = useState(-1);
@@ -50,11 +56,27 @@ export default function Combobox({
     setActive(-1);
   }, [value, open, options]);
   const list = useRef<HTMLUListElement>(null);
+  const choose = (index: number) => {
+    onChoose(index);
+    dismissMobileKeyboard();
+  };
+  useEffect(() => {
+    if (!open) return;
+    const outside = (event: PointerEvent) => {
+      if (
+        event.target instanceof Node &&
+        !list.current?.parentElement?.contains(event.target)
+      )
+        onDismiss();
+    };
+    document.addEventListener("pointerdown", outside);
+    return () => document.removeEventListener("pointerdown", outside);
+  }, [open, onDismiss]);
   useEffect(() => {
     if (!open) setActive(-1);
     if (open && active >= 0) {
       list.current?.children[active]?.scrollIntoView({ block: "nearest" });
-    } else if (open && list.current) {
+    } else if (open && list.current && !usesTouchKeyboard()) {
       const bounds = list.current.getBoundingClientRect();
       if (bounds.bottom > window.innerHeight || bounds.top < 0)
         list.current.scrollIntoView({ block: "nearest" });
@@ -76,6 +98,10 @@ export default function Combobox({
               ? `${listId}-${active}`
               : undefined
           }
+          onBlur={(event) => {
+            // Keep a touch-scrolled list available after hiding the keyboard.
+            if (!isKeyboardScrollDismissal()) onBlur?.(event);
+          }}
           onChange={(e) => {
             setActive(-1);
             onText(e.target.value);
@@ -99,7 +125,7 @@ export default function Combobox({
             }
             if (e.key === "Enter" && active >= 0 && active < options.length) {
               e.preventDefault();
-              onChoose(active);
+              choose(active);
             }
           }}
         />
@@ -133,7 +159,7 @@ export default function Combobox({
               aria-posinset={i + 1}
               onClick={() => {
                 setActive(-1);
-                onChoose(i);
+                choose(i);
               }}
             >
               {option.icon && <span aria-hidden="true">{option.icon}</span>}

@@ -28,7 +28,7 @@ for (const scenario of ["fast", "night"]) {
     const first = await cards.evaluateAll((rows) =>
       rows.map((row) => row.getAttribute("data-journey")),
     );
-    await page.locator("[data-later]").click();
+    await page.locator('[data-pagination-position="top"] [data-later]').click();
     await expect(cards).toHaveCount(10);
     await expect(page).toHaveURL(/page=later/);
     const second = await cards.evaluateAll((rows) =>
@@ -42,7 +42,9 @@ for (const scenario of ["fast", "night"]) {
         rows.map((row) => row.getAttribute("data-journey")),
       ),
     ).toEqual(second);
-    await page.locator("[data-earlier]").click();
+    await page
+      .locator('[data-pagination-position="top"] [data-earlier]')
+      .click();
     await expect(cards).toHaveCount(10);
     expect(
       await cards.evaluateAll((rows) =>

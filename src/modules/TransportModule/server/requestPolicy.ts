@@ -1,6 +1,7 @@
 /** Veřejné čtecí POST routy: žádná změna účtu ani vytvoření tracking ticketu. */
 const publicReadPaths = new Set([
   "/api/transport/places/",
+  "/api/transport/cities/",
   "/api/transport/search/",
 ]);
 

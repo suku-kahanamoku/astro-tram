@@ -9,6 +9,7 @@ import type { useJourneySearch } from "../../TransportSearchModule/hooks/useJour
 import type { useTrip } from "../hooks/useTrip";
 import type { Locale } from "../../LangModule/providers/locale";
 import { adjacentJourneyPage } from "../../TransportCoreModule/providers/journeyPaging";
+import Icon from "../../UIModule/components/TransitIcon";
 
 type SearchState = ReturnType<typeof useJourneySearch>;
 type TripState = ReturnType<typeof useTrip>;
@@ -16,6 +17,7 @@ type TripState = ReturnType<typeof useTrip>;
 function searchError(code: string, t: Dictionary) {
   if (code === "stale_resource") return [t.staleResource, t.staleResourceHelp];
   if (code === "search_prompt") return [t.searchPrompt, ""];
+  if (code === "places_unresolved") return [t.choose, t.placesError];
   if (["unsupported_coverage", "unsupported_capability"].includes(code))
     return [t.unsupported, t.unsupportedHelp];
   if (code === "nearby_stop_not_found")
@@ -48,13 +50,36 @@ export default function TransportResults({
   const [share, setShare] = useState("");
   const error = searchError(search.error, t);
   const pageLink = (page: "earlier" | "later") =>
-    `${searchUrl}?${writeState(adjacentJourneyPage(search.state, search.data!.journeys, page))}`;
+    `${searchUrl}?${writeState(adjacentJourneyPage(search.state, search.data!.journeys, page))}#results`;
+  const pagination =
+    !search.loading && !search.error && !!search.data?.journeys.length ? (
+      <nav
+        className="results-pagination"
+        data-pagination
+        aria-label={t.results}
+      >
+        <a
+          className="button button-outline"
+          data-earlier
+          href={pageLink("earlier")}
+        >
+          ← {t.earlier}
+        </a>
+        <a
+          className="button button-outline"
+          data-later
+          href={pageLink("later")}
+        >
+          {t.later} →
+        </a>
+      </nav>
+    ) : null;
 
   if (!results) return null;
 
   return (
     <section className="results-section" aria-label={t.results}>
-      <div ref={resultsHeading} className="results-heading">
+      <div ref={resultsHeading} className="results-heading" id="results">
         <div>
           <span className="eyebrow">TRAM / {t.results}</span>
           <h1>{t.results}</h1>
@@ -64,6 +89,8 @@ export default function TransportResults({
           className="button button-outline"
           type="button"
           data-share
+          aria-label={share || t.share}
+          title={share || t.share}
           onClick={() =>
             void navigator.clipboard
               .writeText(location.href)
@@ -71,9 +98,16 @@ export default function TransportResults({
               .catch(() => setShare(t.copyError))
           }
         >
-          {share || t.share}
+          <Icon name="copy" size={18} />
+          <span className="share-label">{share || t.share}</span>
         </button>
       </div>
+      {share && (
+        <span className="sr-only" role="status">
+          {share}
+        </span>
+      )}
+      {pagination && <div data-pagination-position="top">{pagination}</div>}
       <div data-results-content aria-live="polite">
         {search.loading ? (
           <div className="status-card">
@@ -113,24 +147,7 @@ export default function TransportResults({
           </>
         ) : null}
       </div>
-      {!search.loading && !search.error && !!search.data?.journeys.length && (
-        <div className="results-pagination" data-pagination>
-          <a
-            className="button button-outline"
-            data-earlier
-            href={pageLink("earlier")}
-          >
-            ← {t.earlier}
-          </a>
-          <a
-            className="button button-outline"
-            data-later
-            href={pageLink("later")}
-          >
-            {t.later} →
-          </a>
-        </div>
-      )}
+      {pagination && <div data-pagination-position="bottom">{pagination}</div>}
     </section>
   );
 }

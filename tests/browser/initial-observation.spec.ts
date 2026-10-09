@@ -145,6 +145,10 @@ test("HTTP GPS at the origin is drawn in accordion and dialog before departure, 
     "Vozidlo u zastávky Praha, Muzeum",
   );
   await expect(dot).toHaveAttribute("data-from", "0");
+  await expect(card.locator("[data-position-state]")).toHaveAttribute(
+    "data-position-state",
+    "live",
+  );
   expect(reads).toBe(1);
   await card.locator("[data-summary-trip]").click();
   const dialog = page.locator("[data-trip-dialog]");
@@ -152,6 +156,10 @@ test("HTTP GPS at the origin is drawn in accordion and dialog before departure, 
   await expect(dialog.locator("[data-trip-vehicle-dot]")).toHaveAttribute(
     "data-from",
     "0",
+  );
+  await expect(dialog.locator("[data-position-state]")).toHaveAttribute(
+    "data-position-state",
+    "live",
   );
   expect(reads).toBe(2);
 });

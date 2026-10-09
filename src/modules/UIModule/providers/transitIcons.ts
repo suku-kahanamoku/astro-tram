@@ -1,4 +1,5 @@
 export const transitPaths: Record<string, string> = {
+  copy: "M9 8h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2ZM16 4V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h1",
   tram: "M5 16V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v11a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3ZM5 11h14M8 3v8m8-8v8M8 15h.01M16 15h.01M8 19l-2 3m10-3 2 3M9 1h6",
   arrow: "M4 12h16m-6-6 6 6-6 6",
   external: "M14 3h7v7m0-7L10 14M10 3H3v18h18v-7",

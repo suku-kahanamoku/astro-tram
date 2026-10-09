@@ -1,4 +1,5 @@
 import { useScrollOnContent } from "../../UIModule/hooks/useScrollOnContent";
+import { useDismissKeyboardOnScroll } from "../../UIModule/hooks/useDismissKeyboardOnScroll";
 import { TripResources } from "../../TransportJourneyModule/hooks/TripResources";
 import { TrackingContext } from "../../TransportTrackingModule/hooks/useTrackingSnapshot";
 import {
@@ -24,6 +25,7 @@ function TransportView({
   searchUrl,
 }: Omit<Props, "initialUrl">) {
   const t = dictionary(locale);
+  useDismissKeyboardOnScroll();
   const {
     url,
     navigate,
@@ -61,8 +63,12 @@ function TransportView({
     });
   useScrollOnContent(
     resultsHeading,
-    search.loading ? null : search.data,
+    results && search.state.at
+      ? `${url.pathname}:${search.state.at ?? ""}:${search.state.page ?? ""}`
+      : null,
     modalOpen || mapOpen,
+    "instant",
+    true,
   );
   return (
     <TrackingContext.Provider value={tracking}>

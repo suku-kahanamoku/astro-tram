@@ -17,6 +17,7 @@ import type {
   SearchState,
   Fix,
 } from "../../TransportCoreModule/types";
+import { dismissMobileKeyboard } from "../../UIModule/providers/mobileKeyboard";
 export default function PlaceField({
   side,
   value,
@@ -37,7 +38,9 @@ export default function PlaceField({
   onError: (message: string) => void;
 }) {
   const label =
-    value?.type === "current_location" ? t.current : (value?.label ?? "");
+    value?.type === "current_location"
+      ? t.current
+      : (value?.label ?? state[`${side}Text`] ?? "");
   const [text, setText] = useState(label),
     [open, setOpen] = useState(false),
     [nearby, setNearby] = useState(false),
@@ -91,7 +94,7 @@ export default function PlaceField({
     hide();
     setText(p.name);
     onChange(selectPlace(p), p.name, p);
-    focusInput();
+    if (!dismissMobileKeyboard()) focusInput();
   };
   const locate = async () => {
     hide();
@@ -102,7 +105,7 @@ export default function PlaceField({
       if (version !== revision.current) return;
       setText(t.current);
       onChange({ type: "current_location", label: t.current });
-      focusInput();
+      if (!dismissMobileKeyboard()) focusInput();
       nearest(fix);
     } catch {
       if (version === revision.current) onError(t.locationError);

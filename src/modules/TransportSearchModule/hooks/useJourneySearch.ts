@@ -8,6 +8,7 @@ import {
 import { getFix } from "../../TransportCoreModule/providers/geolocation";
 import { transportClient } from "../../TransportCoreModule/providers/client";
 import { journeySubmission } from "../providers/journeySubmission";
+import { resolveTypedPlace } from "../providers/placeSuggestions";
 import type { SearchResult } from "../../TransportCoreModule/types";
 export function useJourneySearch(enabled: boolean) {
   const { url, navigate } = useUrlNavigation();
@@ -24,13 +25,43 @@ export function useJourneySearch(enabled: boolean) {
   useEffect(() => {
     if (!enabled || completed.current === key) return;
     const abort = new AbortController();
-    if (!state.from || !state.to || !state.at) {
+    if (
+      (!state.from && !state.fromText) ||
+      (!state.to && !state.toText) ||
+      !state.at
+    ) {
       setValue({ key, data: null, error: "search_prompt", loading: false });
       return;
     }
     setValue({ key, data: null, error: "", loading: true });
     void (async () => {
       try {
+        if (state.fromText || state.toText) {
+          const resolved = { ...state };
+          const countries = state.country
+            ? []
+            : (await transportClient.coverage(abort.signal))
+                .filter((country) => country.searchAvailable)
+                .map((country) => country.state);
+          await Promise.all(
+            (["from", "to"] as const).map(async (side) => {
+              if (resolved[side]) return;
+              const choice = await resolveTypedPlace(
+                resolved[`${side}Text`] ?? "",
+                resolved,
+                abort.signal,
+                countries,
+              );
+              if (!choice) throw new Error("places_unresolved");
+              resolved[side] = choice.place;
+              resolved[`${side}Text`] = undefined;
+            }),
+          );
+          abort.signal.throwIfAborted();
+          // Publish resolved selections first; only the next URL-driven effect plans a trip.
+          navigate(`${url.pathname}?${writeState(resolved)}${url.hash}`, true);
+          return;
+        }
         const fix = requiresLocation(state) ? await getFix() : undefined;
         if (abort.signal.aborted) return;
         const data = await transportClient.search(
@@ -39,7 +70,7 @@ export function useJourneySearch(enabled: boolean) {
         );
         if (abort.signal.aborted) return;
         const next = new URL(
-          `${url.pathname}?${writeState(state)}`,
+          `${url.pathname}?${writeState(state)}${url.hash}`,
           url.origin,
         );
         // Unknown area metadata must not erase the user's selection.

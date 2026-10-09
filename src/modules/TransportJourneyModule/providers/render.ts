@@ -59,7 +59,7 @@ export function navHref(current: URL, params: Record<string, string | null>) {
   const u = new URL(current);
   for (const [k, v] of Object.entries(params))
     v === null ? u.searchParams.delete(k) : u.searchParams.set(k, v);
-  return u.pathname + u.search;
+  return u.pathname + u.search + u.hash;
 }
 export function hasStopDetails(trip: Trip) {
   return trip.stops.some(

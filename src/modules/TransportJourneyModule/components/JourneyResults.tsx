@@ -4,7 +4,7 @@ import {
   journeyContext,
 } from "../providers/journeyExpansion";
 import DelayBadge from "./DelayBadge";
-import TripObservationStatus from "./TripObservationStatus";
+import TripServiceBadge from "./TripServiceBadge";
 import JourneyLegPosition from "./JourneyLegPosition";
 import {
   JourneyTime,
@@ -143,10 +143,9 @@ function JourneyDetail({
                 {l.mode === "walk" ? (
                   <WalkMapBadge journey={journey} index={i} url={url} t={t} />
                 ) : l.tripId ? (
-                  <TransportBadge
+                  <TripServiceBadge
                     as={NavLink}
-                    mode={l.mode}
-                    line={l.line}
+                    leg={l}
                     t={t}
                     className="trip-open"
                     data-trip-open={i}
@@ -162,15 +161,13 @@ function JourneyDetail({
                     })}
                   />
                 ) : (
-                  <TransportBadge mode={l.mode} line={l.line} t={t} />
+                  <TripServiceBadge leg={l} t={t} />
                 )}
-                <DelayBadge leg={l} t={t} />
                 {l.operator && (
                   <strong className="leg-operator">{l.operator}</strong>
                 )}
                 {l.cancelled && <span className="fallback">{t.cancelled}</span>}
               </div>
-              <TripObservationStatus leg={l} t={t} />
               <JourneyLegPosition leg={l} t={t} expanded={!!segment}>
                 <JourneyTime
                   journey={journey}
@@ -302,48 +299,52 @@ export default function JourneyResults({
                 <JourneyDate journey={j} locale={locale} />
                 <div className="route-badges summary-badges">
                   {j.legs.map((l, i) => (
-                    <Fragment key={i}>
-                      {i > 0 && <span aria-hidden="true">›</span>}
-                      <span className="summary-leg-badges" data-mode={l.mode}>
-                        {l.mode === "walk" ? (
-                          <WalkMapBadge journey={j} index={i} url={url} t={t} />
-                        ) : l.tripId ? (
-                          <TransportBadge
-                            as="button"
-                            mode={l.mode}
-                            line={l.line}
-                            t={t}
-                            className="trip-open"
-                            data-summary-trip={i}
-                            aria-haspopup="dialog"
-                            aria-label={`${modeLabel(l.mode, t)}: ${t.tripStops} ${l.line || ""}`}
-                            type="button"
-                            onClick={() =>
-                              navigate(
-                                navHref(url, {
-                                  journey: j.key,
-                                  expanded: [...expandedJourneys(url)].join(
-                                    ",",
-                                  ),
-                                  leg: String(i),
-                                  stops:
-                                    selected === j.key
-                                      ? url.searchParams.get("stops")
-                                      : null,
-                                  map: null,
-                                  stopLeg: null,
-                                  stopSide: null,
-                                  tripStop: null,
-                                }),
-                              )
-                            }
-                          />
-                        ) : (
-                          <TransportBadge mode={l.mode} line={l.line} t={t} />
-                        )}
-                        <DelayBadge leg={l} t={t} />
-                      </span>
-                    </Fragment>
+                    <span
+                      className="summary-leg-badges"
+                      data-mode={l.mode}
+                      key={i}
+                    >
+                      {l.mode === "walk" ? (
+                        <WalkMapBadge journey={j} index={i} url={url} t={t} />
+                      ) : l.tripId ? (
+                        <TransportBadge
+                          as="button"
+                          mode={l.mode}
+                          line={l.line}
+                          t={t}
+                          className="trip-open"
+                          data-summary-trip={i}
+                          aria-haspopup="dialog"
+                          aria-label={`${modeLabel(l.mode, t)}: ${t.tripStops} ${l.line || ""}`}
+                          type="button"
+                          onClick={() =>
+                            navigate(
+                              navHref(url, {
+                                journey: j.key,
+                                expanded: [...expandedJourneys(url)].join(","),
+                                leg: String(i),
+                                stops:
+                                  selected === j.key
+                                    ? url.searchParams.get("stops")
+                                    : null,
+                                map: null,
+                                stopLeg: null,
+                                stopSide: null,
+                                tripStop: null,
+                              }),
+                            )
+                          }
+                        />
+                      ) : (
+                        <TransportBadge mode={l.mode} line={l.line} t={t} />
+                      )}
+                      <DelayBadge leg={l} t={t} />
+                      {i < j.legs.length - 1 && (
+                        <span className="summary-leg-arrow" aria-hidden="true">
+                          ›
+                        </span>
+                      )}
+                    </span>
                   ))}
                 </div>
               </div>

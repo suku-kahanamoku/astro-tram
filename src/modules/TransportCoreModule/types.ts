@@ -7,6 +7,8 @@ export type Place = (
 export interface SearchState {
   from?: Place;
   to?: Place;
+  fromText?: string;
+  toText?: string;
   at?: string;
   arrive: boolean;
   direct: boolean;
@@ -31,6 +33,8 @@ export interface PlaceMetadata {
   district?: string | null;
   modes?: string[];
   transportScope?: "urban" | "regional" | "mixed";
+  regionalCapital?: boolean;
+  capitalRegions?: string[];
 }
 export interface Stop extends PlaceMetadata {
   id: string | null;

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { isPublicTransportRead } from "../src/modules/TransportModule/server/requestPolicy";
 
 test("origin exception covers only explicit read-only transport POST routes", () => {
-  for (const path of ["places", "search"])
+  for (const path of ["places", "cities", "search"])
     assert.equal(
       isPublicTransportRead(
         new Request(`https://tram.test/api/transport/${path}/`, {
