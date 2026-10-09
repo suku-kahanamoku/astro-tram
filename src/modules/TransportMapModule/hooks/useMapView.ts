@@ -1,6 +1,7 @@
 import { useMemo, type RefObject } from "react";
-import { useMapView as useGenericMapView } from "../../MapModule/hooks/useMapView";
-import type { MapPlace, MapRoute } from "../../MapModule/types";
+import { useMapView as useGenericMapView } from "../../OSMModule/hooks/useMapView";
+import { osmConfig } from "../../OSMModule/config/map";
+import type { MapPlace, MapRoute } from "../../OSMModule/types";
 import {
   getFix,
   freshPosition,
@@ -12,10 +13,14 @@ import type { Dictionary } from "../../TransportCoreModule/providers/translation
 import { useTransportPalette } from "../../TransportCoreModule/hooks/useTransportPalette";
 import { modePalette } from "../../TransportCoreModule/providers/transportPalette";
 
+const mapConfig = {
+  ...osmConfig,
+  gpsMaxAgeMs: config.gpsMaxAgeMs,
+  gpsTimeoutMs: config.gpsTimeoutMs,
+};
+
 function mapPlace(place?: Place): MapPlace | undefined {
-  return place?.type === "municipality"
-    ? { ...place, type: "coordinates" }
-    : place;
+  return place;
 }
 
 export function useMapView(
@@ -62,7 +67,7 @@ export function useMapView(
     waiting: options.waiting,
     journey,
     country: options.country,
-    config,
+    config: mapConfig,
     texts: {
       locating: t.locating,
       loadingStopMap: t.loadingStopMap,

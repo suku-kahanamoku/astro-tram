@@ -86,7 +86,6 @@
   "copyError": "Der Link konnte nicht kopiert werden.",
   "stopsCount": "Haltestellen",
   "placesNotConfigured": "Für diese Region sind noch keine Haltestellendaten angebunden.",
-  "municipalityTransport": "Gemeinde · alle Verkehrsmittel",
   "city": "Stadt",
   "allCities": "Alle Städte",
   "noNearbyStop": "Keine Haltestelle in der Nähe gefunden.",

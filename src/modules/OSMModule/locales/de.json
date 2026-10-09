@@ -1,0 +1,8 @@
+{
+  "map": "Interaktive Karte",
+  "loading": "Karte wird geladen…",
+  "error": "Die Karte konnte nicht geladen werden.",
+  "zoomIn": "Vergrößern",
+  "zoomOut": "Verkleinern",
+  "fit": "Alles anzeigen"
+}

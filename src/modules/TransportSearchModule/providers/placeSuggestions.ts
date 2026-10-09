@@ -12,13 +12,6 @@ export function chooseTypedPlace(
   options: readonly PlaceOption[],
 ) {
   const query = normalizePlaceName(text);
-  const municipality = !state.city
-    ? options.find(
-        (option) =>
-          option.kind === "city" && normalizePlaceName(option.name) === query,
-      )
-    : undefined;
-  if (municipality) return municipality;
   const station = !state.city
     ? options.find(
         (option) =>

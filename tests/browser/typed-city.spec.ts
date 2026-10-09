@@ -3,7 +3,7 @@ const id = (external: string) =>
   Buffer.from(
     JSON.stringify(["tram", "otp", "stop", external, null, "a".repeat(64)]),
   ).toString("base64url");
-test("submitting unselected Brno and Praha uses municipalities despite a nearer GPS suggestion", async ({
+test("submitting unselected Brno and Praha uses main stations despite a nearer GPS suggestion", async ({
   page,
   context,
 }) => {
@@ -21,15 +21,6 @@ test("submitting unselected Brno and Praha uses municipalities despite a nearer 
       json: {
         success: true,
         data: [
-          {
-            id: id(`${city}-city`),
-            kind: "city",
-            name: city,
-            state: "CZ",
-            lat: 49.2,
-            lon: 16.6,
-            sourceMode: "index",
-          },
           {
             id: id(`${city}-near`),
             kind: "stop",
@@ -72,16 +63,14 @@ test("submitting unselected Brno and Praha uses municipalities despite a nearer 
     .click();
   const request = await searched;
   expect(request.postDataJSON()["from-dest"]).toEqual({
-    type: "municipality",
-    name: "Brno",
-    state: "CZ",
+    type: "stop",
+    id: id("Brno-main"),
   });
   expect(request.postDataJSON()["to-dest"]).toEqual({
-    type: "municipality",
-    name: "Praha",
-    state: "CZ",
+    type: "stop",
+    id: id("Praha-main"),
   });
   expect(page.url()).not.toMatch(/fromKind=current_location|fromText=|toText=/);
-  await expect(page.locator("#place-from")).toHaveValue("Brno");
-  await expect(page.locator("#place-to")).toHaveValue("Praha");
+  await expect(page.locator("#place-from")).toHaveValue("Brno, hlavní nádraží");
+  await expect(page.locator("#place-to")).toHaveValue("Praha, hlavní nádraží");
 });

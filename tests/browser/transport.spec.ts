@@ -865,6 +865,7 @@ test("GPS offers optional nearby stops using POST, selection changes to a public
 test("GPS map stays fresh, never stores coordinates and ends tracking on close", async ({
   page,
 }) => {
+  await page.route("**/*tile.openstreetmap.org/**", (route) => route.abort());
   await page.addInitScript(() => {
     const position = () =>
       ({
@@ -1018,6 +1019,7 @@ test("trip stop columns show tariff zone, request-stop explanation and source ki
 test("trip stop opens a map above the trip dialog with local state, focus return and lookup failure", async ({
   page,
 }) => {
+  await page.route("**/*tile.openstreetmap.org/**", (route) => route.abort());
   await page.setViewportSize({ width: 390, height: 844 });
   await page.route("**/api/transport/trip/**", async (route) => {
     const response = await route.fetch();

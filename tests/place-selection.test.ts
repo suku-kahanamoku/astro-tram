@@ -18,21 +18,13 @@ test("geography selection keeps transit IDs and uses coordinates for streets and
     id: option.id,
     label: option.name,
   });
-  for (const kind of ["street", "address"] as const)
+  for (const kind of ["street", "address", "city"] as const)
     assert.deepEqual(selectPlace({ ...option, kind }), {
       type: "coordinates",
       lat: 49.2,
       lon: 16.6,
       label: "Česká",
     });
-  assert.deepEqual(selectPlace({ ...option, kind: "city", state: "CZ" }), {
-    type: "municipality",
-    id: option.id,
-    label: option.name,
-    lat: 49.2,
-    lon: 16.6,
-    state: "CZ",
-  });
   assert.equal(
     selectPlace({ ...option, kind: "street", lat: null }),
     undefined,

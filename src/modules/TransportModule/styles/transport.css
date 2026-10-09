@@ -678,16 +678,6 @@
   border-radius: 6px;
   background: white;
 }
-.map-dialog .ol-control button {
-  background: var(--ink);
-}
-.map-dialog .ol-attribution {
-  font-size: 10px;
-}
-.map-dialog .ol-attribution a {
-  color: var(--ink);
-  text-decoration: underline;
-}
 @media (max-width: 1050px) {
   .search-options {
     flex-wrap: wrap;

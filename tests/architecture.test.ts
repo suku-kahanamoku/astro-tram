@@ -150,9 +150,9 @@ const allowed: Record<string, string[]> = {
     "UIModule",
     "LangModule",
     "TransportCoreModule",
-    "MapModule",
+    "OSMModule",
   ],
-  MapModule: [],
+  OSMModule: ["LangModule"],
   UIModule: [],
   CoreModule: [],
   LangModule: ["UIModule"],
@@ -182,9 +182,13 @@ test("modules have explicit one-way dependencies, no pages and no hidden applica
         );
       if (!dependency) {
         assert.ok(
-          !["UIModule", "LangModule", "CoreModule", "RealtimeModule"].includes(
-            owner,
-          ),
+          ![
+            "UIModule",
+            "LangModule",
+            "CoreModule",
+            "RealtimeModule",
+            "OSMModule",
+          ].includes(owner),
           `${owner} must not depend on application files: ${target}`,
         );
         assert.ok(

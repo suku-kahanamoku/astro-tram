@@ -94,8 +94,8 @@ provider nemusí mít živé měření. HTTP gateway kontrakt zůstává beze zm
 - `TransportSearchModule`: formulář, našeptávač, katalog měst a online hledání.
 - `TransportJourneyModule`: výsledky, detaily jízd, zastávky, timeline a výpočty průběhu.
 - `TransportTrackingModule`: transportní realtime pozorování, zpoždění a tracking subscriptions.
-- `TransportMapModule`: transportní mapový dialog a adapter pro obecný `MapModule`.
-- `MapModule`: znovupoužitelné OpenLayers jádro, lifecycle mapy, route rendering a GPS picking.
+- `TransportMapModule`: transportní mapový dialog a adapter pro obecný `OSMModule`.
+- `OSMModule`: sdílená komponenta `OSMMap`, OpenLayers jádro, lifecycle mapy, vrstvy bodů/tras, výřez a GPS picking.
 - `CoreModule/server/backend-client.ts`: sdílený HTTP transport. `java-tram.ts` volá přímo Java dopravu; `php-core.ts` přihlášení a administraci. Klíč i pevný tenant zůstávají na serveru; žádný univerzální proxy endpoint.
 - `UIModule`: theme, základní ovládací prvky a ikony.
 - `LangModule`: čeština, angličtina, němčina; společné komponenty pro všechny jazyky.
@@ -213,7 +213,7 @@ neprokazuje však absenci sémanticky podobné logiky.
 | `UIModule/hooks/useTheme`               | Jedna funkce `applyTheme` obsluhuje inicializaci, přepnutí, systémový motiv, storage i obnovení stránky. Preference ukládá `light`/`dark`, aby se nezaměnila za název brandu `tram`.           |
 | `PlaceField` a `CityPicker`             | Výběr, klávesnice a seznam už sdílí `Combobox`; `useAsyncOptions` řeší dotazy při psaní. `useCityCatalog` má odlišný životní cyklus: přednačtení celého katalogu jednou na zemi.               |
 | `TripTimeline` a `JourneyLegPosition`   | Sdílejí `useTripProgress`, `useTripTimeline` a `TripVehicleDot`; accordion pouze převádí průběh na vybraný úsek. `useTrip` a `TripResources` sdílejí načtené zastávky i probíhající požadavky. |
-| Oba `useMapView`                        | `TransportMapModule` je doménový adaptér, obecný `MapModule` vlastní OpenLayers i GPS lifecycle; nejde o dvě samostatné implementace mapy.                                                     |
+| Oba `useMapView`                        | `TransportMapModule` je doménový adaptér, obecný `OSMModule` vlastní OpenLayers i GPS lifecycle; nejde o dvě samostatné implementace mapy.                                                     |
 | `Dialog`, `Collapse` a `useDisclosure`  | Mají rozdílné chování: nativní modalita/fokus, animace výšky a rozbalovací menu. Podobné zavírání samo o sobě není důvodem sloučit je do jednoho hooku.                                        |
 
 Oba zbývající kandidáti jsou realizovaní. Popisky zastávek používají stejnou
@@ -350,6 +350,53 @@ Vyhledávání má serverový HTTP limit 25 sekund, aby Java API mohlo dokončit
 ## Mapa a realtime
 
 OpenLayers + standardní OSM dlaždice s atribucí. Mapu lze ovládat myší i klávesnicí; alternativou je zadání WGS84 souřadnic. Pro větší produkční provoz nakonfigurujte vhodného poskytovatele mapových dlaždic.
+
+### Sdílený OSM modul
+
+`OSMModule` nahrazuje původní `MapModule`; současné dialogy používají jeho stejné
+jádro přes `TransportMapModule`. Modul nezná dopravce, transportní API ani realtime
+odběry. Dopravní adaptér dodává geometrie a barvy z Java presentation, řešení
+zastávek a ověřování čerstvé GPS. Modul vlastní její mapové zobrazení a cleanup.
+
+Pro novou interaktivní mapu použijte `OSMModule/components/OSMMap.tsx` v Reactu,
+nebo s `client:load` v Astro. `useOSMMap` importuje OpenLayers až po mountu
+v prohlížeči; HTML ani SSR na mapu nebo dlaždice nečekají.
+
+```tsx
+import OSMMap from "./modules/OSMModule/components/OSMMap";
+
+<OSMMap
+  locale="cs"
+  center={[14.42, 50.075]}
+  zoom={13}
+  markers={points}
+  route={route}
+  onMarkerSelect={selectPoint}
+  onViewportChange={loadVisibleArea}
+/>;
+```
+
+- `center` a geometrie používají pořadí `[lon, lat]`, callback `onPick` je `(lat, lon)`.
+- `markers` přijímá body s jedinečným `id`, souřadnicemi, volitelným popiskem a barvou.
+  Zastávky, vozidla nebo POI dodává volající; modul sám nespouští Places ani realtime.
+- `route` obsahuje úseky, geometrii, koncové body a předanou barvu/typ čáry. Vadné
+  souřadnice čáru rozdělí; nevytváříme spojnici přes chybějící geometrii.
+- `ref` zpřístupní `fit`, `focus(lat, lon, zoom?)`, `zoomBy` a `setLayerVisible`
+  pro samostatné vrstvy `routes`, `markers`, `selection`.
+- Změny bodů a tras zachovají mapu i uživatelův výřez. `onViewportChange` vrací
+  centrum, zoom a WGS84 bounds pro budoucí načítání viditelné oblasti;
+  debounce, rušení a deduplikaci API požadavků řeší příslušná doména.
+- `enabled={false}` a unmount uvolní OpenLayers i ResizeObserver. Současné dialogy
+  navíc ukončí GPS watch, timeouty a rozpracované požadavky. Velikost komponenty
+  nastavuje CSS proměnná `--osm-map-height` (výchozí 420 px).
+
+`OSMModule/config/map.ts` vlastní centrum, zoom, animace a výchozí dlaždice.
+Jiný poskytovatel se předává přes `tiles={{ url, attribution, maxZoom }}`;
+atribuce je důvěryhodná konfigurace aplikace, nikoli HTML z veřejného API.
+Atribuce je stále viditelná, dlaždice se načítají pro aktuální výřez a používají
+běžnou cache prohlížeče, bez offline stahování nebo přednačítání dalších zoomů.
+Podmínky služby: [OSM Tile Usage Policy](https://operations.osmfoundation.org/policies/tiles/).
+Stav `ready` znamená připravený renderer; nepotvrzuje dostupnost vzdálených dlaždic.
 
 Mapa spojení vykresluje jen dostupnou plánovanou geometrii a zastávky. Nevymýšlí trasu přímkou a nezobrazuje zastávku jako polohu vozidla. Průběžné sledování vozidla není v této první verzi frontendu implementované. GPS uživatele se nepoužívá jako historická značka na mapě.
 
@@ -780,7 +827,7 @@ prostředků. Astro ji pouze ověří a předá přes `/api/transport/presentati
 nevolá vlastní požadavek a paleta neprobouzí národní plánovače.
 
 `TransportBadge` používá backendové pozadí a barvu textu. `TransportMapModule`
-předá tutéž barvu textu každému úseku obecného `MapModule`; ten obarví čáru
+předá tutéž barvu textu každému úseku obecného `OSMModule`; ten obarví čáru
 i zastávkové body, pro chůzi zachová tečkování. Frontendová `transportModes`
 definuje pouze ikony a překlady. Nové barvy upravuj v Java konfiguraci,
 nikoli v CSS/React podle názvů prostředků. Neznámý typ používá backendové

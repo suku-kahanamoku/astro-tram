@@ -1,13 +1,6 @@
 import type { TripFeature, ReservationKind } from "./config/tripFeatures";
 export type Place = (
   | { type: "stop"; id: string; label: string }
-  | {
-      type: "municipality";
-      id: string;
-      label: string;
-      lat: number;
-      lon: number;
-    }
   | { type: "coordinates"; lat: number; lon: number; label: string }
   | { type: "current_location"; label: string }
 ) & { state?: string };

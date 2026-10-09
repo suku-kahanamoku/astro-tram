@@ -6,7 +6,7 @@ import {
   createTransportPaletteStore,
 } from "../src/modules/TransportCoreModule/providers/transportPalette";
 import { transportStyle } from "../src/modules/TransportCoreModule/providers/transportPresentation";
-import { routeStyle } from "../src/modules/MapModule/providers/routeStyle";
+import { routeStyle } from "../src/modules/OSMModule/providers/routeStyle";
 import CircleStyle from "ol/style/Circle.js";
 import { createJavaTramClient } from "../src/modules/CoreModule/server/java-tram";
 import { createTransportProvider } from "../src/modules/TransportModule/server/provider";

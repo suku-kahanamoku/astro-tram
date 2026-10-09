@@ -86,7 +86,6 @@
   "copyError": "Could not copy the link.",
   "stopsCount": "stops",
   "placesNotConfigured": "Stop data sources are not connected for this area yet.",
-  "municipalityTransport": "Municipality · all transport modes",
   "city": "City",
   "allCities": "All cities",
   "noNearbyStop": "No nearby stop was found.",

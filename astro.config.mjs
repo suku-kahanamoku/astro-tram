@@ -102,6 +102,26 @@ export default defineConfig({
   ],
   vite: {
     cacheDir: `./node_modules/.vite/${cacheScope}`,
+    optimizeDeps: {
+      // Discover the lazy map renderer before the first map opens; late
+      // optimization otherwise reloads the page and closes the dialog.
+      include: [
+        "ol/Map.js",
+        "ol/View.js",
+        "ol/layer/Tile.js",
+        "ol/layer/Vector.js",
+        "ol/source/Vector.js",
+        "ol/source/OSM.js",
+        "ol/Feature.js",
+        "ol/geom/Point.js",
+        "ol/geom/MultiLineString.js",
+        "ol/proj.js",
+        "ol/extent.js",
+        "ol/style.js",
+        "ol/interaction/defaults.js",
+        "ol/control/defaults.js",
+      ],
+    },
     plugins: [tailwindcss()],
     ssr: {
       // Its ESM .js export lacks package type: module. Bundle it so Node

@@ -1,0 +1,8 @@
+{
+  "map": "Interaktivní mapa",
+  "loading": "Načítám mapu…",
+  "error": "Mapu se nepodařilo načíst.",
+  "zoomIn": "Přiblížit",
+  "zoomOut": "Oddálit",
+  "fit": "Zobrazit vše"
+}

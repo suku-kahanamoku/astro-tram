@@ -58,18 +58,6 @@ export function validateSearch(body: Record<string, unknown>) {
   if (Object.keys(body).some((key) => !allowed.includes(key))) fail();
   const place = (input: unknown) => {
     const p = plain(input);
-    if (p.type === "municipality") {
-      if (
-        typeof p.name !== "string" ||
-        !p.name.trim() ||
-        p.name.length > 120 ||
-        /[\u0000-\u001f\u007f]/.test(p.name) ||
-        typeof p.state !== "string" ||
-        !/^[A-Z]{2}$/.test(p.state)
-      )
-        fail();
-      return { type: "municipality", name: p.name.trim(), state: p.state };
-    }
     if (
       p.type === "stop" &&
       typeof p.id === "string" &&

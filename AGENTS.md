@@ -49,7 +49,7 @@ The project code graph is at `graphify-out/graph.json`. It is a navigation aid; 
 - Jediným zdrojem barev badge a úseků mapy je Java
   `/transport/v1/presentation`. Nepřidávej typové palety do React/CSS,
   `transportModes` obsahuje jen ikony a klíče překladů. Sdílené
-  `useTransportPalette` načítá jednou; obecný MapModule dostává pouze barvu
+  `useTransportPalette` načítá jednou; obecný OSMModule dostává pouze barvu
   úseku a nezná dopravce, zemi ani dopravní registr.
 
 ## Zadání města bez výběru zastávky

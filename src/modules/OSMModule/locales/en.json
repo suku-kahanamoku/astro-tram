@@ -1,0 +1,8 @@
+{
+  "map": "Interactive map",
+  "loading": "Loading map…",
+  "error": "The map could not be loaded.",
+  "zoomIn": "Zoom in",
+  "zoomOut": "Zoom out",
+  "fit": "Show all"
+}

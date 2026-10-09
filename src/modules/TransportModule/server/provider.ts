@@ -463,12 +463,7 @@ export function createTransportProvider(core: BackendClient) {
                 : {}),
             },
             limit: 20,
-            kinds:
-              query === null
-                ? ["stop"]
-                : city
-                  ? ["stop", "street", "address"]
-                  : ["stop", "street", "address", "city"],
+            kinds: query === null ? ["stop"] : ["stop", "street", "address"],
           },
         }),
       );

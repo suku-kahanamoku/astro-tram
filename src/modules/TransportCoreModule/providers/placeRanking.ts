@@ -45,16 +45,12 @@ export function rankWorldPlaces(
         ? 1
         : 2;
   const stationPriority = (option: PlaceOption) =>
-    option.kind === "city" &&
+    option.cityStation &&
     term !== null &&
-    normalizePlaceName(option.name) === term
-      ? -1
-      : option.cityStation &&
-          term !== null &&
-          option.matchedCity &&
-          normalizePlaceName(option.matchedCity) === term
-        ? (option.stationPriority ?? 2)
-        : 3;
+    option.matchedCity &&
+    normalizePlaceName(option.matchedCity) === term
+      ? (option.stationPriority ?? 2)
+      : 3;
   const unique = [
     ...new Map(options.map((option) => [option.id, option])).values(),
   ];

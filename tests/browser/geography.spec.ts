@@ -22,7 +22,7 @@ test("street suggestion opens the existing map and submits a coordinate destinat
       },
     }),
   );
-  await page.route("**/*.tile.openstreetmap.org/**", (route) => route.abort());
+  await page.route("**/*tile.openstreetmap.org/**", (route) => route.abort());
   await page.goto("/");
   await page.locator("#place-from").fill("Čes");
   await page.getByRole("option", { name: /Česká/ }).click();

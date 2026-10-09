@@ -34,6 +34,10 @@ export interface MapFix {
 }
 
 export interface MapConfig {
+  tiles?: MapTileConfig;
+  minZoom?: number;
+  maxZoom?: number;
+  animationMs?: number;
   defaultMapCenter: [number, number];
   mapCenters: Record<string, [number, number]>;
   mapZoom: {
@@ -45,6 +49,30 @@ export interface MapConfig {
   gpsMaxAgeMs: number;
   gpsTimeoutMs: number;
 }
+
+/** Public tile provider configuration, supplied by the application, never backend credentials. */
+export interface MapTileConfig {
+  url: string;
+  attribution: string;
+  maxZoom: number;
+}
+
+export interface MapMarker {
+  id: string;
+  lat: number;
+  lon: number;
+  label?: string;
+  color?: string;
+}
+
+export interface MapViewport {
+  center: [number, number];
+  zoom: number;
+  /** West, south, east, north in WGS84; may cross the antimeridian. */
+  bounds: [number, number, number, number];
+}
+
+export type MapLayer = "routes" | "markers" | "selection";
 
 export interface MapTexts {
   locating: string;
