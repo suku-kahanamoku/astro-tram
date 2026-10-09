@@ -102,7 +102,10 @@ for (const width of [375, 1280]) {
       await expect(compactDot).toHaveAttribute("data-from", "0");
       // The timetable has progressed to a different part of the route while
       // the delayed vehicle has not reached even the first stop departure.
-      await page.clock.fastForward(270000);
+      // Advance wall time without expiring the new HTTP timeout: the response
+      // is still pending while the independent timetable projection advances.
+      await page.clock.setSystemTime(new Date("2026-10-06T08:02:30Z"));
+      await page.clock.fastForward(1000);
       await expect(dot).toBeVisible();
       await expect(dot).toHaveAttribute("data-from", "0");
       release();

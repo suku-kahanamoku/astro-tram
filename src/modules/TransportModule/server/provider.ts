@@ -5,7 +5,6 @@ import {
 } from "../../TransportCoreModule/config/tripFeatures";
 import { rankWorldPlaces } from "../../TransportCoreModule/providers/placeRanking";
 import { createHash } from "node:crypto";
-import { staticCatalogCache } from "./staticCatalogCache";
 import { collectJourneyPage } from "./journeyPage";
 import { journeyIdentity } from "../../TransportCoreModule/providers/journeyIdentity";
 import type { BackendClient } from "../../CoreModule/server/backend-client";
@@ -402,10 +401,9 @@ export function createTransportProvider(core: BackendClient) {
           throw new HttpError(502, "invalid_backend_response");
         return { data, partial: raw.partial === true };
       };
-      // A private GPS request never enters the shared static catalogue cache.
-      return location
-        ? load()
-        : staticCatalogCache.get(`${core.cacheScope}:cities:${country}`, load);
+      // Java owns generation-aware public catalogue caching. Revalidate there on
+      // every request; GPS ordering and partially available catalogues stay fresh.
+      return load();
     },
     async worldPlaces(
       query: string | null,

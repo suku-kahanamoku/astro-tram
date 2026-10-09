@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { ApiError } from "../../CoreModule/providers/api";
+import { authProvider } from "../providers/auth";
 import type { User } from "../types";
 
 /** Read the HttpOnly session through the authenticated API after hydration. */
@@ -13,23 +15,14 @@ export function useAccount(loginUrl: string) {
     );
     void (async () => {
       try {
-        const response = await fetch("/api/auth/me/", {
-          cache: "no-store",
-          signal: AbortSignal.any([
-            controller.signal,
-            AbortSignal.timeout(15000),
-          ]),
-        });
-        if (response.status === 401) {
-          if (!controller.signal.aborted) location.replace(loginUrl);
-          return;
-        }
-        const payload = await response.json();
-        if (!response.ok || payload.success !== true || !payload.data)
-          throw new Error("unavailable");
-        if (!controller.signal.aborted) setUser(payload.data);
-      } catch {
-        if (!controller.signal.aborted) setError(true);
+        const user = await authProvider.me(controller.signal);
+        if (!user) throw new Error("unavailable");
+        if (!controller.signal.aborted) setUser(user);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        if (error instanceof ApiError && error.status === 401)
+          location.replace(loginUrl);
+        else setError(true);
       }
     })();
     return () => controller.abort();

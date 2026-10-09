@@ -30,7 +30,7 @@ export default defineConfig({
   devToolbar: { enabled: false },
   adapter: withStaticPageHeaders(
     process.env.NETLIFY === "true"
-      ? netlify()
+      ? netlify({ imageCDN: false })
       : node({ mode: "standalone", staticHeaders: true }),
     process.env.NETLIFY === "true",
   ),

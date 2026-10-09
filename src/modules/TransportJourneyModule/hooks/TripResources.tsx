@@ -5,13 +5,20 @@ import {
   useMemo,
   type ReactNode,
 } from "react";
+import { useUrlNavigation } from "../../UIModule/hooks/useUrlNavigation";
+import {
+  readState,
+  writeState,
+} from "../../TransportCoreModule/providers/state";
 import { createTripResources } from "../providers/tripResources";
 const Context = createContext<ReturnType<typeof createTripResources> | null>(
   null,
 );
 /** One search owns one queue/cache for static details, including public stop coordinates. */
 export function TripResources({ children }: { children: ReactNode }) {
-  const resources = useMemo(() => createTripResources(), []);
+  const { url } = useUrlNavigation();
+  const scope = writeState(readState(url.searchParams)).toString();
+  const resources = useMemo(() => createTripResources(), [scope]);
   useEffect(() => () => resources.dispose(), [resources]);
   return <Context.Provider value={resources}>{children}</Context.Provider>;
 }

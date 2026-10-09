@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import Icon from "../../UIModule/components/TransitIcon";
 import type { Locale } from "../../LangModule/config";
 import type { DataAttribution } from "../../TransportCoreModule/types";
@@ -17,15 +18,19 @@ export default function TransportAttributions({
   headingId?: string;
 }) {
   const t = dictionary(locale);
+  const formatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    [locale],
+  );
   if (!sources.length) return null;
-  const date = (value: string) =>
-    new Intl.DateTimeFormat(locale, {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(value));
+  const date = (value: string) => formatter.format(new Date(value));
   return (
     <section
       className="transport-attributions"

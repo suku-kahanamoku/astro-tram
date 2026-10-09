@@ -1,0 +1,20 @@
+---
+import BrandMark from "./BrandMark.astro";
+import { site } from "../../../config/site";
+import { url, type Locale } from "../../../config/routes";
+interface Props {
+  locale: Locale;
+  class: string;
+}
+const { locale, class: className } = Astro.props;
+---
+
+<a href={url(locale)} class={className} aria-label={site.name}>
+  <BrandMark />
+  <span>
+    {site.name}
+    <span class="brand-period" aria-hidden="true">
+      .
+    </span>
+  </span>
+</a>

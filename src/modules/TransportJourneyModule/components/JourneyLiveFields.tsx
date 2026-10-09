@@ -1,4 +1,3 @@
-import { useJourneyTiming } from "../../TransportTrackingModule/hooks/useTrackingSnapshot";
 import {
   date,
   duration,
@@ -56,22 +55,6 @@ export function JourneyDate({ journey, locale }: Omit<Props, "t">) {
       {date(first.scheduledDeparture, locale)}
     </small>
   );
-}
-export function JourneyRisk({
-  journey,
-  index,
-  t,
-}: Omit<Props, "locale"> & { index: number }) {
-  const risk = useJourneyTiming(journey).transferRiskLegs.includes(index);
-  return risk ? (
-    <p
-      className="notice transfer-risk-notice"
-      role="status"
-      data-transfer-risk={index}
-    >
-      {t.transferAtRisk}
-    </p>
-  ) : null;
 }
 export function TripCallTime({
   call,

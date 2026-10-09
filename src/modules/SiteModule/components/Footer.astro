@@ -1,6 +1,6 @@
 ---
 import { dictionary } from "../providers/translations";
-import BrandMark from "./BrandMark.astro";
+import BrandLink from "./BrandLink.astro";
 import { site } from "../../../config/site";
 import { url, type Locale } from "../../../config/routes";
 interface Props {
@@ -13,15 +13,7 @@ const { locale } = Astro.props,
 <footer class="tram-footer shell">
   <div class="footer-main">
     <div class="footer-brand">
-      <a class="footer-logo" href={url(locale)} aria-label={site.name}>
-        <BrandMark />
-        <span>
-          {site.name}
-          <span class="brand-period" aria-hidden="true">
-            .
-          </span>
-        </span>
-      </a>
+      <BrandLink {locale} class="footer-logo" />
       <p>{t.common.footer}</p>
     </div>
     <nav class="footer-links" aria-label={t.nav.menu}>

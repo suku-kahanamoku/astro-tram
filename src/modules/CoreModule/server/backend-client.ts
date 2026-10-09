@@ -1,7 +1,4 @@
 import { HttpError } from "./errors";
-import { createHash } from "node:crypto";
-const fetchScopes = new WeakMap<typeof fetch, number>();
-let nextFetchScope = 0;
 
 export interface BackendConfig {
   baseUrl: string;
@@ -25,21 +22,7 @@ export function createBackendClient(
   config: BackendConfig,
   fetcher: typeof fetch = fetch,
 ) {
-  // A server-only cache namespace includes credentials and injected transport identity.
-  // Hashes and raw credentials never form part of public response data.
-  if (!fetchScopes.has(fetcher)) fetchScopes.set(fetcher, ++nextFetchScope);
-  const cacheScope = createHash("sha256")
-    .update(
-      JSON.stringify([
-        config.baseUrl,
-        config.headers,
-        fetchScopes.get(fetcher),
-      ]),
-    )
-    .digest("hex");
   return {
-    cacheScope,
-
     async request<T>(
       path: string,
       options: {

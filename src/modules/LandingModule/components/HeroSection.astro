@@ -1,7 +1,9 @@
 ---
+import { Image } from "astro:assets";
+import illustration from "../assets/tram-city.png";
 import { dictionary } from "../providers/translations";
 import Icon from "../../UIModule/components/TransitIcon.astro";
-import TransportMotif from "../../UIModule/components/TransportMotif";
+import TransportMotif from "../../UIModule/components/TransportMotif.astro";
 import type { Locale } from "../../LangModule/config";
 interface Props {
   locale: Locale;
@@ -44,11 +46,17 @@ const t = dictionary(Astro.props.locale);
   </div>
   <div class="hero-art">
     <div class="art-ring" aria-hidden="true"></div>
-    <img
-      src="/images/tram-city.png"
+    <Image
+      src={illustration}
+      widths={[480, 768, 1024, 1536]}
+      sizes="(min-width: 1100px) 640px, (min-width: 768px) 50vw, 100vw"
+      format="webp"
+      quality={80}
       width="1536"
       height="1024"
       alt={t.heroAlt}
+      loading="eager"
+      decoding="async"
       fetchpriority="high"
     />
     <div class="art-caption">

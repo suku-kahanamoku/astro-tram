@@ -1,6 +1,6 @@
 ---
 import "../styles/components.css";
-import AdFrame from "./AdFrame";
+import ReactiveAdFrame from "./AdFrame";
 import { site } from "../../../config/site";
 import { ads } from "../../../config/ads";
 import { dictionary } from "../providers/translations";
@@ -11,12 +11,20 @@ interface Props {
 const t = dictionary(Astro.props.locale);
 ---
 
-<AdFrame
-  client:load
-  enabled={site.modules.ads}
-  units={ads}
-  label={t.ad}
-  placeholder={t.adSpace}
->
-  <slot />
-</AdFrame>
+{site.modules.ads ? (
+  <ReactiveAdFrame
+    client:load
+    enabled={true}
+    units={ads}
+    label={t.ad}
+    placeholder={t.adSpace}
+  >
+    <slot />
+  </ReactiveAdFrame>
+) : (
+  <div class="site-frame">
+    <div class="site-content">
+      <slot />
+    </div>
+  </div>
+)}

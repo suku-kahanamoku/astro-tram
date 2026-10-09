@@ -1,0 +1,28 @@
+---
+import { dictionary } from "../providers/translations";
+import type { Locale } from "../../LangModule/providers/locale";
+import { site } from "../../../config/site";
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = dictionary(locale);
+---
+
+<section class="faq-section shell">
+  <div>
+    <span class="eyebrow">{site.name} / FAQ</span>
+    <h2>{t.faqTitle}</h2>
+  </div>
+  <div>
+    {t.faq.map(({ question, answer }) => (
+      <details>
+        <summary>
+          {question}
+          <span aria-hidden="true">+</span>
+        </summary>
+        <p>{answer}</p>
+      </details>
+    ))}
+  </div>
+</section>

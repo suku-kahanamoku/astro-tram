@@ -23,6 +23,9 @@ for (const width of [375, 1280]) {
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
+    // The synthetic timetable is dated: test its initial position before departure,
+    // independently of the actual day on which this regression is run.
+    await page.clock.setFixedTime(new Date("2026-10-06T08:00:00Z"));
     let reads = 0,
       delay = 360;
     await page.route("**/api/transport/search/**", async (route) => {
@@ -38,7 +41,7 @@ for (const width of [375, 1280]) {
     );
     await page.route("**/api/transport/observation/**", (route) => {
       reads++;
-      const now = Date.now();
+      const now = Date.parse("2026-10-06T08:00:00Z");
       return route.fulfill({
         json: {
           success: true,
@@ -89,11 +92,9 @@ for (const width of [375, 1280]) {
     await page.keyboard.press("Escape");
     await cards.first().locator("[data-summary-trip]").click();
     await expect.poll(() => reads).toBe(5);
-    await expect(dialog.locator("[data-delay-status]")).toHaveText(
-      "Bez zpoždění",
-    );
-    await expect(cards.first().locator(".leg [data-delay-status]")).toHaveText(
-      "Bez zpoždění",
+    await expect(dialog.locator("[data-delay-status]")).toHaveCount(0);
+    await expect(cards.first().locator(".leg [data-delay-status]")).toHaveCount(
+      0,
     );
     await expect(dialog.locator(".delay-badge")).toHaveCount(0);
   });
@@ -214,9 +215,10 @@ for (const [width, status] of [
   });
 }
 
-test("failed HTTP observation displays red receipt indicator and no-delay fallback", async ({
+test("failed HTTP observation displays red receipt indicator without claiming no delay", async ({
   page,
 }) => {
+  await page.clock.setFixedTime(new Date("2026-10-06T08:00:00Z"));
   await page.route("**/api/transport/search/**", async (route) => {
     const json = await (await route.fetch()).json();
     for (const journey of json.data.journeys)
@@ -257,7 +259,7 @@ test("failed HTTP observation displays red receipt indicator and no-delay fallba
     "background-color",
     "rgb(197, 53, 44)",
   );
-  await expect(card.locator("[data-delay-status]")).toHaveText("Bez zpoždění");
+  await expect(card.locator("[data-delay-status]")).toHaveCount(0);
   await expect(card.locator("[data-trip-vehicle-dot]")).toBeVisible();
   await expect(card.locator("[data-trip-vehicle-dot]")).toHaveAttribute(
     "data-from",
@@ -266,7 +268,7 @@ test("failed HTTP observation displays red receipt indicator and no-delay fallba
   await card.locator("[data-summary-trip]").click();
   await expect(
     page.locator("[data-trip-dialog] [data-delay-status]"),
-  ).toHaveText("Bez zpoždění");
+  ).toHaveCount(0);
 });
 
 test("GPS timeline and opening dialog join one pending static detail and reuse it on reopen", async ({

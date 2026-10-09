@@ -774,7 +774,9 @@ test("stop map fetches missing coordinates; read-only marker supports reopening 
       json: { success: false, error: "unavailable" },
     }),
   );
-  await page.locator(".journey-detail .stop-map-link").nth(1).click();
+  // Reopening a cached public stop works offline. An unseen stop must still
+  // request its own coordinates and surface the failed lookup.
+  await page.locator(".journey-detail .stop-map-link").nth(0).click();
   await expect(dialog.locator("[data-map-error]")).toHaveText(
     "Polohu zastávky se nepodařilo načíst.",
   );
@@ -1072,13 +1074,14 @@ test("trip stop opens a map above the trip dialog with local state, focus return
       json: { success: false, error: "unavailable" },
     }),
   );
-  await stopLink.click();
+  const uncachedStop = tripDialog.locator('[data-trip-stop-map="0"]');
+  await uncachedStop.click();
   await expect(map.locator("[data-map-error]")).toHaveText(
     "Polohu zastávky se nepodařilo načíst.",
   );
   await expect(map.locator("[data-map-canvas]")).not.toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(stopLink).toBeFocused();
+  await expect(uncachedStop).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(tripDialog).not.toBeVisible();
 });

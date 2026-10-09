@@ -1,0 +1,34 @@
+---
+import { dictionary } from "../providers/translations";
+import type { Locale } from "../../LangModule/providers/locale";
+import Icon from "../../UIModule/components/TransitIcon.astro";
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = dictionary(locale);
+---
+
+<section class="steps-section shell" id="how">
+  <span class="eyebrow">01 — 02 — 03</span>
+  <h2>{t.stepsTitle}</h2>
+  <p class="section-intro">{t.stepsIntro}</p>
+  <div class="steps-grid">
+    {[
+      { title: t.step1Title, text: t.step1, icon: "pin" },
+      { title: t.step2Title, text: t.step2, icon: "map" },
+      { title: t.step3Title, text: t.step3, icon: "arrow" },
+    ].map((step, i) => (
+      <article>
+        <div class="step-top">
+          <span class="step-icon">
+            <Icon name={step.icon} size={28} />
+          </span>
+          <span class="step-number">0{i + 1}</span>
+        </div>
+        <h3>{step.title}</h3>
+        <p>{step.text}</p>
+      </article>
+    ))}
+  </div>
+</section>

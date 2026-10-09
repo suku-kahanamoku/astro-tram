@@ -1,5 +1,5 @@
 import { TripCallTime } from "./JourneyLiveFields";
-import { Fragment, memo } from "react";
+import { Fragment, memo, useMemo } from "react";
 import StopLabel from "./StopLabel";
 import { tripSegment } from "../providers/trip";
 import {
@@ -32,6 +32,10 @@ function TripStops({
   timeline?: boolean;
   referenceTime?: string | null;
 }) {
+  const kmFormat = useMemo(
+    () => new Intl.NumberFormat(locale, { maximumFractionDigits: 3 }),
+    [locale],
+  );
   const segment = leg ? tripSegment(trip, leg) : null,
     details = hasStopDetails(trip);
   return (
@@ -56,7 +60,7 @@ function TripStops({
           typeof c.routeKm === "number" &&
           Number.isFinite(c.routeKm) &&
           c.routeKm >= 0
-            ? `${new Intl.NumberFormat(locale, { maximumFractionDigits: 3 }).format(c.routeKm)} km`
+            ? `${kmFormat.format(c.routeKm)} km`
             : "—";
         return (
           <li

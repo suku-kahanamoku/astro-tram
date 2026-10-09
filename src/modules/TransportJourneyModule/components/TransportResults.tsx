@@ -1,15 +1,13 @@
-import { useEffect, useState, type RefObject } from "react";
+import { useEffect, type RefObject } from "react";
 import JourneyResults from "./JourneyResults";
 import type { Dictionary } from "../../TransportCoreModule/providers/translations";
-import {
-  requiresLocation,
-  writeState,
-} from "../../TransportCoreModule/providers/state";
+import { requiresLocation } from "../../TransportCoreModule/providers/state";
 import type { useJourneySearch } from "../../TransportSearchModule/hooks/useJourneySearch";
 import type { useTrip } from "../hooks/useTrip";
 import type { Locale } from "../../LangModule/providers/locale";
-import { adjacentJourneyPage } from "../../TransportCoreModule/providers/journeyPaging";
-import Icon from "../../UIModule/components/TransitIcon";
+import ResultsPagination from "./ResultsPagination";
+import CopyLinkButton from "../../UIModule/components/CopyLinkButton";
+import StatusCard from "../../UIModule/components/StatusCard";
 import { notify } from "../../UIModule/providers/notifications";
 import { site } from "../../../config/site";
 
@@ -49,7 +47,6 @@ export default function TransportResults({
   searchUrl: string;
   resultsHeading: RefObject<HTMLDivElement | null>;
 }) {
-  const [copying, setCopying] = useState(false);
   const error = searchError(search.error, t);
   useEffect(() => {
     if (!results || search.loading) return;
@@ -60,30 +57,14 @@ export default function TransportResults({
       : [t.empty, t.emptyHelp];
     return notify(message, search.error ? "error" : "info", help || undefined);
   }, [results, search.loading, search.key, search.error, search.data, t]);
-  const pageLink = (page: "earlier" | "later") =>
-    `${searchUrl}?${writeState(adjacentJourneyPage(search.state, search.data!.journeys, page))}#results`;
   const pagination =
     !search.loading && !search.error && !!search.data?.journeys.length ? (
-      <nav
-        className="results-pagination"
-        data-pagination
-        aria-label={t.results}
-      >
-        <a
-          className="button button-outline"
-          data-earlier
-          href={pageLink("earlier")}
-        >
-          ← {t.earlier}
-        </a>
-        <a
-          className="button button-outline"
-          data-later
-          href={pageLink("later")}
-        >
-          {t.later} →
-        </a>
-      </nav>
+      <ResultsPagination
+        state={search.state}
+        journeys={search.data.journeys}
+        searchUrl={searchUrl}
+        t={t}
+      />
     ) : null;
 
   if (!results) return null;
@@ -97,41 +78,24 @@ export default function TransportResults({
           </span>
           <h1>{t.results}</h1>
         </div>
-        <button
+        <CopyLinkButton
           className="button button-outline"
-          type="button"
           data-share
-          disabled={copying}
-          aria-label={t.share}
-          title={t.share}
-          onClick={async () => {
-            if (copying) return;
-            setCopying(true);
-            try {
-              await navigator.clipboard.writeText(location.href);
-              notify(t.copied, "success");
-            } catch {
-              notify(t.copyError, "error", t.copyErrorHelp);
-            } finally {
-              setCopying(false);
-            }
-          }}
-        >
-          <Icon name="copy" size={18} />
-          <span className="share-label">{t.share}</span>
-        </button>
+          label={t.share}
+          copied={t.copied}
+          error={t.copyError}
+          errorHelp={t.copyErrorHelp}
+        />
       </div>
       {pagination && <div data-pagination-position="top">{pagination}</div>}
       <div data-results-content aria-live="polite">
         {search.loading ? (
-          <div className="status-card">
-            <span className="spinner" aria-hidden="true" />
-            <h2>{requiresLocation(search.state) ? t.locating : t.searching}</h2>
-          </div>
+          <StatusCard
+            loading
+            title={requiresLocation(search.state) ? t.locating : t.searching}
+          />
         ) : search.error ? (
-          <div className="status-card">
-            <h2>{error[0]}</h2>
-            <p>{error[1]}</p>
+          <StatusCard title={error[0]} description={error[1]}>
             {search.error !== "search_prompt" && (
               <button
                 className="button"
@@ -142,7 +106,7 @@ export default function TransportResults({
                 {t.retry} ↻
               </button>
             )}
-          </div>
+          </StatusCard>
         ) : search.data?.journeys.length ? (
           <JourneyResults
             result={search.data}
@@ -153,12 +117,7 @@ export default function TransportResults({
             tripError={middle.error}
           />
         ) : search.data ? (
-          <>
-            <div className="status-card">
-              <h2>{t.empty}</h2>
-              <p>{t.emptyHelp}</p>
-            </div>
-          </>
+          <StatusCard title={t.empty} description={t.emptyHelp} />
         ) : null}
       </div>
       {pagination && <div data-pagination-position="bottom">{pagination}</div>}

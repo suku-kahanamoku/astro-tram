@@ -5,6 +5,7 @@ import { useTripResources } from "./TripResources";
 export function useTrip(id?: string | null, coordinates = false) {
   const resources = useTripResources();
   const [result, setResult] = useState<{
+    resources?: typeof resources;
     id?: string | null;
     coordinates?: boolean;
     trip?: Trip;
@@ -16,11 +17,12 @@ export function useTrip(id?: string | null, coordinates = false) {
       void resources
         .load(id, true, coordinates)
         .then((trip) => {
-          if (active) setResult({ id, coordinates, trip });
+          if (active) setResult({ resources, id, coordinates, trip });
         })
         .catch((error: unknown) => {
           if (active)
             setResult({
+              resources,
               id,
               coordinates,
               error: error instanceof Error ? error.message : "unavailable",
@@ -33,7 +35,9 @@ export function useTrip(id?: string | null, coordinates = false) {
   const cached = id ? resources.peek(id, coordinates) : undefined;
   return cached
     ? { id, trip: cached, error: undefined }
-    : result.id === id && result.coordinates === coordinates
+    : result.resources === resources &&
+        result.id === id &&
+        result.coordinates === coordinates
       ? result
       : { id };
 }

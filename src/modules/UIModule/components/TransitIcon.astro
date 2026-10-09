@@ -2,12 +2,14 @@
 interface Props {
   name?: string;
   size?: number;
+  class?: string;
 }
-const { name = "tram", size = 22 } = Astro.props;
+const { name = "tram", size = 22, class: className } = Astro.props;
 import { transitPaths as paths } from "../providers/transitIcons";
 ---
 
 <svg
+  class={className}
   width={size}
   height={size}
   viewBox="0 0 24 24"

@@ -21,8 +21,9 @@ export function useTransportViewState(results: boolean) {
   const mode = parameters.get("map");
   const isTripMap = mode === "stop" && parameters.has("tripStop");
   const modalOpen = !!modalLeg?.tripId && (!mode || isTripMap);
+  const expanded = expandedJourneys(url);
   const openedTrips = (search.data?.journeys ?? [])
-    .filter((journey) => expandedJourneys(url).has(journey.key))
+    .filter((journey) => expanded.has(journey.key))
     .map((journey) => ({
       key: journey.key,
       ids: journey.legs.flatMap((leg) => (leg.tripId ? [leg.tripId] : [])),

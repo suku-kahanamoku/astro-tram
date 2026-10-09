@@ -1,4 +1,6 @@
+import { ApiError, requestJson } from "../../CoreModule/providers/api";
 import { transportClientConfig as config } from "../config/client";
+import { StaticResponseCache } from "./staticResponseCache";
 import type {
   Trip,
   Stop,
@@ -8,48 +10,63 @@ import type {
   Fix,
   DataAttribution,
 } from "../types";
-export class TransportRequestError extends Error {
-  constructor(
-    message: string,
-    public status: number,
-    public retryAfterMs?: number,
-  ) {
-    super(message);
+export class TransportRequestError extends ApiError {
+  constructor(message: string, status: number, retryAfterMs?: number) {
+    super(status, message, retryAfterMs);
+    this.name = "TransportRequestError";
   }
 }
 export async function request<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const response = await fetch(path, {
-    ...options,
-    cache: "no-store",
-    headers: { "Content-Type": "application/json", ...options.headers },
-  });
-  const body = await response.json();
-  if (!response.ok || body.success !== true)
-    throw new TransportRequestError(
-      body.error ?? "unavailable",
-      response.status,
-      response.headers.has("Retry-After")
-        ? Math.max(
-            1000,
-            /^\d+$/.test(response.headers.get("Retry-After")!)
-              ? Number(response.headers.get("Retry-After")) * 1000
-              : Date.parse(response.headers.get("Retry-After")!) - Date.now(),
-          ) || undefined
-        : undefined,
-    );
-  return body.data;
+  try {
+    return await requestJson<T>(path, options, 30_000);
+  } catch (error) {
+    if (error instanceof ApiError)
+      throw new TransportRequestError(
+        error.code,
+        error.status,
+        error.retryAfterMs,
+      );
+    throw error;
+  }
+}
+
+const staticCache = new StaticResponseCache(config.staticCache);
+function staticRequest<T>(
+  path: string,
+  ttl: number,
+  signal?: AbortSignal,
+): Promise<T> {
+  // SSR is shared between visitors; cache only inside the current browser page.
+  if (!config.staticCache.enabled || typeof window === "undefined")
+    return request<T>(path, { signal });
+  return staticCache.get(
+    path,
+    ttl,
+    (sharedSignal) => request<T>(path, { signal: sharedSignal }),
+    signal,
+  );
 }
 export const transportClient = {
-  presentation: () => request<unknown>(config.endpoints.presentation),
+  presentation: () =>
+    staticRequest<unknown>(
+      config.endpoints.presentation,
+      config.staticCache.catalogTtlMs,
+    ),
   attributions: (signal: AbortSignal) =>
-    request<DataAttribution[]>(config.endpoints.attributions, { signal }),
-  coverage: (signal: AbortSignal) =>
-    request<import("../types").CountryCoverage[]>(config.endpoints.coverage, {
+    staticRequest<DataAttribution[]>(
+      config.endpoints.attributions,
+      config.staticCache.metadataTtlMs,
       signal,
-    }),
+    ),
+  coverage: (signal: AbortSignal) =>
+    staticRequest<import("../types").CountryCoverage[]>(
+      config.endpoints.coverage,
+      config.staticCache.metadataTtlMs,
+      signal,
+    ),
   tracking: (id: string, signal: AbortSignal) =>
     request<import("../types").TrackingSession>(config.endpoints.tracking, {
       method: "POST",
@@ -62,27 +79,24 @@ export const transportClient = {
       { signal },
     ),
   cities: (country: string, signal: AbortSignal, fix?: Fix) =>
-    request<CityOption[]>(
-      fix
-        ? config.endpoints.cities
-        : `${config.endpoints.cities}?q=${encodeURIComponent(JSON.stringify({ state: country }))}`,
-      {
-        signal,
-        ...(fix
-          ? {
-              method: "POST",
-              body: JSON.stringify({
-                q: {
-                  state: country,
-                  latitude: fix.lat,
-                  longitude: fix.lon,
-                  observed_at: fix.observedAt,
-                },
-              }),
-            }
-          : {}),
-      },
-    ),
+    fix
+      ? request<CityOption[]>(config.endpoints.cities, {
+          signal,
+          method: "POST",
+          body: JSON.stringify({
+            q: {
+              state: country,
+              latitude: fix.lat,
+              longitude: fix.lon,
+              observed_at: fix.observedAt,
+            },
+          }),
+        })
+      : staticRequest<CityOption[]>(
+          `${config.endpoints.cities}?q=${encodeURIComponent(JSON.stringify({ state: country }))}`,
+          config.staticCache.catalogTtlMs,
+          signal,
+        ),
   search: (body: Record<string, unknown>, signal: AbortSignal) =>
     request<SearchResult>(config.endpoints.search, {
       method: "POST",
@@ -106,16 +120,21 @@ export const transportClient = {
       },
     ),
   trip: (id: string, signal: AbortSignal) =>
-    request<Trip>(`${config.endpoints.trip}?id=${encodeURIComponent(id)}`, {
+    staticRequest<Trip>(
+      `${config.endpoints.trip}?id=${encodeURIComponent(id)}`,
+      config.staticCache.resourceTtlMs,
       signal,
-    }),
+    ),
   tripCoordinates: (id: string, signal: AbortSignal) =>
-    request<Trip>(
+    staticRequest<Trip>(
       `${config.endpoints.trip}?id=${encodeURIComponent(id)}&coordinates=1`,
-      { signal },
+      config.staticCache.resourceTtlMs,
+      signal,
     ),
   stop: (id: string, signal: AbortSignal) =>
-    request<Stop>(`${config.endpoints.stop}?id=${encodeURIComponent(id)}`, {
+    staticRequest<Stop>(
+      `${config.endpoints.stop}?id=${encodeURIComponent(id)}`,
+      config.staticCache.resourceTtlMs,
       signal,
-    }),
+    ),
 };

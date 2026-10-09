@@ -122,17 +122,17 @@ test("options share symbols and colors with journey summary, detail and trip dia
     .locator('.summary-badges .route-badge[data-mode="tram"]')
     .first();
   await expect(summary).toBeVisible();
-  expect(await palette(summary)).toEqual(tram);
+  await expect.poll(() => palette(summary)).toEqual(tram);
   await card.locator(".journey-summary-toggle").click();
   const detail = card
     .locator('.leg-title .route-badge[data-mode="tram"]')
     .first();
   await expect(detail).toBeVisible();
-  expect(await palette(detail)).toEqual(tram);
+  await expect.poll(() => palette(detail)).toEqual(tram);
   await summary.click();
   const dialogBadge = page.locator("[data-trip-dialog] .trip-title-service");
   await expect(dialogBadge).toBeVisible();
-  expect(await palette(dialogBadge)).toEqual(tram);
+  await expect.poll(() => palette(dialogBadge)).toEqual(tram);
   await page.screenshot({ path: "test-results/transport-shared-badge.png" });
 });
 

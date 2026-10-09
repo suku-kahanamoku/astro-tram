@@ -1,5 +1,14 @@
 /** Transport UI policy; endpoints remain the server-side BFF, never upstream URLs. */
 export const transportClientConfig = {
+  staticCache: {
+    enabled: true,
+    entries: 128,
+    bytes: 8 * 1024 * 1024,
+    pending: 32,
+    metadataTtlMs: 15_000,
+    catalogTtlMs: 60_000,
+    resourceTtlMs: 300_000,
+  },
   autocompleteDelayMs: 250,
   minimumQueryLength: 2,
   gpsMaxAgeMs: 30_000,

@@ -199,6 +199,13 @@ Playwright má navíc scénáře pro hydrataci, jazykový přepínač, opakovan�
 mobilního menu, reklamní souhlas a opožděné odpovědi našeptávače. Testovací React
 harness leží v `tests/`, není aplikační routou a nevstupuje do produkčního buildu.
 
+### Aktuální frontendová architektura (9. 10. 2026)
+
+[Frontend, datový tok a cache](docs/frontend-architecture.md) popisuje aktuální
+rozdělení Astro/React komponent, refaktor výsledků, sdílené API a optimalizaci
+obrázků. Platnost katalogů nyní řídí Java; historická serverová cache měst níže
+byla odstraněna. Realtime a zpoždění obcházejí cache statických odpovědí.
+
 ### Kontrola sdílení kódu (2026-10-04)
 
 Kontrola vycházela z projektového grafu, porovnání přesně shodných bloků v jeho
@@ -345,7 +352,7 @@ nahradit. CC BY licence GTFS/GTFS-RT IDS JMK automaticky nepokrývá JSON API.
 Licence OSM a povinnosti případné veřejné odvozené databáze/grafu se posuzují
 odděleně od vlastní aplikace a od provozních pravidel mapových tiles.
 
-Vyhledávání má serverový HTTP limit 25 sekund, aby Java API mohlo dokončit plánování přes PHP gateway; ostatní požadavky mají limit 10 sekund. Provider whitelistuje odpovědi, nepředává surové chyby ani interní metadata. HTTP odpovědi API a výsledkové stránky mají `Cache-Control: private, no-store`; výsledky se neindexují. Backend nadále kontroluje tenant a limity.
+Vyhledávání má serverový HTTP limit 25 sekund, aby Java API mohlo dokončit plánování při přímém serverovém volání; ostatní požadavky mají limit 10 sekund. Provider whitelistuje odpovědi, nepředává surové chyby ani interní metadata. HTTP odpovědi API a výsledkové stránky mají `Cache-Control: private, no-store`; výsledky se neindexují. Backend nadále kontroluje tenant a limity.
 
 ## Mapa a realtime
 
@@ -765,8 +772,8 @@ detailu. Po načtení se detail při znovuotevření zobrazí ze stejné RAM cac
 Poloha a zpoždění se při otevření dál obnovují samostatným HTTP observation
 a následně WebSocketem. Cache statických dat je nesmí zastavit ani uchovávat.
 
-Veřejný katalog měst má navíc serverovou RAM cache na 30 sekund, maximálně
-32 položek / 4 MiB serializovaných dat. Namespace zahrnuje URL php-core,
+Historicky (4. 10.) měl veřejný katalog měst navíc serverovou RAM cache na 30 sekund, maximálně
+32 položek / 4 MiB serializovaných dat. Dne 9. 10. byla tato vrstva odstraněna ve prospěch generační Java cache. Tehdejší namespace zahrnuje URL php-core,
 tenant a serverový credential; klíče neopouštějí server. Souběžné požadavky
 stejné konfigurace sdílejí načtení. Chyby se necacheují a vrácená data jsou
 nezávislé kopie. Změna katalogu se projeví po expiraci; cache není globální
@@ -876,6 +883,18 @@ bližší zastávky zvýhodněné GPS. Výslovně vybranou zastávku, ulici či 
 polohu toto pravidlo nemění.
 
 ### Rozlišení odpovědi a živých údajů
+
+Statické odpovědi používají stránkovou RAM cache v
+`TransportCoreModule/providers/staticResponseCache.ts`: 128 položek / 8 MiB,
+katalogy 60 sekund, coverage/licence 15 sekund a stop/trip detail 5 minut.
+Opakované i souběžné otevření stejného detailu sdílí HTTP načtení; varianta
+souřadnic má vlastní klíč. Jednotliví konzumenti mají nezávislé kopie výsledku.
+Observation, tracking tickety, hledání, polohové cities a places se přes tuto
+browser cache neposílají. Realtime zůstává čerstvé; soukromá GPS se neukládá.
+Nejde o localStorage, IndexedDB ani CDN a cache zmizí s novou stránkou.
+Konfigurace je v `TransportCoreModule/config/client.ts`, `staticCache`.
+Java má další cache nad statickými katalogy a grafy, včetně ochrany hledání
+s realtime updatery: [Java CACHE.md](../../java-tram/CACHE.md).
 
 Přijatá HTTP/WS odpověď (`responseState: received`) potvrzuje jen dokončení
 dotazu. `status: unavailable` bez polohy a zpoždění nedokazuje včasný spoj.

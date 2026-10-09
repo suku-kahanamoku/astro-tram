@@ -1,10 +1,17 @@
 import { transportClient } from "../../TransportCoreModule/providers/client";
+import { StaticResponseCache } from "../../TransportCoreModule/providers/staticResponseCache";
 import type { Trip } from "../../TransportCoreModule/types";
+export const tripResourceLimits = {
+  entries: 100,
+  bytes: 8 * 1024 * 1024,
+  concurrency: 2,
+};
 type Entry = {
   id: string;
   key: string;
   coordinates: boolean;
   trip?: Trip;
+  bytes: number;
   pending: Promise<Trip>;
   controller: AbortController;
   resolve: (trip: Trip) => void;
@@ -13,24 +20,46 @@ type Entry = {
 export function createTripResources(
   loadTrip: typeof transportClient.trip = transportClient.trip,
   loadCoordinates: typeof transportClient.tripCoordinates = transportClient.tripCoordinates,
+  limits = tripResourceLimits,
 ) {
+  const byteLimit = limits.bytes;
+  let cachedBytes = 0;
   const entries = new Map<string, Entry>();
   const queue: Entry[] = [];
   let active = 0,
     disposed = false;
+  const remove = (key: string, entry: Entry) => {
+    if (entries.get(key) !== entry) return;
+    entries.delete(key);
+    cachedBytes -= entry.bytes;
+  };
+  const remember = (entry: Entry, trip: Trip) => {
+    if (disposed || entries.get(entry.key) !== entry) return;
+    if (!StaticResponseCache.isStatic(trip)) {
+      remove(entry.key, entry);
+      return;
+    }
+    entry.trip = trip;
+    entry.bytes = new TextEncoder().encode(JSON.stringify(trip)).length;
+    cachedBytes += entry.bytes;
+    for (const [key, cached] of entries) {
+      if (cachedBytes <= byteLimit && entries.size <= limits.entries) break;
+      if (cached.trip) remove(key, cached);
+    }
+  };
   const pump = () => {
-    while (!disposed && active < 2 && queue.length) {
+    while (!disposed && active < limits.concurrency && queue.length) {
       const entry = queue.shift()!;
       active++;
       const loader = entry.coordinates ? loadCoordinates : loadTrip;
       void loader(entry.id, entry.controller.signal)
         .then(
           (trip) => {
-            entry.trip = trip;
+            remember(entry, trip);
             entry.resolve(trip);
           },
           (error) => {
-            if (entries.get(entry.key) === entry) entries.delete(entry.key);
+            remove(entry.key, entry);
             entry.reject(error);
           },
         )
@@ -69,10 +98,11 @@ export function createTripResources(
       resolve,
       reject,
       controller: new AbortController(),
+      bytes: 0,
     };
-    if (entries.size >= 100) {
+    if (entries.size >= limits.entries) {
       const oldest = [...entries].find(([, cached]) => cached.trip);
-      if (oldest) entries.delete(oldest[0]);
+      if (oldest) remove(oldest[0], oldest[1]);
     }
     entries.set(key, entry);
     const enqueue = () => {
@@ -102,12 +132,12 @@ export function createTripResources(
                 Math.abs(stop.lon) <= 180,
             )
           ) {
-            entry.trip = trip;
+            remember(entry, trip);
             entry.resolve(trip);
           } else enqueue();
         },
         (error) => {
-          if (entries.get(key) === entry) entries.delete(key);
+          remove(key, entry);
           entry.reject(error);
         },
       );
@@ -123,6 +153,7 @@ export function createTripResources(
       queue.splice(0).forEach((entry) => entry.reject(new Error("disposed")));
       entries.forEach((entry) => entry.controller.abort());
       entries.clear();
+      cachedBytes = 0;
     },
   };
 }

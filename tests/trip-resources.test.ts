@@ -110,3 +110,67 @@ test("optional coordinates have their own shared request and cannot replace stat
   assert.equal(coordinateReads, 1);
   resources.dispose();
 });
+
+test("trip detail retention has a byte budget; oversized results remain usable but reload on reopen", async () => {
+  let reads = 0;
+  const large: Trip = {
+    ...trip,
+    stops: [
+      {
+        stop: {
+          id: "large",
+          name: "x".repeat(1000),
+          lat: null,
+          lon: null,
+          platform: null,
+        },
+        arrival: null,
+        departure: null,
+      },
+    ],
+  };
+  const resources = createTripResources(
+    async () => {
+      reads++;
+      return large;
+    },
+    undefined,
+    { entries: 10, bytes: 100, concurrency: 2 },
+  );
+  assert.equal(await resources.load("large"), large);
+  assert.equal(resources.peek("large"), undefined);
+  assert.equal(await resources.load("large"), large);
+  assert.equal(reads, 2);
+  resources.dispose();
+});
+
+test("detail resources do not retain predictions mixed into an otherwise static trip", async () => {
+  const predicted: Trip = {
+    sourceMode: "schedule",
+    stops: [
+      {
+        stop: {
+          id: "stop",
+          name: "Stop",
+          lat: null,
+          lon: null,
+          platform: null,
+        },
+        arrival: null,
+        departure: "2026-10-09T12:00:00Z",
+        expectedDeparture: "2026-10-09T12:05:00Z",
+        predictionValidUntil: "2026-10-09T12:01:00Z",
+      },
+    ],
+  };
+  let reads = 0;
+  const resources = createTripResources(async () => {
+    reads++;
+    return predicted;
+  });
+  assert.equal(await resources.load("predicted"), predicted);
+  assert.equal(resources.peek("predicted"), undefined);
+  await resources.load("predicted");
+  assert.equal(reads, 2);
+  resources.dispose();
+});
