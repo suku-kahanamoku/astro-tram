@@ -637,7 +637,16 @@
   color: var(--muted);
   margin-bottom: 16px;
 }
-.map-dialog > p {
+.map-dialog .route-badges {
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.map-dialog .route-badge {
+  padding: 8px 10px;
+  line-height: 1.4;
+}
+.map-dialog [data-map-hint] {
   font-size: 12px;
   color: var(--muted);
   margin: 15px 0;
@@ -1137,8 +1146,32 @@ a.trip-open:hover {
   inset: 12px 12px auto;
   margin: 0;
 }
-.trip-dialog {
+.trip-dialog,
+.map-dialog--journey {
   height: min(760px, calc(100dvh - 40px));
+}
+.map-dialog--journey .ui-dialog-content {
+  display: flex;
+  flex-direction: column;
+}
+.map-dialog--journey [data-map-hint] {
+  flex-shrink: 0;
+}
+.map-dialog--journey .map-stage {
+  flex: 1;
+  min-height: 0;
+}
+.map-dialog--journey .map-canvas {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+}
+@media (min-width: 48rem) {
+  .map-dialog.map-dialog--journey {
+    width: 90vw;
+    height: 90dvh;
+    max-height: 90dvh;
+  }
 }
 .trip-body {
   min-height: 220px;
@@ -1257,7 +1290,8 @@ a.trip-open:active {
   .map-stage {
     min-height: 300px;
   }
-  .trip-dialog {
+  .trip-dialog,
+  .map-dialog--journey {
     height: calc(100dvh - 24px);
   }
 }

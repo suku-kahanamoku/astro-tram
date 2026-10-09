@@ -1,7 +1,7 @@
 {
   "navSearch": "Find a journey",
   "navHow": "How it works",
-  "navAbout": "About TRAM",
+  "navAbout": "About Trambus",
   "tag": "Less planning. More exploring.",
   "title1": "The world is closer",
   "title2": "than you think.",
@@ -12,9 +12,11 @@
   "note2": "Everything at a glance",
   "heroAlt": "A red tram, train and bus in an illustrated city",
   "artLabel": "Small step. Big journey.",
-  "strip": "From A to B. And everything in between.",
+  "transportMotif": "Tram → bus",
+  "stripTitle": "Across town and beyond. Travel with confidence.",
+  "stripText": "Trams, buses and trains. Journeys and transfers in one place.",
   "stepsTitle": "Every journey starts simply.",
-  "stepsIntro": "You choose the destination. TRAM helps with the journey.",
+  "stepsIntro": "You choose the destination. Trambus helps with the journey.",
   "step1Title": "Choose your start and finish",
   "step1": "Enter a stop, pick a place on the map or use your current location.",
   "step2Title": "Find your way",
@@ -26,14 +28,38 @@
   "featureText": "We are building one place for journeys across town and beyond. Coverage grows as more transport sources become available.",
   "featureAlt": "A red train on a viaduct between green hills and a fjord",
   "faqTitle": "Before you go…",
-  "faq1": "Where can I search?",
-  "answer1": "Availability depends on connected transport sources. If your journey is outside our coverage, the results will say so.",
-  "faq2": "Is the information current?",
-  "answer2": "Operator data is fetched online first. Backup timetables are clearly labelled. A vehicle position is only shown when it is current.",
-  "faq3": "Can I buy tickets?",
-  "answer3": "For now, you can search and explore journeys. Ticket purchases are planned for a future stage.",
+  "faq": [
+    {
+      "question": "How do you find and sort journeys?",
+      "answer": "Our planner combines available timetables with walking routes. You can search by departure or arrival time. Results are sorted by scheduled departure; ties are resolved by arrival, journey duration and number of transfers. Use pagination to see more options."
+    },
+    {
+      "question": "What can I enter in From and To?",
+      "answer": "A stop, town, street or address. A selected stop keeps its identity, while streets and addresses are planned from their coordinates. An exact town name prioritises its main railway and bus stations where available in the catalogue; these are also used when submitting without selecting a suggestion. GPS ranks matches but does not override a town you explicitly entered."
+    },
+    {
+      "question": "Do I need to select City / timetables?",
+      "answer": "No. All timetables searches available places throughout the selected country. A city filter is applied only when you explicitly select one, and limits both suggestions and journey searches. A journey within one town does not automatically select that town, so your next search can go elsewhere."
+    },
+    {
+      "question": "Why do results include walking legs?",
+      "answer": "They connect your location to a boarding stop, link transport services and connect the final stop to your destination. We prefer journeys where each walking leg takes no more than 10 minutes. If no such transport journey is found, we also try longer walks. An entirely walking route may appear when there are at most two distinct transport options."
+    },
+    {
+      "question": "How does My current location work?",
+      "answer": "Your browser requests a fresh location. If the nearest stop is reachable within two minutes of verified walking, we use it as your start or destination. Otherwise, we plan from the location itself. If location access is unavailable, choose a place manually or on the map. GPS coordinates are not stored in shared links."
+    },
+    {
+      "question": "Does the timeline dot always show a measured position?",
+      "answer": "A fresh measured position takes priority. The last known position may remain during an interruption. Without measurements, we show a labelled timetable estimate; this is neither GPS nor confirmation that the service is on time. The timeline is schematic. The full-route map shows the planned route and stops, not a live vehicle position."
+    },
+    {
+      "question": "Why might no journey be found?",
+      "answer": "Results depend on timetable coverage for the place, date and time, your filters and planner availability. Try another time, check the selected place or change the city filter to All timetables. Results distinguish missing coverage from a temporarily unavailable source."
+    }
+  ],
   "footer": "Every journey starts somewhere.",
   "privacy": "We do not store your GPS location.",
   "aboutTitle": "A simple way to get going.",
-  "aboutText": "TRAM brings available transport sources into one clear journey search. We are starting with the first regions and gradually adding cities, operators and countries."
+  "aboutText": "Trambus brings available transport sources into one clear journey search. We are starting with the first regions and gradually adding cities, operators and countries."
 }

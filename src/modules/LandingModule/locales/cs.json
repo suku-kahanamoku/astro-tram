@@ -1,7 +1,7 @@
 {
   "navSearch": "Najít spojení",
   "navHow": "Jak to funguje",
-  "navAbout": "O TRAM",
+  "navAbout": "O aplikaci Trambus",
   "tag": "Méně plánování. Více cestování.",
   "title1": "Svět je blíž,",
   "title2": "než si myslíš.",
@@ -12,9 +12,11 @@
   "note2": "Všechno přehledně",
   "heroAlt": "Červená tramvaj, vlak a autobus v ilustrovaném městě",
   "artLabel": "Malý krok. Velká cesta.",
-  "strip": "Z bodu A do bodu B. A za vším mezi tím.",
+  "transportMotif": "Tramvaj → autobus",
+  "stripTitle": "Městem i dál. S přehledem.",
+  "stripText": "Tramvaje, autobusy i vlaky. Spojení a přestupy na jednom místě.",
   "stepsTitle": "Cesta začíná jednoduše.",
-  "stepsIntro": "Ty vybereš cíl. TRAM ti pomůže s cestou.",
+  "stepsIntro": "Ty vybereš cíl. Trambus ti pomůže s cestou.",
   "step1Title": "Řekni odkud a kam",
   "step1": "Zadej zastávku, vyber místo na mapě nebo použij svoji aktuální polohu.",
   "step2Title": "Najdi svoji cestu",
@@ -26,14 +28,38 @@
   "featureText": "Budujeme jedno místo pro cesty po městě i za jeho hranice. Pokrytí přidáváme postupně, podle dostupných dopravních zdrojů.",
   "featureAlt": "Červený vlak na viaduktu mezi zelenými kopci a fjordem",
   "faqTitle": "Než vyrazíš…",
-  "faq1": "Kde už můžu hledat?",
-  "answer1": "Dostupnost závisí na připojených dopravních zdrojích. Pokud pro tvoji cestu nemáme pokrytí, řekneme ti to přímo ve výsledcích.",
-  "faq2": "Jsou údaje aktuální?",
-  "answer2": "Přednost mají online údaje dopravců. Záložní jízdní řád jasně označujeme. Polohu vozidla ukážeme pouze tehdy, když je aktuální.",
-  "faq3": "Můžu si koupit jízdenku?",
-  "answer3": "Zatím hledáme a zobrazujeme spojení. Nákup jízdenek je plánovaný další krok.",
+  "faq": [
+    {
+      "question": "Jak vybíráte a řadíte spojení?",
+      "answer": "Vlastní plánovač kombinuje dostupné jízdní řády s pěšími trasami. Hledat můžeš podle odjezdu i příjezdu. Výsledky řadíme podle plánovaného odjezdu; při shodě rozhodují příjezd, délka cesty a počet přestupů. Další varianty najdeš přes stránkování."
+    },
+    {
+      "question": "Co můžu napsat do Odkud a Kam?",
+      "answer": "Zastávku, město, ulici nebo adresu. Vybraná zastávka zůstává konkrétní zastávkou, ulice a adresy plánujeme od jejich souřadnic. Samotný název města upřednostní jeho hlavní vlakové a autobusové stanice, pokud je máme v katalogu; použijeme je i při hledání bez výběru položky. GPS pomáhá řadit shody, ale nepřepíše výslovně zadané město."
+    },
+    {
+      "question": "Musím vybrat Město / jízdní řády?",
+      "answer": "Nemusíš. Všechny jízdní řády hledají napříč dostupnými místy ve zvolené zemi. Městský filtr se zapne pouze tvým výslovným výběrem a omezí našeptávání i hledání. Cesta mezi dvěma místy ve stejné obci město automaticky nevybere, takže další hledání může vést do jiné obce."
+    },
+    {
+      "question": "Proč jsou ve výsledcích pěší úseky?",
+      "answer": "Propojují místo s nástupní zastávkou, jednotlivé spoje a výstupní zastávku s cílem. Upřednostňujeme spojení, kde každý pěší úsek trvá nejvýše 10 minut. Pokud žádné takové dopravní spojení nenajdeme, zkusíme i delší chůzi. Samostatná pěší varianta se může objevit při nejvýše dvou různých dopravních spojeních."
+    },
+    {
+      "question": "Jak funguje Moje aktuální poloha?",
+      "answer": "Prohlížeč si vyžádá čerstvou polohu. Pokud je nejbližší zastávka dostupná do dvou minut ověřené chůze, použijeme ji jako začátek nebo cíl. Jinak plánujeme od získaného bodu. Bez dostupné polohy můžeš místo vybrat ručně nebo na mapě. GPS souřadnice neukládáme do odkazů."
+    },
+    {
+      "question": "Je tečka na časové ose vždy skutečná poloha?",
+      "answer": "Čerstvá měřená poloha má přednost. Při výpadku může zůstat poslední známá poloha. Pokud měření nemáme, ukážeme označený odhad podle jízdního řádu; nejde o GPS ani potvrzení jízdy načas. Osa je schematická. Mapa celé trasy zobrazuje plánovanou cestu a zastávky, nikoli živou polohu vozidla."
+    },
+    {
+      "question": "Proč se někdy nepodaří najít spojení?",
+      "answer": "Záleží na dostupnosti jízdních řádů pro dané místo, datum a čas, na filtrech i na dostupnosti plánovače. Zkus jiný čas, zkontroluj vybrané místo nebo přepni městský filtr na Všechny jízdní řády. Chybějící pokrytí a dočasnou nedostupnost zdroje rozlišujeme ve výsledcích."
+    }
+  ],
   "footer": "Každá cesta někde začíná.",
   "privacy": "Tvoji GPS polohu neukládáme.",
   "aboutTitle": "Jedna jednoduchá cesta k cestování.",
-  "aboutText": "TRAM propojuje dostupné dopravní zdroje v přehledném vyhledávání. Začínáme prvními regiony a postupně přidáváme další města, dopravce a země."
+  "aboutText": "Trambus propojuje dostupné dopravní zdroje v přehledném vyhledávání. Začínáme prvními regiony a postupně přidáváme další města, dopravce a země."
 }

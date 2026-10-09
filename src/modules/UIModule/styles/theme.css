@@ -287,47 +287,84 @@ button {
   width: 26px;
 }
 .tram-footer {
-  padding: 55px 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 30px;
+  padding: 40px 0 28px;
   border-top: 1px solid var(--line);
   margin-top: 50px;
 }
-.footer-logo {
-  font-size: 44px;
-  letter-spacing: -3px;
-  font-weight: 900;
+.footer-main {
+  display: grid;
+  grid-template-columns: minmax(200px, 1fr) minmax(0, 1.5fr);
+  align-items: center;
+  gap: 32px;
+  padding-bottom: 28px;
 }
-.footer-logo span {
+.footer-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 32px;
+  letter-spacing: -1.7px;
+  font-weight: 900;
+  line-height: 1;
+}
+.footer-logo .brand-period {
   color: var(--red);
 }
 .tram-footer p {
   font-size: 12px;
   color: var(--muted);
-  margin-top: 8px;
+  margin-top: 12px;
 }
-.footer-meta {
+.footer-bottom {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
-  gap: 24px;
-  font-size: 11px;
+  gap: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.footer-contact {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding-block: 4px;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: thin;
+  font-size: 12px;
   color: var(--muted);
+}
+.footer-contact > * {
+  flex-shrink: 0;
+}
+.footer-divider {
+  color: var(--line);
+}
+.footer-contact a:hover {
+  color: var(--red);
+  text-decoration: underline;
 }
 .footer-links,
 .footer-notes {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 24px;
+}
+.footer-links {
+  justify-content: end;
+  font-size: 12px;
+  font-weight: 650;
+}
+.footer-links a {
+  padding-block: 8px;
+}
+.footer-links a:hover {
+  color: var(--red);
 }
 .footer-notes {
-  align-items: end;
-}
-.footer-meta a {
-  color: var(--ink);
-  font-weight: 700;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
 }
 .simple-page {
   padding: 90px 0;
@@ -370,14 +407,16 @@ button {
     font-size: 31px;
   }
   .tram-footer {
-    padding: 35px 0;
-    flex-direction: column;
+    padding-top: 28px;
   }
-  .footer-meta {
-    gap: 20px;
+  .footer-main {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding-bottom: 20px;
   }
-  .footer-notes {
-    align-items: start;
+  .footer-links {
+    justify-content: start;
+    gap: 4px 20px;
   }
   .button {
     gap: 12px;

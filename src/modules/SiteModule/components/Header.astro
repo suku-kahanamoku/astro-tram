@@ -1,5 +1,6 @@
 ---
 import BrandMark from "./BrandMark.astro";
+import { site } from "../../../config/site";
 import LanguagePicker from "../../LangModule/components/LanguagePicker.astro";
 import OnlinePlannerControls from "./OnlinePlannerControls";
 import { dictionary } from "../providers/translations";
@@ -13,10 +14,13 @@ const { locale, page = "home" } = Astro.props,
 ---
 
 <header class="tram-header shell">
-  <a href={url(locale)} class="tram-brand" aria-label="TRAM">
+  <a href={url(locale)} class="tram-brand" aria-label={site.name}>
     <BrandMark />
     <span>
-      tram<span class="brand-period">.</span>
+      {site.name}
+      <span class="brand-period" aria-hidden="true">
+        .
+      </span>
     </span>
   </a>
   <nav class="desktop-nav" aria-label={t.nav.menu}>

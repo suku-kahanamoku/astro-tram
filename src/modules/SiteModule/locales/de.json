@@ -1,7 +1,7 @@
 {
   "nav": {
     "home": "Startseite",
-    "about": "Über TRAM",
+    "about": "Über Trambus",
     "login": "Anmelden",
     "account": "Mein Konto",
     "menu": "Menü",
@@ -41,6 +41,7 @@
     "skip": "Zum Inhalt springen",
     "back": "Zur Startseite",
     "footer": "Jede Reise beginnt irgendwo.",
+    "registration": "Unternehmens-ID",
     "privacy": "Wir speichern deinen GPS-Standort nicht.",
     "notifications": "Benachrichtigungen",
     "closeNotification": "Benachrichtigung schließen"

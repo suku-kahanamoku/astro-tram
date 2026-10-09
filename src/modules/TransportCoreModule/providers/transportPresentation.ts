@@ -72,7 +72,7 @@ export function placeDetail(place: PlaceOption, t: Dictionary): string {
       : place.kind === "address"
         ? t.address
         : place.kind === "city"
-          ? t.city
+          ? t.municipalityTransport
           : place.modes?.length && place.modes.every((mode) => mode === "train")
             ? t.station
             : t.stopName,

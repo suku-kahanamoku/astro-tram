@@ -13,7 +13,9 @@ import { useTransportPalette } from "../../TransportCoreModule/hooks/useTranspor
 import { modePalette } from "../../TransportCoreModule/providers/transportPalette";
 
 function mapPlace(place?: Place): MapPlace | undefined {
-  return place;
+  return place?.type === "municipality"
+    ? { ...place, type: "coordinates" }
+    : place;
 }
 
 export function useMapView(
@@ -44,11 +46,12 @@ export function useMapView(
               color: modePalette(palette, leg.mode)?.foreground,
               lineStyle: leg.mode === "walk" ? "dotted" : "solid",
             })),
-            endpointLabels: options.mode === "walk" ? ["A", "B"] : undefined,
+            endpointLabels:
+              options.mode === "walk" ? [t.from, t.to] : undefined,
             zoomOffset: options.mode === "walk" ? 0 : undefined,
           }
         : undefined,
-    [options.journey, options.mode, palette],
+    [options.journey, options.mode, palette, t.from, t.to],
   );
   return useGenericMapView(canvas, {
     open: options.open,

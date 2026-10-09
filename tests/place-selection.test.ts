@@ -18,13 +18,21 @@ test("geography selection keeps transit IDs and uses coordinates for streets and
     id: option.id,
     label: option.name,
   });
-  for (const kind of ["street", "address", "city"] as const)
+  for (const kind of ["street", "address"] as const)
     assert.deepEqual(selectPlace({ ...option, kind }), {
       type: "coordinates",
       lat: 49.2,
       lon: 16.6,
       label: "Česká",
     });
+  assert.deepEqual(selectPlace({ ...option, kind: "city", state: "CZ" }), {
+    type: "municipality",
+    id: option.id,
+    label: option.name,
+    lat: 49.2,
+    lon: 16.6,
+    state: "CZ",
+  });
   assert.equal(
     selectPlace({ ...option, kind: "street", lat: null }),
     undefined,
@@ -71,4 +79,31 @@ test("geography projection drops private fields and invalid map points", async (
   assert.equal(result.data[0].kind, "street");
   assert.equal(result.data[0].citySource, "nearest_settlement");
   assert.ok(!JSON.stringify(result).includes("private"));
+});
+
+test("search results retain resolved named coordinate endpoints without a transit ID", async () => {
+  const from = {
+    type: "coordinates",
+    name: "Eleonory Voračické",
+    lat: 49.2076651,
+    lon: 16.5814115,
+  };
+  const provider = createTransportProvider(
+    createCoreClient(
+      {
+        baseUrl: "https://core.test/api",
+        apiKey: "secret",
+        tenantHost: "tram.test",
+      },
+      async () =>
+        Response.json({
+          success: true,
+          data: { journeys: [], resolved_places: { from } },
+        }),
+    ),
+  );
+  const result = await provider.search({});
+  assert.equal(result.resolvedPlaces?.from?.name, from.name);
+  assert.equal(result.resolvedPlaces?.from?.id, null);
+  assert.equal(result.resolvedPlaces?.from?.lat, from.lat);
 });

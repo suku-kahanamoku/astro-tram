@@ -1,7 +1,7 @@
 {
   "navSearch": "Verbindung finden",
   "navHow": "So funktioniert’s",
-  "navAbout": "Über TRAM",
+  "navAbout": "Über Trambus",
   "tag": "Weniger planen. Mehr entdecken.",
   "title1": "Die Welt ist näher,",
   "title2": "als du denkst.",
@@ -12,9 +12,11 @@
   "note2": "Alles im Blick",
   "heroAlt": "Eine rote Tram, ein Zug und ein Bus in einer illustrierten Stadt",
   "artLabel": "Kleiner Schritt. Große Reise.",
-  "strip": "Von A nach B. Und zu allem dazwischen.",
+  "transportMotif": "Tram → Bus",
+  "stripTitle": "Durch die Stadt und weiter. Alles im Blick.",
+  "stripText": "Trams, Busse und Züge. Verbindungen und Umstiege an einem Ort.",
   "stepsTitle": "Jede Reise beginnt einfach.",
-  "stepsIntro": "Du wählst das Ziel. TRAM hilft dir auf dem Weg.",
+  "stepsIntro": "Du wählst das Ziel. Trambus hilft dir auf dem Weg.",
   "step1Title": "Start und Ziel wählen",
   "step1": "Gib eine Haltestelle ein, wähle einen Ort auf der Karte oder nutze deinen aktuellen Standort.",
   "step2Title": "Deinen Weg finden",
@@ -26,14 +28,38 @@
   "featureText": "Wir schaffen einen Ort für Fahrten durch die Stadt und darüber hinaus. Die Abdeckung wächst mit weiteren Verkehrsquellen.",
   "featureAlt": "Roter Zug auf einem Viadukt zwischen grünen Hügeln und einem Fjord",
   "faqTitle": "Bevor du losfährst…",
-  "faq1": "Wo kann ich suchen?",
-  "answer1": "Die Verfügbarkeit hängt von den angebundenen Verkehrsquellen ab. Liegt deine Reise außerhalb der Abdeckung, zeigen wir das in den Ergebnissen.",
-  "faq2": "Sind die Daten aktuell?",
-  "answer2": "Online-Daten der Betreiber haben Vorrang. Ersatzfahrpläne werden klar markiert. Fahrzeugpositionen zeigen wir nur bei aktueller Messung.",
-  "faq3": "Kann ich Fahrkarten kaufen?",
-  "answer3": "Vorerst kannst du Verbindungen suchen und ansehen. Der Fahrkartenkauf ist für einen späteren Schritt geplant.",
+  "faq": [
+    {
+      "question": "Wie werden Verbindungen gesucht und sortiert?",
+      "answer": "Unser Planer kombiniert verfügbare Fahrpläne mit Fußwegen. Du kannst nach Abfahrts- oder Ankunftszeit suchen. Die Ergebnisse werden nach planmäßiger Abfahrt sortiert; bei Gleichstand entscheiden Ankunft, Reisedauer und Umstiege. Weitere Varianten findest du über die Seitennavigation."
+    },
+    {
+      "question": "Was kann ich bei Von und Nach eingeben?",
+      "answer": "Eine Haltestelle, einen Ort, eine Straße oder eine Adresse. Ausgewählte Haltestellen behalten ihre Identität; Straßen und Adressen werden anhand ihrer Koordinaten geplant. Ein genauer Ortsname bevorzugt die Hauptbahnhöfe und Busbahnhöfe dieses Ortes, sofern sie im Katalog vorhanden sind. Diese werden auch bei einer Suche ohne ausgewählten Vorschlag verwendet. GPS ordnet Treffer, ersetzt aber keinen ausdrücklich eingegebenen Ort."
+    },
+    {
+      "question": "Muss ich Stadt / Fahrpläne auswählen?",
+      "answer": "Nein. Alle Fahrpläne durchsucht verfügbare Orte im gewählten Land. Der Stadtfilter wird nur durch deine ausdrückliche Auswahl aktiviert und begrenzt Vorschläge sowie Verbindungssuchen. Eine Fahrt innerhalb eines Ortes wählt diesen nicht automatisch aus; die nächste Suche kann in einen anderen Ort führen."
+    },
+    {
+      "question": "Warum enthalten Ergebnisse Fußwege?",
+      "answer": "Sie verbinden deinen Standort mit der Einstiegshaltestelle, einzelne Fahrten miteinander und die letzte Haltestelle mit dem Ziel. Bevorzugt werden Verbindungen, bei denen jeder Fußweg höchstens 10 Minuten dauert. Gibt es keine solche Verkehrsverbindung, suchen wir auch mit längeren Fußwegen. Eine reine Fußroute kann erscheinen, wenn höchstens zwei unterschiedliche Verkehrsverbindungen verfügbar sind."
+    },
+    {
+      "question": "Wie funktioniert Mein aktueller Standort?",
+      "answer": "Dein Browser fragt einen aktuellen Standort ab. Ist die nächste Haltestelle über einen geprüften Fußweg innerhalb von zwei Minuten erreichbar, verwenden wir sie als Start oder Ziel. Andernfalls planen wir vom ermittelten Punkt aus. Ohne Standortzugriff kannst du einen Ort manuell oder auf der Karte wählen. GPS-Koordinaten werden nicht in geteilten Links gespeichert."
+    },
+    {
+      "question": "Zeigt der Punkt auf der Zeitachse immer eine gemessene Position?",
+      "answer": "Eine aktuelle gemessene Position hat Vorrang. Bei einer Unterbrechung kann die letzte bekannte Position bleiben. Ohne Messung zeigen wir eine gekennzeichnete Fahrplanschätzung; sie ist weder GPS noch eine Bestätigung für Pünktlichkeit. Die Zeitachse ist schematisch. Die Karte der gesamten Route zeigt die geplante Strecke und Haltestellen, keine Live-Fahrzeugposition."
+    },
+    {
+      "question": "Warum wird manchmal keine Verbindung gefunden?",
+      "answer": "Ergebnisse hängen von verfügbaren Fahrplänen für Ort, Datum und Uhrzeit, den Filtern und der Verfügbarkeit des Planers ab. Versuche eine andere Zeit, prüfe den gewählten Ort oder stelle den Stadtfilter auf Alle Fahrpläne. Die Ergebnisse unterscheiden fehlende Abdeckung von einer vorübergehend nicht verfügbaren Quelle."
+    }
+  ],
   "footer": "Jede Reise beginnt irgendwo.",
   "privacy": "Wir speichern deinen GPS-Standort nicht.",
   "aboutTitle": "Ein einfacher Weg zum Unterwegssein.",
-  "aboutText": "TRAM bündelt verfügbare Verkehrsquellen in einer übersichtlichen Suche. Wir beginnen mit ersten Regionen und ergänzen schrittweise Städte, Betreiber und Länder."
+  "aboutText": "Trambus bündelt verfügbare Verkehrsquellen in einer übersichtlichen Suche. Wir beginnen mit ersten Regionen und ergänzen schrittweise Städte, Betreiber und Länder."
 }

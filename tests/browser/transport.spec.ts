@@ -569,22 +569,71 @@ test("city picker defaults to all and offers online municipalities", async ({
   );
 });
 
-test("search auto selects one city and resets intercity routes to all timetables", async ({
+test("same-city results never narrow subsequent autocomplete or intercity searches", async ({
   page,
 }) => {
+  const searches: any[] = [];
+  const lookups: any[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/api/transport/search/"))
+      searches.push(request.postDataJSON());
+    if (request.url().includes("/api/transport/places/")) {
+      const q =
+        request.method() === "POST"
+          ? request.postDataJSON().q
+          : JSON.parse(new URL(request.url()).searchParams.get("q")!);
+      lookups.push(q);
+    }
+  });
   await page.goto("/spojeni/?" + query());
-  await expect(page.locator("#travel-city")).toHaveValue("Praha");
-  await expect(page).toHaveURL(/city=Praha/);
+  await expect(page.locator(".journey-card")).toHaveCount(2);
+  await expect(page.locator("#travel-city")).toHaveValue("Všechny jízdní řády");
+  expect(new URL(page.url()).searchParams.has("city")).toBe(false);
+  expect(searches).toHaveLength(1);
+  for (const href of await page
+    .locator(".results-pagination a")
+    .evaluateAll((links) =>
+      links.map((link) => (link as HTMLAnchorElement).href),
+    ))
+    expect(new URL(href).searchParams.has("city")).toBe(false);
   await page.reload();
-  await expect(page.locator("#travel-city")).toHaveValue("Praha");
+  await expect(page.locator(".journey-card")).toHaveCount(2);
+  await expect(page.locator("#travel-city")).toHaveValue("Všechny jízdní řády");
+  expect(searches).toHaveLength(2);
+  await page.locator("#place-from").fill("Grohova");
+  await page.getByRole("option", { name: "Brno, Grohova" }).click();
+  const submitted = page.waitForRequest((request) =>
+    request.url().includes("/api/transport/search/"),
+  );
+  await page.getByRole("button", { name: "Hledat spojení" }).click();
+  expect((await submitted).postDataJSON()["from-dest"].id).toBe(id("S4"));
+  await expect(page.locator(".journey-card")).toHaveCount(2);
+  expect(searches).toHaveLength(3);
+  expect(lookups.length).toBeGreaterThan(0);
+  for (const body of searches) expect(body.city).toBeUndefined();
+  for (const q of lookups) expect(q.city).toBeUndefined();
+  expect(new URL(page.url()).searchParams.has("city")).toBe(false);
+  await expect(page.locator("#travel-city")).toHaveValue("Všechny jízdní řády");
+});
+
+test("intercity results preserve an explicitly selected city in searches and URL", async ({
+  page,
+}) => {
+  page.on("request", (request) => {
+    if (request.url().includes("/api/transport/search/"))
+      expect(request.postDataJSON().city).toBe("Brno");
+  });
   await page.goto(
     "/spojeni/?" +
       query({ from: id("S4"), fromLabel: "Brno, Grohova", city: "Brno" }),
   );
   await expect(page.locator(".journey-card")).toHaveCount(2);
-  await expect(page.locator("#travel-city")).toHaveValue("Všechny jízdní řády");
-  expect(new URL(page.url()).searchParams.has("city")).toBe(false);
+  await expect(page.locator("#travel-city")).toHaveValue("Brno");
+  expect(new URL(page.url()).searchParams.get("city")).toBe("Brno");
   await expect(page.locator("#place-from")).toHaveValue("Brno, Grohova");
+  await page.reload();
+  await expect(page.locator(".journey-card")).toHaveCount(2);
+  await expect(page.locator("#travel-city")).toHaveValue("Brno");
 });
 
 test("line opens full-trip dialog; middle button shows only intermediate stops; reopening reuses static stops", async ({

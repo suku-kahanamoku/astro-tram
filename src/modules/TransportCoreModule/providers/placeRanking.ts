@@ -1,7 +1,14 @@
 import type { Fix, PlaceOption } from "../types";
 
-const normalize = (text: string) =>
-  text.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase();
+export const normalizePlaceName = (text: string) =>
+  text
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/ł/g, "l")
+    .replace(/ß/g, "ss")
+    .replace(/\s+/g, " ")
+    .trim();
 const radians = (value: number) => (value * Math.PI) / 180;
 function distance(option: PlaceOption, fix?: Fix) {
   if (!fix || typeof option.lat !== "number" || typeof option.lon !== "number")
@@ -20,10 +27,10 @@ export function rankWorldPlaces(
   text: string | null,
   fix?: Fix,
 ) {
-  const term = text === null ? null : normalize(text.trim());
+  const term = text === null ? null : normalizePlaceName(text);
   const relevance = (option: PlaceOption) => {
     if (term === null) return 0;
-    const name = normalize(option.name);
+    const name = normalizePlaceName(option.name);
     const stop = name.split(",").at(-1)!.trim();
     return name === term || stop === term
       ? 0
@@ -37,12 +44,24 @@ export function rankWorldPlaces(
       : option.kind === "street"
         ? 1
         : 2;
+  const stationPriority = (option: PlaceOption) =>
+    option.kind === "city" &&
+    term !== null &&
+    normalizePlaceName(option.name) === term
+      ? -1
+      : option.cityStation &&
+          term !== null &&
+          option.matchedCity &&
+          normalizePlaceName(option.matchedCity) === term
+        ? (option.stationPriority ?? 2)
+        : 3;
   const unique = [
     ...new Map(options.map((option) => [option.id, option])).values(),
   ];
   return unique
     .sort(
       (a, b) =>
+        stationPriority(a) - stationPriority(b) ||
         priority(a) - priority(b) ||
         relevance(a) - relevance(b) ||
         distance(a, fix) - distance(b, fix) ||

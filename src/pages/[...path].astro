@@ -14,6 +14,7 @@ import { dictionary } from "../modules/LandingModule/providers/translations";
 import { dictionary as transportDictionary } from "../modules/TransportCoreModule/providers/translations";
 import { locales, pages, resolveRoute, url } from "../config/routes";
 import { localeFromPath } from "../modules/LangModule/providers/locale";
+import { site } from "../config/site";
 export const prerender = true;
 export function getStaticPaths() {
   return locales.flatMap((locale) =>
@@ -63,7 +64,7 @@ if (page === "search" || page === "account" || page === "login") {
   {error ? (
     <section class="shell simple-page">
       <span class="eyebrow">404</span>
-      <h1>TRAM / 404</h1>
+      <h1>{site.name} / 404</h1>
       <a class="button" href={url(locale)}>
         {t.cta} →
       </a>
@@ -74,7 +75,7 @@ if (page === "search" || page === "account" || page === "login") {
     <Account {locale} />
   ) : page === "licenses" ? (
     <section class="shell simple-page licenses-page">
-      <span class="eyebrow">TRAM</span>
+      <span class="eyebrow">{site.name}</span>
       <h1>{licenses.title}</h1>
       <p>{licenses.intro}</p>
       <DataLicenses {locale} />
@@ -93,7 +94,7 @@ if (page === "search" || page === "account" || page === "login") {
   ) : (
     <>
       <section class="shell simple-page">
-        <span class="eyebrow">TRAM</span>
+        <span class="eyebrow">{site.name}</span>
         <h1>{t.aboutTitle}</h1>
         <p>{t.aboutText}</p>
         <a class="button" href={url(locale, "search")}>

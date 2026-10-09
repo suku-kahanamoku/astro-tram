@@ -1,4 +1,12 @@
-<svg viewBox="0 0 40 40" width="36" height="36" aria-hidden="true">
-  <rect width="40" height="40" rx="12" fill="currentColor" />
-  <path d="M8 10h24v6h-9v17h-6V16H8z" fill="#fff8ee" />
-</svg>
+---
+import { site } from "../../../config/site";
+---
+
+<img src={site.logo} width="36" height="36" alt="" aria-hidden="true" />
+
+<style>
+  img {
+    display: block;
+    flex-shrink: 0;
+  }
+</style>

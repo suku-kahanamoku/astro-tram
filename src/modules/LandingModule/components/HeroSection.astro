@@ -1,6 +1,7 @@
 ---
 import { dictionary } from "../providers/translations";
 import Icon from "../../UIModule/components/TransitIcon.astro";
+import TransportMotif from "../../UIModule/components/TransportMotif";
 import type { Locale } from "../../LangModule/config";
 interface Props {
   locale: Locale;
@@ -58,7 +59,7 @@ const t = dictionary(Astro.props.locale);
       <span aria-hidden="true">→</span>
     </div>
     <span class="art-sticker" aria-hidden="true">
-      A <span>→</span> B
+      <TransportMotif />
     </span>
   </div>
 </section>

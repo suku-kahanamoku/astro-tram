@@ -39,6 +39,7 @@ export default function TripTimeline({
   const { progress, retained, estimated } = useTripProgress(
     coordinateTrip,
     live,
+    leg?.mode,
   );
   const top = useTripTimeline(root, progress, trip);
   return (

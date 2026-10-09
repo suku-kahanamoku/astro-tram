@@ -113,7 +113,7 @@ http
           id: "fixture-timetable",
           feed_id: "fixture",
           name: "Testovací jízdní řád",
-          attribution: "Syntetická data pro testování TRAM.",
+          attribution: "Syntetická data pro testování Trambus.",
           license_url: "https://example.test/timetable-license",
           source_url: "https://example.test/timetable",
           published_at: "2026-10-01T12:00:00Z",

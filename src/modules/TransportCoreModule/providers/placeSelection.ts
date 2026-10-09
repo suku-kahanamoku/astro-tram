@@ -9,6 +9,7 @@ export function selectPlace(option: PlaceOption): Place | undefined {
       : {};
   if (!option.kind || option.kind === "stop")
     return { type: "stop", id: option.id, label: option.name, ...country };
+  if (option.kind === "city" && !country.state) return undefined;
   if (
     typeof option.lat !== "number" ||
     typeof option.lon !== "number" ||
@@ -16,7 +17,9 @@ export function selectPlace(option: PlaceOption): Place | undefined {
   )
     return undefined;
   return {
-    type: "coordinates",
+    ...(option.kind === "city"
+      ? { type: "municipality" as const, id: option.id }
+      : { type: "coordinates" as const }),
     lat: option.lat,
     lon: option.lon,
     label: option.name,

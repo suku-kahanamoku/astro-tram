@@ -14,6 +14,8 @@ export const transportClientConfig = {
     ambiguityMeters: 25,
     minSegmentMeters: 10,
     maxSegmentMeters: 10000,
+    // Train stops may be far apart; their schematic chord is not the railway geometry.
+    railProjection: { maxSegmentMeters: 100000, maxOffsetMeters: 3000 },
   },
   mapZoom: { stop: 17, picker: 13, journeyFitMax: 15, journeyOffset: 1 },
   defaultMapCenter: [14.42, 50.075] as [number, number],

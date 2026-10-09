@@ -196,3 +196,23 @@ test("a dated last-known measurement can initialise the dot without being treate
     null,
   );
 });
+
+test("railway GPS projects between distant stations without relaxing other modes or loop ambiguity", () => {
+  const railway = {
+    ...trip,
+    stops: [
+      trip.stops[0],
+      { ...trip.stops[2], stop: { ...trip.stops[2].stop, lat: 50.3 } },
+    ],
+  };
+  const measured = live(50.15, 14.01);
+  assert.equal(tripProgress(railway, measured, now), null);
+  const progress = tripProgress(railway, measured, now, "train")!;
+  assert.equal(progress.from, 0);
+  assert.equal(progress.to, 1);
+  assert.ok(Math.abs(progress.fraction - 0.5) < 0.01);
+  assert.equal(progress.atStop, false);
+  assert.equal(tripProgress(railway, live(50.15, 14.2), now, "train"), null);
+  const loop = { ...railway, stops: [...railway.stops, railway.stops[0]] };
+  assert.equal(tripProgress(loop, measured, now, "train"), null);
+});

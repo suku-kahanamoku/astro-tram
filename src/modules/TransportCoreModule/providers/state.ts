@@ -29,12 +29,20 @@ export function readState(params: URLSearchParams): SearchState {
     const kind = params.get(`${side}Kind`),
       label = (params.get(`${side}Label`) ?? "").slice(0, 160);
     if (kind === "current_location") return { type: kind, label };
-    if (kind === "coordinates") {
+    if (kind === "coordinates" || kind === "municipality") {
       const la = params.get(`${side}Lat`),
         lo = params.get(`${side}Lon`);
+      const municipalityId = params.get(side);
+      if (
+        kind === "municipality" &&
+        (!municipalityId || !/^[A-Za-z0-9_-]{1,2048}$/.test(municipalityId))
+      )
+        return;
       if (la && lo && validCoordinates(Number(la), Number(lo)))
         return {
-          type: kind,
+          ...(kind === "municipality"
+            ? { type: kind, id: municipalityId! }
+            : { type: kind }),
           lat: Number(la),
           lon: Number(lo),
           label,
@@ -99,7 +107,8 @@ export function writeState(state: SearchState): URLSearchParams {
       p.set(side, place.id);
       p.set(`${side}Label`, place.label);
     }
-    if (place.type === "coordinates") {
+    if (place.type === "coordinates" || place.type === "municipality") {
+      if (place.type === "municipality") p.set(side, place.id);
       p.set(`${side}Lat`, String(place.lat));
       p.set(`${side}Lon`, String(place.lon));
       p.set(`${side}Label`, place.label);
@@ -124,8 +133,21 @@ export function searchBody(
   const place = (value?: Place) => {
     if (!value) throw new Error("invalid");
     if (value.type === "stop") return { type: "stop", id: value.id };
+    if (value.type === "municipality") {
+      if (!value.state || !value.label.trim()) throw new Error("invalid");
+      return {
+        type: "municipality",
+        name: value.label.trim(),
+        state: value.state,
+      };
+    }
     if (value.type === "coordinates")
-      return { type: value.type, lat: value.lat, lon: value.lon };
+      return {
+        type: value.type,
+        lat: value.lat,
+        lon: value.lon,
+        ...(value.label.trim() ? { name: value.label.trim() } : {}),
+      };
     if (
       !fix ||
       !validInstant(fix.observedAt) ||

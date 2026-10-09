@@ -1,7 +1,7 @@
 {
   "nav": {
     "home": "Domů",
-    "about": "O TRAM",
+    "about": "O aplikaci Trambus",
     "login": "Přihlášení",
     "account": "Můj účet",
     "menu": "Menu",
@@ -41,6 +41,7 @@
     "skip": "Přejít k obsahu",
     "back": "Zpět na úvod",
     "footer": "Každá cesta někde začíná.",
+    "registration": "IČO",
     "privacy": "Tvoji GPS polohu neukládáme.",
     "notifications": "Oznámení",
     "closeNotification": "Zavřít oznámení"

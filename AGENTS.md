@@ -1,4 +1,4 @@
-# Astro TRAM
+# Astro Trambus
 
 - Měňte pouze tento projekt, pokud není výslovně zadáno jinak.
 - Značka a zapnutí modulů patří do `src/config/site.ts`, reklamní jednotky do `src/config/ads.ts`, trasy do `src/config/routes.ts`.
@@ -51,3 +51,25 @@ The project code graph is at `graphify-out/graph.json`. It is a navigation aid; 
   `transportModes` obsahuje jen ikony a klíče překladů. Sdílené
   `useTransportPalette` načítá jednou; obecný MapModule dostává pouze barvu
   úseku a nezná dopravce, zemi ani dopravní registr.
+
+## Zadání města bez výběru zastávky
+
+- Java Places řadí hlavní vlakové/autobusové stanice před běžnými shodami
+  pouze při přesné shodě názvu města bez explicitního městského filtru.
+  Zachovej backendové `cityStation`, `matchedCity`, `stationPriority` i při
+  slučování ve Světě a řešení nevybraného textu. Nepřidávej seznam nádraží
+  nebo lokální pojmenovávací heuristiku do Reactu.
+- Výslovně napsané město nesmí GPS změnit na blízkou městskou zastávku.
+  Formulář bez vybrané položky řeší text hlavní stanicí daného města;
+  výslovně vybranou zastávku, ulici nebo aktuální polohu nezaměňuje.
+
+## Tečka na ose a dostupnost realtime
+
+- Bez čerstvé nebo poslední jednoznačně měřené polohy použij označený
+  schematický odhad ze statických časů. Nečekej na backendový odhad nebo
+  potvrzení absence poskytovatele; nezávislá realtime služba může vracet
+  `unavailable`. Odhad není GPS a nikdy nedokazuje nulové zpoždění.
+- Přijatá HTTP/WS odpověď není potvrzení včasné jízdy. U nulového nebo
+  neznámého zpoždění nezobrazuj „Bez zpoždění“; kladné zpoždění má badge.
+- Živá GPS a poslední jednoznačně měřený bod mají přednost. Lokální
+  odhad aktualizuje jen osu, nikoli statické časy či detaily spoje.

@@ -92,9 +92,10 @@ export function tripProgress(
   trip: Trip,
   live?: TripObservation,
   now = Date.now(),
+  mode?: string,
 ): TripProgress | null {
   if (!freshTripPosition(live, now)) return null;
-  return projectPosition(trip, live.position);
+  return projectPosition(trip, live.position, mode);
 }
 
 /** Backend progress is distinct from GPS and must match the displayed stop occurrences. */
@@ -137,6 +138,7 @@ export function lastKnownTripProgress(
   trip: Trip,
   live?: TripObservation,
   now = Date.now(),
+  mode?: string,
 ): TripProgress | null {
   if (
     !live ||
@@ -161,22 +163,28 @@ export function lastKnownTripProgress(
     !validCoordinates(live.position.lat, live.position.lon)
   )
     return null;
-  return projectPosition(trip, live.position);
+  return projectPosition(trip, live.position, mode);
 }
 
-/** Always show an anchor; only a confirmed timetable service may predict movement. */
+/** Measured GPS wins; otherwise show a clearly labelled static timetable estimate. */
 export function displayTripProgress(
   trip: Trip,
   live?: TripObservation,
   remembered: TripProgress | null = null,
   now = Date.now(),
-  allowTimetable = false,
+  allowTimetable = true,
+  mode?: string,
 ) {
-  const current = tripProgress(trip, live, now);
-  const known = lastKnownTripProgress(trip, live, now) ?? remembered;
+  const current = tripProgress(trip, live, now, mode);
+  const known = lastKnownTripProgress(trip, live, now, mode) ?? remembered;
   const backendEstimate = estimatedTripProgress(trip, live, now);
   const timetable =
-    allowTimetable && !live?.position && !current && !known && !backendEstimate;
+    allowTimetable &&
+    live?.cancelled !== true &&
+    !live?.position &&
+    !current &&
+    !known &&
+    !backendEstimate;
   const progress =
     current ??
     known ??
@@ -197,8 +205,12 @@ export function displayTripProgress(
 function projectPosition(
   trip: Trip,
   position: { lat: number; lon: number },
+  mode?: string,
 ): TripProgress | null {
-  const policy = config.timeline;
+  const policy =
+    mode === "train"
+      ? { ...config.timeline, ...config.timeline.railProjection }
+      : config.timeline;
   // Local tangent plane centred on the measured point; wrap longitude at the date line.
   const points = trip.stops.map(({ stop }) => {
     if (

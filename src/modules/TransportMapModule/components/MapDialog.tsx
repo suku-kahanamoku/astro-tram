@@ -76,7 +76,8 @@ export default function MapDialog({
     <Dialog
       open={open}
       onDismiss={onClose}
-      className="map-dialog"
+      className={`map-dialog${mode === "journey" ? " map-dialog--journey" : ""}`}
+      scrollContent={mode === "journey"}
       data-map-dialog
       titleId="map-title"
       titleClassName="map-title-symbol"
@@ -106,7 +107,8 @@ export default function MapDialog({
         <>
           {mode === "walk" && journey && (
             <p data-walk-endpoints>
-              A: {journey.legs[0].from.name} → B: {journey.legs[0].to.name}
+              {t.from}: {journey.legs[0].from.name} → {t.to}:{" "}
+              {journey.legs[0].to.name}
             </p>
           )}
           {mode === "journey" && journey && (

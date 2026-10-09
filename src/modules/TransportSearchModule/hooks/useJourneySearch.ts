@@ -69,20 +69,9 @@ export function useJourneySearch(enabled: boolean) {
           abort.signal,
         );
         if (abort.signal.aborted) return;
-        const next = new URL(
-          `${url.pathname}?${writeState(state)}${url.hash}`,
-          url.origin,
-        );
-        // Unknown area metadata must not erase the user's selection.
-        if (state.country && data.journeys.length) {
-          if (data.intercity) next.searchParams.delete("city");
-          else if (!state.city && data.city)
-            next.searchParams.set("city", data.city);
-        }
-        const resolvedKey = writeState(readState(next.searchParams)).toString();
-        completed.current = resolvedKey;
-        setValue({ key: resolvedKey, data, error: "", loading: false });
-        if (resolvedKey !== key) navigate(next.href, true);
+        // Backend area metadata describes this journey, not the user's search scope.
+        completed.current = key;
+        setValue({ key, data, error: "", loading: false });
       } catch (e) {
         if (!abort.signal.aborted) {
           completed.current = key;

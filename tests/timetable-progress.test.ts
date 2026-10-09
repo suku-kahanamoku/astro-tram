@@ -95,7 +95,7 @@ test("prediction works without GPS and keeps a safe anchor when times are absent
     "Never invent interpolation across an untimed stop",
   );
 });
-test("unconfirmed position support keeps a visible origin anchor without predicting movement", () => {
+test("pending or unavailable realtime uses timetable progress without claiming GPS or a delay", () => {
   const now = Date.parse(instant(16));
   for (const status of [
     "pending",
@@ -113,20 +113,20 @@ test("unconfirmed position support keeps a visible origin anchor without predict
       cancelled: false,
     };
     assert.deepEqual(displayTripProgress(trip, live, null, now), {
-      progress: at(0),
+      progress: predict(16),
       retained: false,
       estimated: true,
-      timetable: false,
+      timetable: true,
     });
   }
   assert.deepEqual(
     displayTripProgress(trip, undefined, null, now).progress,
-    at(0),
+    predict(16),
   );
   assert.deepEqual(
     displayTripProgress(trip, undefined, null, now, true).progress,
     predict(16),
-    "Only verified absence of a position provider permits local prediction",
+    "Prediction does not require a backend estimate or an available provider",
   );
 });
 test("live GPS overrides permitted prediction, gaps retain the last measured point, estimates never become measurements", () => {

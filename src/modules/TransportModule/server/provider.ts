@@ -109,6 +109,19 @@ function tripMetadata(value: unknown, operatorValue: unknown): TripMetadata {
 }
 function placeMetadata(p: Record<string, unknown>): PlaceMetadata {
   return {
+    ...(p.city_station === true &&
+    p.kind === "stop" &&
+    typeof p.matched_city === "string" &&
+    typeof p.station_priority === "number" &&
+    Number.isInteger(p.station_priority) &&
+    p.station_priority >= 0 &&
+    p.station_priority <= 2
+      ? {
+          cityStation: true,
+          matchedCity: text(p.matched_city, 120),
+          stationPriority: p.station_priority,
+        }
+      : {}),
     ...(typeof p.kind === "string" &&
     ["stop", "city", "street", "address"].includes(p.kind)
       ? { kind: p.kind as PlaceMetadata["kind"] }
@@ -450,7 +463,12 @@ export function createTransportProvider(core: BackendClient) {
                 : {}),
             },
             limit: 20,
-            kinds: query === null ? ["stop"] : ["stop", "street", "address"],
+            kinds:
+              query === null
+                ? ["stop"]
+                : city
+                  ? ["stop", "street", "address"]
+                  : ["stop", "street", "address", "city"],
           },
         }),
       );
@@ -522,7 +540,13 @@ export function createTransportProvider(core: BackendClient) {
         for (const side of ["from", "to"] as const) {
           const rawPlace = object(object(raw.resolved_places)[side]);
           const mapped = stop(rawPlace);
-          if (mapped.id && mapped.name)
+          if (
+            mapped.name &&
+            (mapped.id ||
+              (rawPlace.type === "coordinates" &&
+                mapped.lat !== null &&
+                mapped.lon !== null))
+          )
             resolvedPlaces[side] = {
               ...mapped,
               sourceMode: text(rawPlace.source_mode, 20),

@@ -1,6 +1,8 @@
 ---
 import { dictionary } from "../providers/translations";
+import { site } from "../../../config/site";
 import Icon from "../../UIModule/components/TransitIcon.astro";
+import TransportMotif from "../../UIModule/components/TransportMotif";
 import { url, type Locale } from "../../../config/routes";
 interface Props {
   locale: Locale;
@@ -11,9 +13,11 @@ const { locale } = Astro.props,
 
 <div class="brand-strip">
   <div class="shell">
-    <Icon name="tram" />
-    <span>{t.strip}</span>
-    <span aria-hidden="true">→</span>
+    <TransportMotif label={t.transportMotif} />
+    <p class="brand-strip-copy">
+      <strong>{t.stripTitle}</strong>
+      <span>{t.stripText}</span>
+    </p>
   </div>
 </div>
 <section class="steps-section shell" id="how">
@@ -59,21 +63,17 @@ const { locale } = Astro.props,
 </section>
 <section class="faq-section shell">
   <div>
-    <span class="eyebrow">TRAM / FAQ</span>
+    <span class="eyebrow">{site.name} / FAQ</span>
     <h2>{t.faqTitle}</h2>
   </div>
   <div>
-    {[
-      [t.faq1, t.answer1],
-      [t.faq2, t.answer2],
-      [t.faq3, t.answer3],
-    ].map(([q, a]) => (
+    {t.faq.map(({ question, answer }) => (
       <details>
         <summary>
-          {q}
+          {question}
           <span aria-hidden="true">+</span>
         </summary>
-        <p>{a}</p>
+        <p>{answer}</p>
       </details>
     ))}
   </div>

@@ -1,7 +1,7 @@
 {
   "nav": {
     "home": "Home",
-    "about": "About TRAM",
+    "about": "About Trambus",
     "login": "Sign in",
     "account": "My account",
     "menu": "Menu",
@@ -41,6 +41,7 @@
     "skip": "Skip to content",
     "back": "Back to home",
     "footer": "Every journey starts somewhere.",
+    "registration": "Company ID",
     "privacy": "We do not store your GPS location.",
     "notifications": "Notifications",
     "closeNotification": "Dismiss notification"

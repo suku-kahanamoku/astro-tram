@@ -23,7 +23,11 @@ function Position({
   expanded: boolean;
 }) {
   const live = useTripObservation(leg.tripId);
-  const { progress, retained, estimated } = useTripProgress(trip, live);
+  const { progress, retained, estimated } = useTripProgress(
+    trip,
+    live,
+    leg.mode,
+  );
   const placement = legTimelineProgress(
     progress,
     tripSegment(trip, leg),

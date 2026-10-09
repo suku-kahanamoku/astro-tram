@@ -1,0 +1,27 @@
+.transport-motif {
+  --motif-icon-size: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  vertical-align: middle;
+  line-height: 1;
+}
+.transport-motif-vehicle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--motif-icon-size) + 20px);
+  height: calc(var(--motif-icon-size) + 20px);
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, currentColor 9%, transparent);
+}
+.transport-motif-vehicle svg {
+  width: var(--motif-icon-size);
+  height: var(--motif-icon-size);
+}
+.transport-motif-arrow {
+  width: 20px;
+  height: 20px;
+  opacity: 0.65;
+}

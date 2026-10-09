@@ -113,7 +113,7 @@ async function walkingResult(page: Page, geometry = true) {
 }
 
 for (const width of [390, 1280]) {
-  test(`walking badges open only their segment with a dotted path and A/B markers (${width}px)`, async ({
+  test(`walking badges open only their segment with a dotted path and localized endpoint labels (${width}px)`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 800 });
@@ -132,7 +132,7 @@ for (const width of [390, 1280]) {
     await expect(dialog).toBeVisible();
     await expect(dialog.locator("h2")).toHaveText("Pěší trasa na mapě");
     await expect(dialog.locator("[data-walk-endpoints]")).toHaveText(
-      "A: Brno, Preslova → B: Brno, Pisárky",
+      "Odkud: Brno, Preslova → Kam: Brno, Pisárky",
     );
     await expect(dialog.locator("canvas").first()).toBeVisible();
     await expect(dialog.locator("[data-map-form]")).toHaveCount(0);
@@ -147,7 +147,9 @@ for (const width of [390, 1280]) {
     await expect
       .poll(() =>
         page.evaluate(() =>
-          ["A", "B"].every((label) => window.walkingMapLabels.includes(label)),
+          ["Odkud", "Kam"].every((label) =>
+            window.walkingMapLabels.includes(label),
+          ),
         ),
       )
       .toBe(true);
@@ -163,7 +165,7 @@ for (const width of [390, 1280]) {
     const detail = card.locator('.journey-detail [data-walk-map="2"]');
     await detail.click();
     await expect(dialog.locator("[data-walk-endpoints]")).toHaveText(
-      "A: Stařeč, nádraží → B: Stařeč, Tyršova",
+      "Odkud: Stařeč, nádraží → Kam: Stařeč, Tyršova",
     );
     await expect(dialog.locator("canvas").first()).toBeVisible();
     await page.keyboard.press("Escape");
@@ -190,7 +192,9 @@ test("a walking segment without geometry shows endpoints and no invented path", 
   await expect
     .poll(() =>
       page.evaluate(() =>
-        ["A", "B"].every((label) => window.walkingMapLabels.includes(label)),
+        ["Odkud", "Kam"].every((label) =>
+          window.walkingMapLabels.includes(label),
+        ),
       ),
     )
     .toBe(true);

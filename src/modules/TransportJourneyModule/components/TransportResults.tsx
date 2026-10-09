@@ -11,6 +11,7 @@ import type { Locale } from "../../LangModule/providers/locale";
 import { adjacentJourneyPage } from "../../TransportCoreModule/providers/journeyPaging";
 import Icon from "../../UIModule/components/TransitIcon";
 import { notify } from "../../UIModule/providers/notifications";
+import { site } from "../../../config/site";
 
 type SearchState = ReturnType<typeof useJourneySearch>;
 type TripState = ReturnType<typeof useTrip>;
@@ -91,7 +92,9 @@ export default function TransportResults({
     <section className="results-section" aria-label={t.results}>
       <div ref={resultsHeading} className="results-heading" id="results">
         <div>
-          <span className="eyebrow">TRAM / {t.results}</span>
+          <span className="eyebrow">
+            {site.name} / {t.results}
+          </span>
           <h1>{t.results}</h1>
         </div>
         <button

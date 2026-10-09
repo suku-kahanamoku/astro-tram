@@ -48,24 +48,24 @@ export default function TripObservationStatus({
           {response}
         </span>
       </span>
-      <span
-        className={minutes !== null && minutes > 0 ? "delay-badge" : undefined}
-        data-delay-status
-        data-status={minutes !== null && minutes > 0 ? "delayed" : undefined}
-        data-delay-known={minutes !== null || undefined}
-        data-delay-badge={(minutes !== null && minutes > 0) || undefined}
-        data-stale={retained ? true : undefined}
-        title={retained ? t.delayLastKnown : undefined}
-        aria-label={
-          retained
-            ? `${minutes !== null && minutes > 0 ? t.delayBadge.replace("{minutes}", String(minutes)) : t.delayOnTime}. ${t.delayLastKnown}`
-            : undefined
-        }
-      >
-        {minutes !== null && minutes > 0
-          ? t.delayBadge.replace("{minutes}", String(minutes))
-          : t.delayOnTime}
-      </span>
+      {minutes !== null && minutes > 0 && (
+        <span
+          className="delay-badge"
+          data-delay-status
+          data-status="delayed"
+          data-delay-known={true}
+          data-delay-badge={true}
+          data-stale={retained ? true : undefined}
+          title={retained ? t.delayLastKnown : undefined}
+          aria-label={
+            retained
+              ? `${t.delayBadge.replace("{minutes}", String(minutes))}. ${t.delayLastKnown}`
+              : undefined
+          }
+        >
+          {t.delayBadge.replace("{minutes}", String(minutes))}
+        </span>
+      )}
     </span>
   );
 }

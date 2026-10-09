@@ -27,7 +27,7 @@ export const supplementaryDataLicenses: DataAttribution[] = [
     feed_id: null,
     name: "PID / Golemio — podmínky Open Data API",
     attribution:
-      "ROPID / Pražská integrovaná doprava / Operátor ICT — polohy vozidel a zpoždění PID. Identifikátory spojů jsou převedené do GTFS TRAM; živá měření se neukládají. Licence odkazovaných API se řídí podmínkami daného zdroje.",
+      "ROPID / Pražská integrovaná doprava / Operátor ICT — polohy vozidel a zpoždění PID. Identifikátory spojů jsou převedené do GTFS aplikace Trambus; živá měření se neukládají. Licence odkazovaných API se řídí podmínkami daného zdroje.",
     license_url: "https://pid.cz/o-systemu/opendata/",
     source_url: "https://api.golemio.cz/pid/docs/openapi/",
     published_at: null,

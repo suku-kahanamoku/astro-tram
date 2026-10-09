@@ -23,11 +23,13 @@ test("licence page renders active backend sources, exact credits, update dates a
   );
   await expect(credits).toBeVisible();
   await expect(credits.locator(".attribution-processing")).toHaveText(
-    "Data byla zpracována pro vyhledávání a zobrazení v aplikaci TRAM.",
+    "Data byla zpracována pro vyhledávání a zobrazení v aplikaci Trambus.",
   );
   await expect(credits.locator("[data-attribution-source]")).toHaveCount(2);
   await expect(
-    credits.getByText("Syntetická data pro testování TRAM.", { exact: true }),
+    credits.getByText("Syntetická data pro testování Trambus.", {
+      exact: true,
+    }),
   ).toBeVisible();
   await expect(
     credits.getByText("Tato data nejsou skutečný jízdní řád.", { exact: true }),

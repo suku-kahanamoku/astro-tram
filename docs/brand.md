@@ -1,6 +1,8 @@
-# TRAM — brand assets
+# Trambus — brand assets
 
 Built-in imagegen generation; no CLI fallback. Logo and interface icons are editable SVG.
+
+Current name: **Trambus**, configured in `src/config/site.ts`. Header and footer use the same coral vehicle icon with a T monogram as the browser favicon (`public/favicon.svg`). The image prompts below describe the original illustrations; those assets contain no text or logos and remain unchanged.
 
 Palette: coral #ed483b, ink #172337, warm cream #fff8ee, sage #e7eddf. Typeface: Manrope Variable, served locally.
 

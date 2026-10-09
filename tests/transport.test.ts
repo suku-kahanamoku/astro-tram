@@ -27,6 +27,42 @@ test("search URL preserves places, map coordinates, instant, arrival and direct 
   assert.equal(body["max-transfers"], 0);
   assert.equal(body["from-date"], undefined);
   assert.equal((body["from-dest"] as any).label, undefined);
+  assert.deepEqual(body["to-dest"], {
+    type: "coordinates",
+    lat: 50.1,
+    lon: 14.2,
+    name: "Mapa",
+  });
+  assert.deepEqual(validateSearch(body)["to-dest"], body["to-dest"]);
+});
+test("coordinate place names remain bounded display labels without changing routing coordinates", () => {
+  const body = searchBody({
+    ...state,
+    from: {
+      type: "coordinates",
+      lat: 49.2076651,
+      lon: 16.5814115,
+      label: "Eleonory Voračické",
+    },
+  });
+  assert.deepEqual(validateSearch(body)["from-dest"], {
+    type: "coordinates",
+    lat: 49.2076651,
+    lon: 16.5814115,
+    name: "Eleonory Voračické",
+  });
+  for (const name of [3, "", "x".repeat(251), "bad\nname"])
+    assert.throws(() =>
+      validateSearch({
+        ...body,
+        "from-dest": {
+          type: "coordinates",
+          lat: 49.2076651,
+          lon: 16.5814115,
+          name,
+        },
+      }),
+    );
 });
 test("current GPS is reacquired and never serialized into URL state", () => {
   const current: SearchState = {

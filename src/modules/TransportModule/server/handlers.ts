@@ -58,6 +58,18 @@ export function validateSearch(body: Record<string, unknown>) {
   if (Object.keys(body).some((key) => !allowed.includes(key))) fail();
   const place = (input: unknown) => {
     const p = plain(input);
+    if (p.type === "municipality") {
+      if (
+        typeof p.name !== "string" ||
+        !p.name.trim() ||
+        p.name.length > 120 ||
+        /[\u0000-\u001f\u007f]/.test(p.name) ||
+        typeof p.state !== "string" ||
+        !/^[A-Z]{2}$/.test(p.state)
+      )
+        fail();
+      return { type: "municipality", name: p.name.trim(), state: p.state };
+    }
     if (
       p.type === "stop" &&
       typeof p.id === "string" &&
@@ -79,7 +91,20 @@ export function validateSearch(body: Record<string, unknown>) {
         throw new HttpError(422, "stale_location");
       return { type: p.type, lat: p.lat, lon: p.lon, "observed-at": at };
     }
-    return { type: p.type, lat: p.lat, lon: p.lon };
+    if (
+      p.name !== undefined &&
+      (typeof p.name !== "string" ||
+        !p.name.trim() ||
+        p.name.length > 250 ||
+        /[\u0000-\u001f\u007f]/.test(p.name))
+    )
+      fail();
+    return {
+      type: p.type,
+      lat: p.lat,
+      lon: p.lon,
+      ...(typeof p.name === "string" ? { name: p.name.trim() } : {}),
+    };
   };
   if ((body["from-date"] !== undefined) === (body["to-date"] !== undefined))
     fail();

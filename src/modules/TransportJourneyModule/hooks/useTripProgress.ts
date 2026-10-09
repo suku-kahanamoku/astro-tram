@@ -3,21 +3,21 @@ import {
   tripProgress,
   lastKnownTripProgress,
   displayTripProgress,
-  estimatedTripProgress,
   type TripProgress,
 } from "../providers/tripProgress";
 import type { Trip, TripObservation } from "../../TransportCoreModule/types";
 import { transportClientConfig as config } from "../../TransportCoreModule/config/client";
 
 /** Hold the last resolved point of this trip while the dialog remains mounted. */
-export function useTripProgress(trip: Trip, live?: TripObservation) {
+export function useTripProgress(
+  trip: Trip,
+  live?: TripObservation,
+  mode?: string,
+) {
   const [last, setLast] = useState<{
     identity: string;
     progress: TripProgress;
   } | null>(null);
-  const [estimatedIdentity, setEstimatedIdentity] = useState<string | null>(
-    null,
-  );
   const [, refresh] = useState(0);
   // Optional coordinate enrichment must not discard the last unambiguous position.
   const identity = useMemo(
@@ -32,35 +32,26 @@ export function useTripProgress(trip: Trip, live?: TripObservation) {
     [trip],
   );
   const remembered = last?.identity === identity ? last.progress : null;
-  const backendEstimate = estimatedTripProgress(trip, live);
-  // Missing GPS, a pending read or a delay-only frame never establish that a
-  // service has no position provider. Java only estimates unsupported services.
-  const allowTimetable =
-    !live?.position && (!!backendEstimate || estimatedIdentity === identity);
+  // The timetable is a display estimate, not proof of live GPS or of zero delay.
+  // It also works while the independent realtime service is pending/unavailable.
   const display = displayTripProgress(
     trip,
     live,
     remembered,
     Date.now(),
-    allowTimetable,
+    true,
+    mode,
   );
   useEffect(() => {
     const progress =
-      tripProgress(trip, live) ?? lastKnownTripProgress(trip, live);
+      tripProgress(trip, live, Date.now(), mode) ??
+      lastKnownTripProgress(trip, live, Date.now(), mode);
     if (progress) setLast({ identity, progress });
     else
       setLast((previous) =>
         previous?.identity === identity ? previous : null,
       );
-  }, [trip, identity, live]);
-  useEffect(() => {
-    if (live?.position) setEstimatedIdentity(null);
-    else if (estimatedTripProgress(trip, live)) setEstimatedIdentity(identity);
-    else
-      setEstimatedIdentity((previous) =>
-        previous === identity ? previous : null,
-      );
-  }, [trip, identity, live]);
+  }, [trip, identity, live, mode]);
   useEffect(() => {
     if (!display.timetable) return;
     // Only the small timeline component ticks; static stop rows are memoized.
