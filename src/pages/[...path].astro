@@ -82,8 +82,10 @@ if (page === "search" || page === "account" || page === "login") {
     </section>
   ) : page === "home" ? (
     <>
-      <Hero {locale} />
-      <Search {locale} />
+      <div class="home-intro">
+        <Hero {locale} />
+        <Search {locale} />
+      </div>
       <Story {locale} />
     </>
   ) : page === "search" ? (

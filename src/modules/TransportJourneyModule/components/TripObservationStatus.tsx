@@ -1,64 +1,29 @@
 import { useTripObservation } from "../../TransportTrackingModule/hooks/useTrackingSnapshot";
 import { useDelayStatus } from "../hooks/useDelayStatus";
-import type {
-  Leg,
-  Trip,
-  TripObservation,
-} from "../../TransportCoreModule/types";
-import { useTrip } from "../hooks/useTrip";
-import {
-  tripProgress,
-  lastKnownTripProgress,
-  estimatedTripProgress,
-} from "../providers/tripProgress";
-import { usePredictionExpiry } from "../../TransportTrackingModule/hooks/useTrackingSnapshot";
+import type { Leg, TripObservation } from "../../TransportCoreModule/types";
 import type { Dictionary } from "../../TransportCoreModule/providers/translations";
 
-/** The same explicit GPS and delay state in accordion and trip dialog. */
+/** Realtime response receipt and delay shared by accordion and trip dialog. */
 export default function TripObservationStatus({
   leg,
   live,
-  trip,
   t,
 }: {
   leg: Leg;
   live?: TripObservation;
-  trip?: Trip;
   t: Dictionary;
 }) {
   const watched = useTripObservation(leg.tripId);
   const observation = live ?? watched;
-  const resource = useTrip(leg.tripId, !!observation?.position);
-  trip = resource.trip ?? trip;
-  usePredictionExpiry([
-    observation?.validUntil,
-    observation?.estimatedProgress?.validUntil,
-  ]);
   const { minutes, retained } = useDelayStatus(leg, observation);
   if (!leg.tripId || leg.mode === "walk") return null;
-  const pending = !observation || observation.status === "connecting";
-  const fresh =
-    observation?.validUntil && Date.parse(observation.validUntil) > Date.now();
-  const hasPosition =
-    !!trip &&
-    !!(
-      tripProgress(trip, observation) ??
-      lastKnownTripProgress(trip, observation) ??
-      estimatedTripProgress(trip, observation)
-    );
-  const position =
-    hasPosition &&
-    observation?.estimatedProgress &&
-    Date.parse(observation.estimatedProgress.validUntil) > Date.now()
-      ? t.trackingEstimated
-      : hasPosition && fresh && observation?.position
-        ? observation.status === "last_known"
-          ? t.trackingLastKnown
-          : t.trackingLive
-        : pending ||
-            (!trip && !resource.error && !!observation?.position && fresh)
-          ? t.trackingConnecting
-          : t.trackingUnavailable;
+  const state = observation?.responseState ?? "pending";
+  const response =
+    state === "received"
+      ? t.trackingResponseReceived
+      : state === "error"
+        ? t.trackingResponseError
+        : t.trackingResponsePending;
   return (
     <span
       className="trip-observation-status"
@@ -66,27 +31,21 @@ export default function TripObservationStatus({
       role="status"
     >
       <span
-        className="vehicle-position-indicator"
-        data-position-state={
-          hasPosition
-            ? "live"
-            : position === t.trackingConnecting
-              ? "connecting"
-              : "unavailable"
-        }
+        className="realtime-response-indicator"
+        data-response-state={state}
         role="img"
-        aria-label={position}
-        title={position}
+        aria-label={response}
+        title={response}
       >
         {[0, 1, 2].map((dot) => (
           <span
             key={dot}
-            className="vehicle-position-light"
+            className="realtime-response-light"
             aria-hidden="true"
           />
         ))}
-        <span data-position-status className="sr-only">
-          {position}
+        <span data-response-status className="sr-only">
+          {response}
         </span>
       </span>
       <span
@@ -103,11 +62,9 @@ export default function TripObservationStatus({
             : undefined
         }
       >
-        {minutes === null
-          ? t.delayUnknown
-          : minutes > 0
-            ? t.delayBadge.replace("{minutes}", String(minutes))
-            : t.delayOnTime}
+        {minutes !== null && minutes > 0
+          ? t.delayBadge.replace("{minutes}", String(minutes))
+          : t.delayOnTime}
       </span>
     </span>
   );

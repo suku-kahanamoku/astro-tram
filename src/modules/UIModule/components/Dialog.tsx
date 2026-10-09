@@ -1,23 +1,82 @@
 import "../styles/motion.css";
+import "../styles/dialog.css";
+import Icon from "./TransitIcon";
 import {
   useEffect,
+  useId,
   useRef,
   useState,
   type ReactNode,
   type DialogHTMLAttributes,
 } from "react";
 
-/** Native focus trapping and restoration, with backdrop-only dismissal. */
+export type DialogProps = Omit<
+  DialogHTMLAttributes<HTMLDialogElement>,
+  "open" | "title" | "aria-labelledby"
+> & {
+  open: boolean;
+  onDismiss: () => void;
+  title: ReactNode;
+  titleId?: string;
+  titleClassName?: string;
+  headerContent?: ReactNode;
+  scrollContent?: boolean;
+  closeLabel: string;
+  closeButtonAttributes?: { [name: `data-${string}`]: string | boolean };
+  children: ReactNode;
+};
+
+/** Shared modal shell, native focus trapping, restoration and backdrop dismissal. */
 export default function Dialog({
   open,
   onDismiss,
+  title,
+  titleId,
+  titleClassName,
+  headerContent,
+  scrollContent = false,
+  closeLabel,
+  closeButtonAttributes,
+  className,
   children,
   ...props
-}: Omit<DialogHTMLAttributes<HTMLDialogElement>, "open"> & {
-  open: boolean;
-  onDismiss: () => void;
-  children: ReactNode;
-}) {
+}: DialogProps) {
+  const generatedId = useId();
+  const headingId = titleId ?? generatedId;
+  const panel = (
+    <>
+      <header className="ui-dialog-header">
+        <div className="ui-dialog-heading">
+          <h2 id={headingId} className={titleClassName}>
+            {title}
+          </h2>
+          {headerContent}
+        </div>
+        <button
+          {...closeButtonAttributes}
+          className="ui-dialog-close"
+          type="button"
+          data-dialog-close
+          aria-label={closeLabel}
+          onClick={onDismiss}
+        >
+          <Icon name="close" size={25} />
+        </button>
+      </header>
+      {scrollContent ? (
+        <div
+          className="ui-dialog-content"
+          role="region"
+          aria-labelledby={headingId}
+          tabIndex={0}
+        >
+          {children}
+        </div>
+      ) : (
+        children
+      )}
+    </>
+  );
   const [present, setPresent] = useState(open);
   useEffect(() => {
     if (open) {
@@ -42,10 +101,10 @@ export default function Dialog({
     };
   }, [open]);
   const ref = useRef<HTMLDialogElement>(null);
-  const content = useRef(children);
+  const content = useRef<ReactNode>(panel);
   const opener = useRef<HTMLElement | null>(null);
   const backdropDown = useRef(false);
-  if (open) content.current = children;
+  if (open) content.current = panel;
   useEffect(() => {
     const dialog = ref.current!;
     if (open && !dialog.open) {
@@ -94,6 +153,14 @@ export default function Dialog({
   return (
     <dialog
       {...props}
+      className={[
+        "ui-dialog",
+        scrollContent && "ui-dialog--scroll-content",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      aria-labelledby={headingId}
       ref={ref}
       onPointerDown={(e) => {
         backdropDown.current = outside(e);
@@ -110,7 +177,7 @@ export default function Dialog({
         onDismiss();
       }}
     >
-      {open ? children : present ? content.current : null}
+      {open ? panel : present ? content.current : null}
     </dialog>
   );
 }

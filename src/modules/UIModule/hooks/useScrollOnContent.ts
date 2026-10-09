@@ -32,11 +32,13 @@ export function useScrollOnContent(
     const frame = requestAnimationFrame(() => {
       if (!target.current) return;
       visited.current = content;
+      const scrollBehavior = matchMedia("(prefers-reduced-motion: reduce)")
+        .matches
+        ? "instant"
+        : behavior;
       target.current.scrollIntoView({
         block: "start",
-        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? "instant"
-          : behavior,
+        behavior: scrollBehavior,
       });
       if (keepAnchor) {
         // Async form fields and results can move the anchor, or make an initially
@@ -49,7 +51,7 @@ export function useScrollOnContent(
             if (!target.current) return;
             const delta = target.current.getBoundingClientRect().top - top;
             if (Math.abs(delta) > 1)
-              window.scrollBy({ top: delta, behavior: "instant" });
+              window.scrollBy({ top: delta, behavior: scrollBehavior });
           });
         });
         observer.observe(document.body);

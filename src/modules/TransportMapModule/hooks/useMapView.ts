@@ -9,6 +9,8 @@ import { transportClient } from "../../TransportCoreModule/providers/client";
 import { transportClientConfig as config } from "../../TransportCoreModule/config/client";
 import type { Journey, Place, Stop } from "../../TransportCoreModule/types";
 import type { Dictionary } from "../../TransportCoreModule/providers/translations";
+import { useTransportPalette } from "../../TransportCoreModule/hooks/useTransportPalette";
+import { modePalette } from "../../TransportCoreModule/providers/transportPalette";
 
 function mapPlace(place?: Place): MapPlace | undefined {
   return place;
@@ -30,6 +32,7 @@ export function useMapView(
   },
 ) {
   const { t } = options;
+  const palette = useTransportPalette();
   const journey = useMemo<MapRoute | undefined>(
     () =>
       options.journey
@@ -38,13 +41,14 @@ export function useMapView(
               from: leg.from,
               to: leg.to,
               geometry: leg.geometry,
+              color: modePalette(palette, leg.mode)?.foreground,
               lineStyle: leg.mode === "walk" ? "dotted" : "solid",
             })),
             endpointLabels: options.mode === "walk" ? ["A", "B"] : undefined,
             zoomOffset: options.mode === "walk" ? 0 : undefined,
           }
         : undefined,
-    [options.journey, options.mode],
+    [options.journey, options.mode, palette],
   );
   return useGenericMapView(canvas, {
     open: options.open,

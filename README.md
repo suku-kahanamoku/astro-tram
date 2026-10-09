@@ -122,6 +122,21 @@ providery jsou samostatné TypeScript moduly. Backendové klíče zůstávají n
   `useTransport.ts` je odstraněný. Nevykresluje se přes `innerHTML`.
 - `SearchForm`, `PlaceField` a `CityPicker` používají společný `Combobox` z UIModule.
   `useAsyncOptions` řeší debounce, rušení požadavků a ignorování starých odpovědí.
+- Všechny modální dialogy používají `UIModule/components/Dialog`. Wrapper vlastní
+  vzhled okna, přichycenou hlavičku, titulek a jednotný křížek 44 × 44 px u horního
+  pravého okraje. Doménové komponenty předávají `title`, volitelný `headerContent`,
+  lokalizovaný `closeLabel` a obsah jako `children`; vlastní zavírací tlačítko
+  nevykreslují. Nativní dialog řeší fokus, Escape a zavírání přes pozadí; wrapper
+  zachová obsah během zavírací animace a vrací fokus původnímu tlačítku.
+  Detail spoje používá `scrollContent`: scrollbar patří jen obsahu pod hlavičkou,
+  hlavička a křížek zůstávají přes celou šířku dialogu.
+- UIModule používá Sonner pro krátká oznámení. Jeden `ToastViewport` v layoutu
+  obsluhuje `notify()` napříč React islands; před jeho hydratací uchová jen
+  poslední zprávu. Nové oznámení nahradí předchozí, nevytváří frontu.
+  Potvrzuje kopírování odkazu, jednou oznámí dokončené hledání bez výsledků
+  nebo s chybou a selhání ručně vyžádané GPS. Načítání, realtime, automatické
+  řazení měst podle GPS a validace polí toast nevytvářejí. Podrobnosti a
+  opakování hledání zůstávají dostupné na stránce i po zavření oznámení.
 - `TransportCoreModule/components/TransportBadge.tsx` používá jediný registr ikon,
   barev a názvů v `config/transportModes.ts`. Stejná komponenta vykresluje symboly
   v nabídce míst a měst, štítky v souhrnu i detailu spojení a v dialozích.
@@ -431,7 +446,7 @@ stránky načte katalog znovu online; neúspěšný požadavek lze zopakovat ote
 nabídky. Názvy se seřadí a normalizují jednou, psaní pouze filtruje připravený
 index. Toto znovupoužití statických metadat se netýká polohy ani spojů. Nový endpoint
 vyžaduje současné nasazení změn modulu Transport v php-core, bez DB migrace. Stát a vybrané město
-se přenášejí do našeptávání i hledání cest. Prázdné město znamená všechna města daného státu. Našeptávání upřednostní zastávky před ulicemi/adresami a přesná jména před částečnými shodami; stejné shody řadí podle čerstvé GPS a textové relevance. GPS nezúží nabídku
+se přenášejí do našeptávání i hledání cest. Prázdné město znamená všechna města daného státu. Našeptávání upřednostní zastávky, potom ulice a nakonec jednotlivé adresy; tuto politiku Java Places uplatňuje před stránkováním, sloučení zemí v záložce Svět zachová stejné priority. Uvnitř typu mají přesná jména přednost před částečnými shodami; stejné shody řadí podle čerstvé GPS a textové relevance. GPS nezúží nabídku
 na aktuální město; pro zvolený stát zůstávají zapojené všechny dostupné zdroje.
 Při odmítnutí nebo nedostupnosti GPS (limit 1,5 sekundy) funguje textové hledání
 bez polohy. Výslovné město má přednost jako filtr; GPS může řadit shody i uvnitř města. GPS našeptávání používá `POST /api/transport/places/` s `q` v těle,
@@ -551,9 +566,15 @@ může tuto návaznost znovu umožnit.
 
 Badge je vedle označení spoje v souhrnu, accordionu i dialogu pouze při
 kladném zpoždění. Otevřený accordion a dialog navíc používají společný
-`TripObservationStatus`: potvrzená nula má text „Bez zpoždění“, chybějící
-údaj „Zpoždění neznámé“ a stav GPS rozlišuje načítání, dostupné měření,
-poslední známou polohu, backendový odhad a nedostupnost.
+`TripObservationStatus`: při nulovém nebo chybějícím zpoždění zobrazí
+text „Bez zpoždění“. Tři tečky ukazují pouze přijetí odpovědi o stavu spoje:
+před první odpovědí zeleně blikají zleva doprava, po úspěšné HTTP odpovědi
+nebo WS zprávě `observation` svítí zeleně, i když spoj ještě nevyjel nebo
+neposkytuje realtime polohu. Červené jsou při selhání bez přijaté odpovědi.
+Platnost GPS, přiřazení k trase ani načítání statických zastávek barvu neřídí;
+expirace měření ani další neúspěšné čtení přijatou odpověď nevymažou.
+Frontendový `responseState` je pouze v paměti aktivního odběru a po jeho
+uzavření se zahodí. Ticket ani ping/pong nejsou odpovědí o stavu spoje.
 Všechny odebírají stejné pozorování podle trip ID. Neznámá
 hodnota zůstává ve výpočtech `null`, není potvrzením včasného příjezdu.
 `useDelayStatus` ponechá poslední potvrzenou hodnotu mezi aktualizacemi;
@@ -565,6 +586,9 @@ neukládá do storage ani URL.
 Detail spoje používá `TripTimeline` s osou vlevo od časů a bodem u každé zastávky. `tripProgress` promítá čerstvou GPS a `lastKnownTripProgress` odděleně poslední známé měření na jednoznačný úsek mezi sousedními zastávkami; bod mezi nimi vyjadřuje přibližný postup na schematické ose, nikoli odhad polohy podle hodin. Chybějící souřadnice, nejednoznačné smyčky nebo bod mimo trasu se nepřemosťují. Limity projekce jsou v `TransportModule/config/client.ts`. `useTripTimeline` měří skutečné výšky řádků i po změně šířky a při zalomení názvů. Bez měření může osu doplnit pouze platný backendový odhad; frontend postup podle hodin nepočítá. Poslední známá poloha je viditelně označená a po dobu otevřeného dialogu zůstane na posledním jednoznačném místě. Živá mapa není součástí dialogu; mapy zastávek a trasy zůstávají dostupné.
 
 Accordion používá `JourneyLegPosition` a stejný `TripVehicleDot` jako dialog.
+Střed červeného bodu zůstává mezi první a poslední viditelnou zastávkou.
+Před nástupní zastávkou nebo za výstupní zastávkou stojí bod přímo na krajní
+šedé tečce; pouze šipka nahoru/dolů označuje polohu mimo vybraný úsek.
 Při dostupné GPS načte sdílený statický detail se souřadnicemi, ověří místo
 na celé trase a promítne postup mezi zastávkami na stručnou osu daného úseku.
 Po rozbalení mezizastávek se bod váže na konkrétní řádky. Stejnou osu používají
@@ -607,8 +631,15 @@ přebírá backendový poměr i bez souřadnic; nezískává ani nevytváří fa
 GPS. Accordion a dialog používají společný bod s tooltipem a přístupným
 popiskem „Odhad podle jízdního řádu; nejde o skutečnou polohu vozidla.“
 Čerstvé potvrzené zpoždění může backend použít k posunu odhadu, samotný
-odhad ale zpoždění ani predikce nepotvrzuje. Po expiraci backendového odhadu
-se osa přepne na lokální odhad ze statických časů zastávek. Před odjezdem
+odhad ale zpoždění ani predikce nepotvrzuje. Teprve validní backendový odhad
+potvrdí, že spoj nemá registrovanou službu polohy. Červený bod je vždy
+vidět: při čekání bez známé polohy zůstává na výchozí zastávce, při výpadku
+drží poslední jednoznačně zobrazenou GPS a po dojezdu na konečné.
+Čekání na úplný detail spoje ponechá bod na již zobrazeném výchozím bodě
+accordionu. U služby GPS se bez měření bod neposouvá podle místního času.
+Čekající dotaz, výpadek, samotné zpoždění ani `unsupported` tracking ticket
+nepotvrzují nepřítomnost služby polohy. Po expiraci potvrzeného backendového
+odhadu se osa přepne na lokální odhad ze statických časů zastávek. Před odjezdem
 je červený bod na výchozí zastávce, při stání u zastávky, mezi odjezdem a
 příjezdem se plynule posouvá mezi sousedními body a po dojezdu zůstane na
 konečné. Funguje i bez souřadnic a online služby; při chybějících časech
@@ -644,7 +675,12 @@ otevřeného vyhledávače. Opětovné otevření statického detailu je bez dal
 otevření dosud nenačteného spoje zobrazí hlavičku a stav načítání zastávek.
 WebSocket běží nezávisle a aktualizuje pouze malé živé komponenty.
 
-Po načtení nových výsledků `useScrollOnContent` plynule posune stránku k jejich záhlaví. Respektuje omezení animací a nepřesouvá stránku při změnách accordionů, dialogů ani živých údajů.
+`useScrollOnContent` ihned zahájí plynulý posun k záhlaví výsledků, bez čekání
+na odpověď vyhledávání. I dorovnání kotvy při asynchronních změnách výšky
+formuláře je plynulé a skončí při interakci uživatele. Globální styl zapíná
+smooth scroll také v dialozích, seznamech a dalších scrollovatelných prvcích.
+Systémová volba omezení pohybu se respektuje. Změny accordionů, dialogů ani
+živých údajů znovu neposouvají stránku k výsledkům.
 
 Statické detaily se načítají na vyžádání, nikoliv hromadně pro všechny výsledky.
 `tripResources` slučuje stejné požadavky a omezuje síť na dva souběžné požadavky.
@@ -733,3 +769,32 @@ bez GPS a při prvním otevření jej jednou upřesní privátním `POST /api/tr
 pořadí se nesdílí ve statické serverové cache. Zamítnutá GPS neblokuje formulář.
 Změna vyžaduje novou Java Places službu a index se správními centry; OTP grafy
 se kvůli pořadí měst nepřestavují.
+
+### Barvy badge a tras na mapě
+
+Java endpoint `/transport/v1/presentation` vlastní jednu paletu dopravních
+prostředků. Astro ji pouze ověří a předá přes `/api/transport/presentation/`.
+`useTransportPalette` sdílí jedno načtení mezi React komponentami; žádný badge
+nevolá vlastní požadavek a paleta neprobouzí národní plánovače.
+
+`TransportBadge` používá backendové pozadí a barvu textu. `TransportMapModule`
+předá tutéž barvu textu každému úseku obecného `MapModule`; ten obarví čáru
+i zastávkové body, pro chůzi zachová tečkování. Frontendová `transportModes`
+definuje pouze ikony a překlady. Nové barvy upravuj v Java konfiguraci,
+nikoli v CSS/React podle názvů prostředků. Neznámý typ používá backendové
+`transport`; při nedostupné paletě je zobrazení neutrální.
+
+### Řazení výsledků spojení
+
+Výsledky se vždy zobrazují vzestupně podle plánovaného odjezdu, při shodě
+podle plánovaného příjezdu, pak plánované doby cesty a počtu přestupů.
+Platí to i při hledání na příjezd nebo načtení předchozí stránky; výběr
+stránky a její hranice nadále respektují režim dotazu. Realtime údaje
+pořadí zobrazených karet ani statické časy nemění.
+
+Celá pěší varianta se ponechá pouze při 0–2 různých dopravních spojeních.
+Od tří spojení se vynechá; pěší přístupy a přestupy zůstávají.
+`collectJourneyPage` filtruje po deduplikaci a před LIMIT, doplní deset
+dopravních výsledků v dostupném časovém rozpočtu. Společná politika je
+v `TransportCoreModule/providers/journeyOrdering.ts` a Java
+`JourneyOrderingService`, pro všechny země a adaptéry.

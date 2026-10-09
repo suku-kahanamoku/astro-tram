@@ -41,7 +41,9 @@
     "skip": "Skip to content",
     "back": "Back to home",
     "footer": "Every journey starts somewhere.",
-    "privacy": "We do not store your GPS location."
+    "privacy": "We do not store your GPS location.",
+    "notifications": "Notifications",
+    "closeNotification": "Dismiss notification"
   },
   "errors": {
     "notFound": "This page isn't here.",

@@ -1,0 +1,86 @@
+{
+  "walk": {
+    "background": "#eeeae4",
+    "foreground": "#655e54"
+  },
+  "bus": {
+    "background": "#e2efdf",
+    "foreground": "#28582b"
+  },
+  "coach": {
+    "background": "#e9edd4",
+    "foreground": "#4d5716"
+  },
+  "trolleybus": {
+    "background": "#e2f2eb",
+    "foreground": "#116748"
+  },
+  "tram": {
+    "background": "#fff0dc",
+    "foreground": "#9a4809"
+  },
+  "train": {
+    "background": "#e2ecfb",
+    "foreground": "#24549c"
+  },
+  "metro": {
+    "background": "#f5e0f1",
+    "foreground": "#853d7b"
+  },
+  "ferry": {
+    "background": "#d9f2f7",
+    "foreground": "#086579"
+  },
+  "airplane": {
+    "background": "#e7e3fa",
+    "foreground": "#574197"
+  },
+  "gondola": {
+    "background": "#fff0d5",
+    "foreground": "#81520e"
+  },
+  "cable_car": {
+    "background": "#ffe6d1",
+    "foreground": "#934b13"
+  },
+  "funicular": {
+    "background": "#f5e7d9",
+    "foreground": "#81512c"
+  },
+  "monorail": {
+    "background": "#e2e4f8",
+    "foreground": "#444d94"
+  },
+  "transport": {
+    "background": "#e8ece1",
+    "foreground": "#40584a"
+  },
+  "stop": {
+    "background": "#edf0f3",
+    "foreground": "#526174"
+  },
+  "city": {
+    "background": "#e8e5f6",
+    "foreground": "#63518d"
+  },
+  "street": {
+    "background": "#e5eef6",
+    "foreground": "#36536d"
+  },
+  "address": {
+    "background": "#e8e5f6",
+    "foreground": "#63518d"
+  },
+  "location": {
+    "background": "#e0f1f5",
+    "foreground": "#176b80"
+  },
+  "point": {
+    "background": "#edf0f3",
+    "foreground": "#526174"
+  },
+  "region": {
+    "background": "#edf0f3",
+    "foreground": "#526174"
+  }
+}

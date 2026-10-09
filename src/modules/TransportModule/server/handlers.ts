@@ -22,6 +22,16 @@ export const coverage: APIRoute = async ({ locals }) => {
     return errorResponse(error);
   }
 };
+export const presentation: APIRoute = async ({ locals }) => {
+  try {
+    return Response.json({
+      success: true,
+      data: await locals.providers.transport.presentation(),
+    });
+  } catch (error) {
+    return errorResponse(error);
+  }
+};
 /** Only credits for data actually active in this tenant, selected by the backend. */
 export const attributions: APIRoute = async ({ locals }) => {
   try {

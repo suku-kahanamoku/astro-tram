@@ -44,7 +44,7 @@ export default function TripVehicleDot({
         data-from={progress.from}
         data-to={progress.to}
         data-fraction={progress.fraction}
-        style={{ top }}
+        style={{ top: outside ? "50%" : top }}
         role="img"
         aria-label={label}
         title={

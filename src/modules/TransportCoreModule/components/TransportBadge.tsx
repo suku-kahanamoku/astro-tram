@@ -8,6 +8,7 @@ import {
   modeLabel,
 } from "../providers/transportPresentation";
 import type { Dictionary } from "../providers/translations";
+import { useTransportPalette } from "../hooks/useTransportPalette";
 
 type Props = Omit<ComponentProps<"button">, "children"> & {
   mode: string;
@@ -29,6 +30,7 @@ export default function TransportBadge({
   ...props
 }: Props) {
   const kind = transportMode(mode);
+  const palette = useTransportPalette();
   const label = modeLabel(kind, t);
   const Component: ElementType = as;
   return (
@@ -36,7 +38,7 @@ export default function TransportBadge({
       {...props}
       className={`${variant === "icon" ? "transport-mode-symbol" : "route-badge"} ${className}`.trim()}
       data-mode={kind}
-      style={{ ...transportStyle(kind), ...style }}
+      style={{ ...transportStyle(mode, palette), ...style }}
       title={props.title ?? label}
       role={variant === "icon" ? "img" : props.role}
       aria-label={

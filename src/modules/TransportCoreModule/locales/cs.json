@@ -1,7 +1,6 @@
 {
   "eyebrow": "Další zastávka?",
   "title": "Kam dnes vyrazíš?",
-  "subtitle": "Zadej cestu. My najdeme spojení.",
   "from": "Odkud",
   "to": "Kam",
   "placeholder": "Město nebo zastávka",
@@ -30,8 +29,7 @@
   "loadingPlaces": "Hledám zastávky…",
   "placesError": "Zastávky teď nelze načíst. Zkus to znovu.",
   "searching": "Hledáme tvoji cestu…",
-  "results": "Tvoje spojení",
-  "resultsSub": "Vyber si cestu, která ti sedí.",
+  "results": "Vyhledané spoje",
   "found": "nalezených spojení",
   "empty": "Pro toto zadání jsme nenašli spojení.",
   "emptyHelp": "Zkus jiný čas, povol přestupy nebo změň zastávky.",
@@ -84,8 +82,8 @@
   "javascript": "Pro našeptávání, mapu a vyhledání spojení zapni JavaScript.",
   "searchPrompt": "Vyplň odkud a kam a vyber čas cesty.",
   "share": "Zkopírovat odkaz",
-  "copied": "Odkaz zkopírován",
-  "copyError": "Odkaz najdeš v adresním řádku.",
+  "copied": "Odkaz zkopírován do schránky.",
+  "copyError": "Odkaz se nepodařilo zkopírovat.",
   "stopsCount": "zastávek",
   "placesNotConfigured": "Pro tuto oblast zatím nejsou připojené zdroje zastávek.",
   "city": "Město",
@@ -164,6 +162,9 @@
   "trackingUnsupported": "Poskytovatel pro tento spoj neposkytuje ověřenou živou polohu.",
   "trackingConnecting": "Zjišťujeme aktuální polohu…",
   "trackingUnavailable": "Aktuální poloha není dostupná.",
+  "trackingResponsePending": "Čekáme na odpověď o stavu spoje…",
+  "trackingResponseReceived": "Odpověď o stavu spoje přijata.",
+  "trackingResponseError": "Odpověď o stavu spoje se nepodařilo získat.",
   "transferAtRisk": "Kvůli aktuálnímu zpoždění tento přestup pravděpodobně nestihneš.",
   "arrivalEstimated": "Příjezd je odhadnut podle aktuálního zpoždění.",
   "connectionAtRisk": "Přestup nevychází",
@@ -200,5 +201,7 @@
   "street": "Ulice",
   "address": "Adresa",
   "nearCity": "V okolí: {city}",
-  "dataAttributionsLoading": "Načítám datové zdroje…"
+  "dataAttributionsLoading": "Načítám datové zdroje…",
+  "copyErrorHelp": "Zkopíruj ho prosím z adresního řádku.",
+  "locationErrorHelp": "Zadej místo ručně nebo vyber zastávku z nabídky."
 }

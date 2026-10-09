@@ -43,6 +43,7 @@ export async function request<T>(
   return body.data;
 }
 export const transportClient = {
+  presentation: () => request<unknown>(config.endpoints.presentation),
   attributions: (signal: AbortSignal) =>
     request<DataAttribution[]>(config.endpoints.attributions, { signal }),
   coverage: (signal: AbortSignal) =>

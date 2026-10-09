@@ -1,0 +1,89 @@
+.ui-dialog {
+  --dialog-padding: 25px;
+  width: min(900px, calc(100% - 30px));
+  max-height: calc(100dvh - 40px);
+  padding: var(--dialog-padding);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  color: var(--ink);
+  background: var(--paper);
+  overflow-y: auto;
+}
+.ui-dialog::backdrop {
+  background: #17233799;
+  backdrop-filter: blur(4px);
+}
+.ui-dialog--scroll-content {
+  padding: 0;
+  overflow: hidden;
+}
+.ui-dialog--scroll-content[open] {
+  display: flex;
+  flex-direction: column;
+}
+.ui-dialog--scroll-content > .ui-dialog-header {
+  position: relative;
+  top: auto;
+  flex-shrink: 0;
+  margin: 0;
+}
+.ui-dialog-content {
+  flex: 1;
+  min-height: 0;
+  padding: 5px var(--dialog-padding) var(--dialog-padding);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.ui-dialog-header {
+  position: sticky;
+  top: calc(-1 * var(--dialog-padding));
+  z-index: 5;
+  min-height: 44px;
+  background: var(--paper);
+  margin: calc(-1 * var(--dialog-padding)) calc(-1 * var(--dialog-padding)) 5px;
+  padding: var(--dialog-padding) 52px 16px var(--dialog-padding);
+}
+.ui-dialog-heading {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ui-dialog-heading > h2 {
+  margin: 0;
+  font-size: 24px;
+  overflow-wrap: anywhere;
+}
+.ui-dialog-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+}
+.ui-dialog-close:hover {
+  color: var(--red);
+  background: var(--line);
+}
+.ui-dialog-close:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: -3px;
+}
+@media (max-width: 600px) {
+  .ui-dialog {
+    --dialog-padding: 18px;
+    max-height: calc(100dvh - 24px);
+  }
+  .ui-dialog-heading > h2 {
+    font-size: 21px;
+  }
+}

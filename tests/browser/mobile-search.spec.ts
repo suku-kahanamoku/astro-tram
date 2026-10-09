@@ -43,6 +43,17 @@ for (const width of [320, 480, 768]) {
       );
     });
     const close = (await dialog.locator("[data-close-trip]").boundingBox())!;
+    const frame = (await dialog.boundingBox())!;
+    expect(
+      Math.abs(close.x + close.width - frame.x - frame.width + 1),
+    ).toBeLessThan(1);
+    const header = (await dialog.locator(".ui-dialog-header").boundingBox())!;
+    const title = (await dialog.locator("#trip-title").boundingBox())!;
+    expect(Math.abs(close.y - header.y)).toBeLessThan(1);
+    expect(
+      Math.abs(header.x + header.width - close.x - close.width),
+    ).toBeLessThan(1);
+    expect(title.x + title.width).toBeLessThanOrEqual(close.x);
     const service = (await dialog
       .locator(".trip-service-badge")
       .boundingBox())!;
@@ -299,23 +310,23 @@ test.describe("touch search", () => {
       const card = page.locator(".journey-card").first();
       await card.locator(".journey-summary-toggle").click();
       const service = card.locator(".leg .trip-service-badge");
-      await expect(service.locator(".vehicle-position-light")).toHaveCount(3);
-      await expect(service.locator("[data-position-state]")).toHaveAttribute(
-        "data-position-state",
-        "connecting",
+      await expect(service.locator(".realtime-response-light")).toHaveCount(3);
+      await expect(service.locator("[data-response-state]")).toHaveAttribute(
+        "data-response-state",
+        "pending",
       );
       const delays = await service
-        .locator(".vehicle-position-light")
+        .locator(".realtime-response-light")
         .evaluateAll((dots) =>
           dots.map((dot) => getComputedStyle(dot).animationDelay),
         );
       expect(delays).toEqual(["0s", "0.2s", "0.4s"]);
       release();
-      await expect(service.locator("[data-position-state]")).toHaveAttribute(
-        "data-position-state",
-        "unavailable",
+      await expect(service.locator("[data-response-state]")).toHaveAttribute(
+        "data-response-state",
+        "received",
       );
-      await expect(service.locator("[data-position-status]")).toHaveCSS(
+      await expect(service.locator("[data-response-status]")).toHaveCSS(
         "position",
         "absolute",
       );
@@ -332,7 +343,7 @@ test.describe("touch search", () => {
       const dialog = page.locator("[data-trip-dialog]");
       await expect(dialog).toBeVisible();
       await expect(
-        dialog.locator(".trip-service-badge .vehicle-position-light"),
+        dialog.locator(".trip-service-badge .realtime-response-light"),
       ).toHaveCount(3);
       await expect(dialog.locator(".eyebrow")).toHaveCount(0);
       await expect(dialog.locator("[data-delay-status]")).toHaveCSS(
@@ -345,14 +356,12 @@ test.describe("touch search", () => {
         );
       });
       const close = (await dialog.locator("[data-close-trip]").boundingBox())!;
-      const header = (await dialog
-        .locator(".trip-sticky-header")
-        .boundingBox())!;
+      const header = (await dialog.locator(".ui-dialog-header").boundingBox())!;
       expect(close.width).toBe(44);
-      expect(close.x + close.width).toBeGreaterThan(
-        header.x + header.width - 30,
-      );
-      expect(close.y - header.y).toBeLessThan(30);
+      expect(
+        Math.abs(header.x + header.width - close.x - close.width),
+      ).toBeLessThan(1);
+      expect(Math.abs(close.y - header.y)).toBeLessThan(1);
       await page.screenshot({
         path: testInfo.outputPath("mobile-service-dialog.png"),
       });

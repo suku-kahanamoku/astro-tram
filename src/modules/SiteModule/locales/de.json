@@ -41,7 +41,9 @@
     "skip": "Zum Inhalt springen",
     "back": "Zur Startseite",
     "footer": "Jede Reise beginnt irgendwo.",
-    "privacy": "Wir speichern deinen GPS-Standort nicht."
+    "privacy": "Wir speichern deinen GPS-Standort nicht.",
+    "notifications": "Benachrichtigungen",
+    "closeNotification": "Benachrichtigung schließen"
   },
   "errors": {
     "notFound": "Diese Seite ist nicht hier.",

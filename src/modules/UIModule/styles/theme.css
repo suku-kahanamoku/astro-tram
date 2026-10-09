@@ -23,6 +23,7 @@
   box-sizing: border-box;
 }
 * {
+  scroll-behavior: smooth;
   scrollbar-color: var(--primary) var(--paper);
   scrollbar-width: thin;
 }

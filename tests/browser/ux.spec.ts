@@ -326,20 +326,36 @@ test("summary badge loads only its own stops into a dialog with a sticky title a
   await expect(dialog.locator(".trip-call")).toHaveCount(30);
   await expect(dialog.locator(".trip-loading")).toHaveCount(0);
   await expect(
-    dialog.locator(".trip-sticky-header [data-delay-badge]"),
+    dialog.locator(".ui-dialog-header [data-delay-badge]"),
   ).toHaveCount(0);
   await dialog.evaluate(async (el) => {
     await Promise.allSettled(el.getAnimations().map((a) => a.finished));
   });
-  const before = await dialog.locator(".trip-sticky-header").boundingBox();
-  await dialog.evaluate((el) => {
+  const before = await dialog.locator(".ui-dialog-header").boundingBox();
+  const content = dialog.locator(".ui-dialog-content");
+  const firstStop = await dialog.locator(".trip-call").first().boundingBox();
+  await content.evaluate((el) => {
     el.scrollTop = 500;
   });
-  const after = await dialog.locator(".trip-sticky-header").boundingBox();
+  await expect.poll(() => content.evaluate((el) => el.scrollTop)).toBe(500);
+  expect(await dialog.evaluate((el) => el.scrollTop)).toBe(0);
+  const scrolledStop = await dialog.locator(".trip-call").first().boundingBox();
+  expect(scrolledStop!.y).toBeLessThan(firstStop!.y);
+  const after = await dialog.locator(".ui-dialog-header").boundingBox();
   expect(Math.abs(after!.y - before!.y)).toBeLessThan(2);
   const close = await dialog.locator("[data-close-trip]").boundingBox();
+  const frame = await dialog.boundingBox();
+  expect(
+    Math.abs(close!.x + close!.width - frame!.x - frame!.width + 1),
+  ).toBeLessThan(1);
   const title = await dialog.locator("#trip-title").boundingBox();
   expect(title!.x + title!.width).toBeLessThanOrEqual(close!.x);
+  await content.focus();
+  const scroll = await content.evaluate((el) => el.scrollTop);
+  await page.keyboard.press("PageUp");
+  await expect
+    .poll(() => content.evaluate((el) => el.scrollTop))
+    .toBeLessThan(scroll);
   const colors = await dialog
     .locator(".request-stop")
     .evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).color));

@@ -18,6 +18,7 @@ import type {
   Fix,
 } from "../../TransportCoreModule/types";
 import { dismissMobileKeyboard } from "../../UIModule/providers/mobileKeyboard";
+import { notify } from "../../UIModule/providers/notifications";
 export default function PlaceField({
   side,
   value,
@@ -108,7 +109,10 @@ export default function PlaceField({
       if (!dismissMobileKeyboard()) focusInput();
       nearest(fix);
     } catch {
-      if (version === revision.current) onError(t.locationError);
+      if (version === revision.current) {
+        onError(t.locationError);
+        notify(t.locationError, "error", t.locationErrorHelp);
+      }
     } finally {
       setLocating(false);
     }

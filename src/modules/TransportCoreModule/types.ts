@@ -155,6 +155,8 @@ export interface TrackingSession {
   tripId?: string;
 }
 export interface TripObservation {
+  /** Browser receipt state, independent of the backend's position/delay status. */
+  responseState?: "pending" | "received" | "error";
   status: string;
   position: { lat: number; lon: number } | null;
   observedAt: string | null;

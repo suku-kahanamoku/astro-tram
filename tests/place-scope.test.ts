@@ -27,7 +27,7 @@ const fix = { lat: 49.2, lon: 16.6, observedAt: "2026-10-07T10:00:00Z" };
 const option = (
   id: string,
   state: string,
-  kind: "stop" | "street" = "stop",
+  kind: "stop" | "street" | "address" = "stop",
 ): PlaceOption => ({
   id,
   state,
@@ -127,6 +127,21 @@ test("World ranks exact stop names before partial transit matches and streets, t
       (p) => p.id,
     ),
     ["near", "far", "partial", "street"],
+  );
+});
+
+test("World keeps matching stops and streets before addresses even across countries and before the result limit", () => {
+  const stop = { ...option("stop", "CZ"), name: "Březová rozcestí" };
+  const street = { ...option("street", "DE", "street"), name: "Březová cesta" };
+  const addresses = Array.from({ length: 25 }, (_, index) => ({
+    ...option(`address-${index}`, "CZ", "address"),
+    name: "Březová",
+  }));
+  const result = rankWorldPlaces([...addresses, street, stop], "brezova", fix);
+  assert.equal(result.length, 20);
+  assert.deepEqual(
+    result.slice(0, 2).map((row) => row.id),
+    ["stop", "street"],
   );
 });
 

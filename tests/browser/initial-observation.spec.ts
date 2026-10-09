@@ -62,15 +62,15 @@ for (const width of [375, 1280]) {
       "Zpoždění 6 min",
     );
     expect(reads).toBe(1);
-    await expect(cards.first().locator("[data-position-status]")).toHaveText(
-      "Aktuální poloha není dostupná.",
+    await expect(cards.first().locator("[data-response-status]")).toHaveText(
+      "Odpověď o stavu spoje přijata.",
     );
     await expect(
       cards.first().locator("[data-trip-vehicle-dot]"),
     ).toBeVisible();
     await expect(
       cards.first().locator("[data-trip-vehicle-dot]"),
-    ).toHaveAttribute("data-estimated", "true");
+    ).toHaveAttribute("data-from", "0");
     await cards.last().locator(".journey-summary-toggle").click();
     await expect.poll(() => reads).toBe(2);
     await cards.first().locator(".journey-summary-toggle").click();
@@ -82,8 +82,8 @@ for (const width of [375, 1280]) {
     await expect(dialog.locator(".delay-badge")).toHaveText("Zpoždění 6 min");
     await expect(dialog.locator("[data-trip-vehicle-dot]")).toBeVisible();
     await expect(dialog.locator("[data-trip-vehicle-dot]")).toHaveAttribute(
-      "data-estimated",
-      "true",
+      "data-from",
+      "0",
     );
     delay = 0;
     await page.keyboard.press("Escape");
@@ -145,9 +145,9 @@ test("HTTP GPS at the origin is drawn in accordion and dialog before departure, 
     "Vozidlo u zastávky Praha, Muzeum",
   );
   await expect(dot).toHaveAttribute("data-from", "0");
-  await expect(card.locator("[data-position-state]")).toHaveAttribute(
-    "data-position-state",
-    "live",
+  await expect(card.locator("[data-response-state]")).toHaveAttribute(
+    "data-response-state",
+    "received",
   );
   expect(reads).toBe(1);
   await card.locator("[data-summary-trip]").click();
@@ -157,14 +157,64 @@ test("HTTP GPS at the origin is drawn in accordion and dialog before departure, 
     "data-from",
     "0",
   );
-  await expect(dialog.locator("[data-position-state]")).toHaveAttribute(
-    "data-position-state",
-    "live",
+  await expect(dialog.locator("[data-response-state]")).toHaveAttribute(
+    "data-response-state",
+    "received",
   );
   expect(reads).toBe(2);
 });
 
-test("failed HTTP observation displays unknown delay and unavailable GPS instead of an empty detail", async ({
+for (const [width, status] of [
+  [375, "unavailable"],
+  [1280, "unsupported"],
+] as const) {
+  test(`received ${status} response is green before departure without GPS at ${width}px`, async ({
+    page,
+  }) => {
+    const clockInstant = Date.parse("2026-10-06T07:30:00Z");
+    await page.clock.install({ time: new Date(clockInstant) });
+    await page.setViewportSize({ width, height: 900 });
+    await page.route("**/api/transport/tracking/", (route) =>
+      route.fulfill({ json: { success: true, data: { status: "disabled" } } }),
+    );
+    await page.route("**/api/transport/observation/**", (route) =>
+      route.fulfill({
+        json: {
+          success: true,
+          data: { status, position: null, delay_seconds: null },
+        },
+      }),
+    );
+    await page.goto(path);
+    const card = page.locator(".journey-card").first();
+    const departure = await card
+      .locator(".journey-time")
+      .first()
+      .getAttribute("datetime");
+    expect(Date.parse(departure!)).toBeGreaterThan(clockInstant);
+    await card.locator(".journey-summary-toggle").click();
+    const indicator = card.locator("[data-response-state]");
+    await expect(indicator).toHaveAttribute("data-response-state", "received");
+    await expect(indicator).toHaveAttribute(
+      "aria-label",
+      "Odpověď o stavu spoje přijata.",
+    );
+    await expect(
+      indicator.locator(".realtime-response-light").first(),
+    ).toHaveCSS("background-color", "rgb(38, 150, 75)");
+    await expect(
+      indicator.locator(".realtime-response-light").first(),
+    ).toHaveCSS("animation-name", "none");
+    await card.locator("[data-summary-trip]").click();
+    const dialog = page.locator("[data-trip-dialog]");
+    await expect(dialog.locator("[data-response-state]")).toHaveAttribute(
+      "data-response-state",
+      "received",
+    );
+  });
+}
+
+test("failed HTTP observation displays red receipt indicator and no-delay fallback", async ({
   page,
 }) => {
   await page.route("**/api/transport/search/**", async (route) => {
@@ -196,21 +246,27 @@ test("failed HTTP observation displays unknown delay and unavailable GPS instead
   await page.goto(path);
   const card = page.locator(".journey-card").first();
   await card.locator(".journey-summary-toggle").click();
-  await expect(card.locator("[data-position-status]")).toHaveText(
-    "Aktuální poloha není dostupná.",
+  await expect(card.locator("[data-response-status]")).toHaveText(
+    "Odpověď o stavu spoje se nepodařilo získat.",
   );
-  await expect(card.locator("[data-delay-status]")).toHaveText(
-    "Zpoždění neznámé",
+  await expect(card.locator("[data-response-state]")).toHaveAttribute(
+    "data-response-state",
+    "error",
   );
+  await expect(card.locator(".realtime-response-light").first()).toHaveCSS(
+    "background-color",
+    "rgb(197, 53, 44)",
+  );
+  await expect(card.locator("[data-delay-status]")).toHaveText("Bez zpoždění");
   await expect(card.locator("[data-trip-vehicle-dot]")).toBeVisible();
   await expect(card.locator("[data-trip-vehicle-dot]")).toHaveAttribute(
-    "data-estimated",
-    "true",
+    "data-from",
+    "0",
   );
   await card.locator("[data-summary-trip]").click();
   await expect(
     page.locator("[data-trip-dialog] [data-delay-status]"),
-  ).toHaveText("Zpoždění neznámé");
+  ).toHaveText("Bez zpoždění");
 });
 
 test("GPS timeline and opening dialog join one pending static detail and reuse it on reopen", async ({
@@ -253,9 +309,22 @@ test("GPS timeline and opening dialog join one pending static detail and reuse i
     const card = page.locator(".journey-card").first();
     await card.locator(".journey-summary-toggle").click();
     await expect.poll(() => staticReads).toBe(1);
+    await expect(card.locator("[data-response-state]")).toHaveAttribute(
+      "data-response-state",
+      "received",
+    );
+    await expect(card.locator(".leg [data-trip-vehicle-dot]")).toBeVisible();
+    await expect(card.locator(".leg [data-trip-vehicle-dot]")).toHaveAttribute(
+      "data-from",
+      "0",
+    );
     await card.locator("[data-summary-trip]").click();
     const dialog = page.locator("[data-trip-dialog]");
     await expect(dialog).toBeVisible();
+    await expect(dialog.locator("[data-response-state]")).toHaveAttribute(
+      "data-response-state",
+      "received",
+    );
     release();
     await expect(dialog.locator(".trip-call")).toHaveCount(3);
     await expect(dialog.locator(".delay-badge")).toHaveText("Zpoždění 6 min");

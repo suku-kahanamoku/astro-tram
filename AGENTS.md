@@ -43,3 +43,11 @@ The project code graph is at `graphify-out/graph.json`. It is a navigation aid; 
   (`administrative_levels`, `city_ranking.locale`, `regional_capital`,
   `capital_regions`) a nový Places index. Přidání státu nesmí vyžadovat
   další větvení nebo seznam měst v Reactu. Nezaměňuj hlavní a krajské město.
+
+## Barvy dopravních prostředků
+
+- Jediným zdrojem barev badge a úseků mapy je Java
+  `/transport/v1/presentation`. Nepřidávej typové palety do React/CSS,
+  `transportModes` obsahuje jen ikony a klíče překladů. Sdílené
+  `useTransportPalette` načítá jednou; obecný MapModule dostává pouze barvu
+  úseku a nezná dopravce, zemi ani dopravní registr.

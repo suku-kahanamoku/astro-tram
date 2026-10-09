@@ -5,6 +5,10 @@ import {
   journeyIdentity,
 } from "../../TransportCoreModule/providers/journeyIdentity";
 import type { Journey, SearchResult } from "../../TransportCoreModule/types";
+import {
+  compareJourneys,
+  eligibleJourneys,
+} from "../../TransportCoreModule/providers/journeyOrdering";
 
 /** Fill a count-based page even when an upstream planner returns a short time window. */
 export async function collectJourneyPage<T extends SearchResult>(
@@ -58,7 +62,7 @@ export async function collectJourneyPage<T extends SearchResult>(
     walkingOnly =
       batch.journeys.length > 0 && batch.journeys.every(isWalkingJourney);
     if (
-      found.size >= journeyPaging.size ||
+      eligibleJourneys([...found.values()]).length >= journeyPaging.size ||
       walkingOnly ||
       batch.partial ||
       !Number.isFinite(start)
@@ -79,13 +83,15 @@ export async function collectJourneyPage<T extends SearchResult>(
         : cursor + direction * journeyPaging.scanStepMs;
     if (Math.abs(cursor - start) > journeyPaging.horizonMs) break;
   }
-  const journeys = [...found.values()]
+  const journeys = eligibleJourneys([...found.values()])
     .sort(
       (a, b) =>
-        direction * (journeyPageTime(a, arrive) - journeyPageTime(b, arrive)),
+        direction * (journeyPageTime(a, arrive) - journeyPageTime(b, arrive)) ||
+        compareJourneys(a, b),
     )
     .slice(0, journeyPaging.size)
-    .sort((a, b) => journeyPageTime(a, arrive) - journeyPageTime(b, arrive));
+    // Selection/page cursors follow the query; presentation always follows scheduled departure.
+    .sort(compareJourneys);
   return {
     ...result!,
     journeys,

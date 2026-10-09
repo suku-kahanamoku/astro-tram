@@ -31,15 +31,19 @@ export function rankWorldPlaces(
         ? 1
         : 2;
   };
-  const transit = (option: PlaceOption) =>
-    !option.kind || option.kind === "stop" ? 0 : 1;
+  const priority = (option: PlaceOption) =>
+    !option.kind || option.kind === "stop"
+      ? 0
+      : option.kind === "street"
+        ? 1
+        : 2;
   const unique = [
     ...new Map(options.map((option) => [option.id, option])).values(),
   ];
   return unique
     .sort(
       (a, b) =>
-        transit(a) - transit(b) ||
+        priority(a) - priority(b) ||
         relevance(a) - relevance(b) ||
         distance(a, fix) - distance(b, fix) ||
         a.name.localeCompare(b.name) ||

@@ -1,7 +1,6 @@
 {
   "eyebrow": "Nächster Halt?",
   "title": "Wohin geht es heute?",
-  "subtitle": "Wähle deine Strecke. Wir finden die Verbindung.",
   "from": "Von",
   "to": "Nach",
   "placeholder": "Stadt oder Haltestelle",
@@ -30,8 +29,7 @@
   "loadingPlaces": "Haltestellen werden gesucht…",
   "placesError": "Haltestellen konnten nicht geladen werden. Versuche es erneut.",
   "searching": "Deine Verbindung wird gesucht…",
-  "results": "Deine Verbindungen",
-  "resultsSub": "Wähle die Verbindung, die zu dir passt.",
+  "results": "Gefundene Verbindungen",
   "found": "gefundene Verbindungen",
   "empty": "Keine Verbindung für diese Suche gefunden.",
   "emptyHelp": "Versuche eine andere Zeit, erlaube Umstiege oder ändere die Haltestellen.",
@@ -84,8 +82,8 @@
   "javascript": "Aktiviere JavaScript für Vorschläge, Karten und die Verbindungssuche.",
   "searchPrompt": "Gib Start, Ziel und Reisezeit ein.",
   "share": "Link kopieren",
-  "copied": "Link kopiert",
-  "copyError": "Der Link steht in der Adressleiste.",
+  "copied": "Link in die Zwischenablage kopiert.",
+  "copyError": "Der Link konnte nicht kopiert werden.",
   "stopsCount": "Haltestellen",
   "placesNotConfigured": "Für diese Region sind noch keine Haltestellendaten angebunden.",
   "city": "Stadt",
@@ -164,6 +162,9 @@
   "trackingUnsupported": "Der Anbieter liefert keine verifizierte Live-Position für diese Fahrt.",
   "trackingConnecting": "Aktuelle Position wird ermittelt…",
   "trackingUnavailable": "Aktuelle Position ist nicht verfügbar.",
+  "trackingResponsePending": "Warten auf die Antwort zum Fahrtstatus…",
+  "trackingResponseReceived": "Antwort zum Fahrtstatus empfangen.",
+  "trackingResponseError": "Antwort zum Fahrtstatus konnte nicht abgerufen werden.",
   "transferAtRisk": "Wegen der aktuellen Verspätung erreichst du diesen Anschluss wahrscheinlich nicht.",
   "arrivalEstimated": "Ankunft anhand der aktuellen Verspätung geschätzt.",
   "connectionAtRisk": "Anschluss gefährdet",
@@ -200,5 +201,7 @@
   "street": "Straße",
   "address": "Adresse",
   "nearCity": "In der Nähe von {city}",
-  "dataAttributionsLoading": "Datenquellen werden geladen…"
+  "dataAttributionsLoading": "Datenquellen werden geladen…",
+  "copyErrorHelp": "Bitte kopiere ihn aus der Adressleiste.",
+  "locationErrorHelp": "Gib einen Ort ein oder wähle eine Haltestelle aus den Vorschlägen."
 }

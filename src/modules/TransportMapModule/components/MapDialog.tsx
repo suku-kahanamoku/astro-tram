@@ -78,28 +78,32 @@ export default function MapDialog({
       onDismiss={onClose}
       className="map-dialog"
       data-map-dialog
-      aria-labelledby="map-title"
-    >
-      <div className="map-header">
-        <div>
-          <h2 id="map-title" className="map-title-symbol">
-            {mode !== "journey" && (
-              <TransportBadge
-                mode={
-                  mode === "walk"
-                    ? "walk"
-                    : place?.type === "current_location"
-                      ? "location"
-                      : mode === "stop" || place?.type === "stop"
-                        ? (stop?.modes?.[0] ?? "stop")
-                        : "point"
-                }
-                variant="icon"
-                t={t}
-              />
-            )}
-            {title}
-          </h2>
+      titleId="map-title"
+      titleClassName="map-title-symbol"
+      closeLabel={t.close}
+      closeButtonAttributes={{ "data-close-map": true }}
+      title={
+        <>
+          {mode !== "journey" && (
+            <TransportBadge
+              mode={
+                mode === "walk"
+                  ? "walk"
+                  : place?.type === "current_location"
+                    ? "location"
+                    : mode === "stop" || place?.type === "stop"
+                      ? (stop?.modes?.[0] ?? "stop")
+                      : "point"
+              }
+              variant="icon"
+              t={t}
+            />
+          )}
+          {title}
+        </>
+      }
+      headerContent={
+        <>
           {mode === "walk" && journey && (
             <p data-walk-endpoints>
               A: {journey.legs[0].from.name} → B: {journey.legs[0].to.name}
@@ -112,17 +116,9 @@ export default function MapDialog({
               ))}
             </div>
           )}
-        </div>
-        <button
-          className="icon-button"
-          type="button"
-          data-close-map
-          aria-label={t.close}
-          onClick={onClose}
-        >
-          <Icon name="close" />
-        </button>
-      </div>
+        </>
+      }
+    >
       <p data-map-hint>{hint}</p>
       <div className="map-stage" aria-busy={!status.ready}>
         {status.ready && (

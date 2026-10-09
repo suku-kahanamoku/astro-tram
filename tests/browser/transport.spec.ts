@@ -1171,7 +1171,7 @@ test("live vehicle tracking shares the selected journey, shows delay and removes
   );
   await page.locator("[data-trip-open]").first().click();
   await expect(
-    page.locator("[data-trip-dialog] .trip-sticky-header [data-delay-badge]"),
+    page.locator("[data-trip-dialog] .ui-dialog-header [data-delay-badge]"),
   ).toHaveText("Zpoždění 8 min");
   expect(sessions).toBe(1);
   await expect(
@@ -1365,8 +1365,8 @@ test("unsupported tracking keeps static stops without inventing GPS or an on-tim
   await expect(dialog.locator("[data-trip-point]")).toHaveCount(3);
   await expect(dialog.locator("[data-trip-vehicle-dot]")).toBeVisible();
   await expect(dialog.locator("[data-trip-vehicle-dot]")).toHaveAttribute(
-    "data-estimated",
-    "true",
+    "data-from",
+    "0",
   );
   await expect(dialog.locator("[data-delay-badge]")).toHaveCount(0);
   await expect(
@@ -1612,16 +1612,32 @@ for (const width of [390, 1280]) {
     await expect(dialog.locator(".vehicle-map")).toHaveCount(0);
     await expect(dialog.locator(".trip-call")).toHaveCount(3);
     await page.waitForTimeout(300);
-    const geometry = await dialog.evaluate((element) => {
-      element.scrollTop = 120;
+    await dialog.evaluate((element) => {
+      const content = element.querySelector<HTMLElement>(".ui-dialog-content")!;
+      content.scrollTop = 120;
       (window as any).stableDialogNodes = [
         element.querySelector(".trip-call"),
         element.querySelector("#trip-title"),
       ];
+    });
+    await expect
+      .poll(() =>
+        dialog
+          .locator(".ui-dialog-content")
+          .evaluate((content) =>
+            Math.abs(
+              content.scrollTop -
+                Math.min(120, content.scrollHeight - content.clientHeight),
+            ),
+          ),
+      )
+      .toBeLessThan(1);
+    const geometry = await dialog.evaluate((element) => {
+      const content = element.querySelector<HTMLElement>(".ui-dialog-content")!;
       return {
         height: element.getBoundingClientRect().height,
-        scroll: element.scrollTop,
-        total: element.scrollHeight,
+        scroll: content.scrollTop,
+        total: content.scrollHeight,
       };
     });
     for (const delay of [null, 180, 0]) {
@@ -1636,8 +1652,11 @@ for (const width of [390, 1280]) {
       await page.waitForTimeout(250);
       const after = await dialog.evaluate((element) => ({
         height: element.getBoundingClientRect().height,
-        scroll: element.scrollTop,
-        total: element.scrollHeight,
+        scroll:
+          element.querySelector<HTMLElement>(".ui-dialog-content")!.scrollTop,
+        total:
+          element.querySelector<HTMLElement>(".ui-dialog-content")!
+            .scrollHeight,
         same: [
           element.querySelector(".trip-call"),
           element.querySelector("#trip-title"),
@@ -1684,7 +1703,7 @@ test("multiple expanded journeys use local state and dialogs reuse static detail
   const dialog = page.locator("[data-trip-dialog]");
   await expect(dialog.locator(".trip-call")).toHaveCount(3);
   await expect(
-    dialog.locator(".trip-sticky-header [data-delay-badge]"),
+    dialog.locator(".ui-dialog-header [data-delay-badge]"),
   ).toHaveCount(0);
   await expect(
     dialog.locator(".vehicle-map, .vehicle-tracking, .trip-timeline-hint"),

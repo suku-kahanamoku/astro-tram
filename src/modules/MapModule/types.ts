@@ -17,6 +17,7 @@ export interface MapRoute {
   endpointLabels?: readonly [string, string];
   zoomOffset?: number;
   legs: ReadonlyArray<{
+    color?: string;
     lineStyle?: "solid" | "dotted";
     from: MapPoint;
     to: MapPoint;

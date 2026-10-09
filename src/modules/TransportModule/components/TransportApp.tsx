@@ -67,7 +67,7 @@ function TransportView({
       ? `${url.pathname}:${search.state.at ?? ""}:${search.state.page ?? ""}`
       : null,
     modalOpen || mapOpen,
-    "instant",
+    "smooth",
     true,
   );
   return (

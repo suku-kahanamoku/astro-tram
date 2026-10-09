@@ -114,6 +114,9 @@
   align-items: end;
   gap: 15px;
 }
+.search-preferences {
+  display: contents;
+}
 .field-label {
   font-size: 10px;
   font-weight: 800;
@@ -415,8 +418,8 @@
   font-size: 10px;
   padding: 5px 8px;
   border-radius: 5px;
-  background: var(--mode-bg, #e8ece1);
-  color: var(--mode-fg, #40584a);
+  background: var(--mode-bg, var(--line));
+  color: var(--mode-fg, var(--ink));
   font-weight: 800;
 }
 .journey-duration {
@@ -546,32 +549,32 @@
   font-size: inherit;
   font-weight: inherit;
 }
-.vehicle-position-indicator {
+.realtime-response-indicator {
   display: flex;
   align-items: center;
   gap: 4px;
 }
-.vehicle-position-light {
+.realtime-response-light {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: #c5352c;
 }
-[data-position-state="live"] .vehicle-position-light,
-[data-position-state="connecting"] .vehicle-position-light {
+[data-response-state="received"] .realtime-response-light,
+[data-response-state="pending"] .realtime-response-light {
   background: #26964b;
 }
-[data-position-state="connecting"] .vehicle-position-light {
+[data-response-state="pending"] .realtime-response-light {
   opacity: 0.25;
-  animation: position-search 1.2s infinite;
+  animation: realtime-response-search 1.2s infinite;
 }
-[data-position-state="connecting"] .vehicle-position-light:nth-child(2) {
+[data-response-state="pending"] .realtime-response-light:nth-child(2) {
   animation-delay: 0.2s;
 }
-[data-position-state="connecting"] .vehicle-position-light:nth-child(3) {
+[data-response-state="pending"] .realtime-response-light:nth-child(3) {
   animation-delay: 0.4s;
 }
-@keyframes position-search {
+@keyframes realtime-response-search {
   0%,
   70%,
   100% {
@@ -582,7 +585,7 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  [data-position-state="connecting"] .vehicle-position-light {
+  [data-response-state="pending"] .realtime-response-light {
     animation: none;
   }
 }
@@ -633,31 +636,6 @@
   font-size: 12px;
   color: var(--muted);
   margin-bottom: 16px;
-}
-.map-dialog {
-  --dialog-padding: 25px;
-  width: min(900px, calc(100% - 30px));
-  max-height: calc(100dvh - 40px);
-  padding: var(--dialog-padding);
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  color: var(--ink);
-  background: var(--paper);
-  overflow-y: auto;
-}
-.map-dialog::backdrop {
-  background: #17233799;
-  backdrop-filter: blur(4px);
-}
-.map-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-}
-.map-header h2 {
-  font-size: 24px;
-  margin-top: 8px;
 }
 .map-dialog > p {
   font-size: 12px;
@@ -755,10 +733,23 @@
     font-size: 12px;
   }
   .search-options {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
     gap: 15px 12px;
   }
-  .field-label {
-    flex: 1;
+  .search-options .ui-date-time[data-kind] {
+    width: 100%;
+  }
+  .search-options .ui-date-time input {
+    font-size: clamp(12px, 3.6vw, 14px);
+    padding-left: 9px;
+  }
+  .search-preferences {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    grid-column: 1 / -1;
+    min-width: 0;
   }
   .field-label input,
   .field-label input[type="time"] {
@@ -766,17 +757,27 @@
     min-width: 0;
   }
   .time-mode {
-    width: 50%;
+    flex-shrink: 0;
     justify-content: center;
+    padding: 3px;
+  }
+  .time-mode label {
+    min-width: 44px;
   }
   .time-mode span {
-    padding: 10px 12px;
+    padding: 10px 5px;
+    white-space: nowrap;
   }
   .direct-toggle {
     font-size: 10px;
-    min-width: 40%;
+    min-width: 0;
+    gap: 5px;
+  }
+  .direct-toggle input {
+    flex-shrink: 0;
   }
   .search-submit {
+    grid-column: 1 / -1;
     width: 100%;
     flex: auto;
     min-height: 49px;
@@ -846,10 +847,6 @@
     max-width: 90px;
     text-align: right;
   }
-  .map-dialog {
-    --dialog-padding: 18px;
-    max-height: calc(100dvh - 24px);
-  }
   .map-canvas {
     height: 300px;
   }
@@ -858,9 +855,6 @@
   }
   .map-dialog form .button {
     width: 100%;
-  }
-  .map-header h2 {
-    font-size: 21px;
   }
   .results-pagination .button {
     padding: 10px;
@@ -1020,19 +1014,16 @@ a.trip-open:hover {
 .trip-title-service .transport-icon {
   flex-shrink: 0;
 }
+.trip-dialog .trip-observation-status {
+  font-size: 12px;
+  gap: 6px;
+}
 .trip-title-route {
   flex: 1 1 180px;
   min-width: 0;
   font-size: 16px;
   line-height: 1.4;
   overflow-wrap: anywhere;
-}
-.trip-dialog .map-header > div {
-  width: 100%;
-  min-width: 0;
-}
-.trip-dialog .map-header > button {
-  flex-shrink: 0;
 }
 .map-canvas[hidden] {
   display: none;
@@ -1134,21 +1125,7 @@ a.trip-open:hover {
   }
 }
 
-/* Stable loading regions and reserved close-button space, including long route names. */
-.map-header {
-  position: relative;
-  align-items: flex-start;
-  padding-right: 48px;
-  min-height: 40px;
-}
-.map-header > .icon-button {
-  position: absolute;
-  top: 0;
-  right: 0;
-}
-.map-header h2 {
-  overflow-wrap: anywhere;
-}
+/* Reserve the map's canvas space while loading. */
 .map-stage {
   position: relative;
   min-height: 380px;
@@ -1162,7 +1139,6 @@ a.trip-open:hover {
 }
 .trip-dialog {
   height: min(760px, calc(100dvh - 40px));
-  scrollbar-gutter: stable;
 }
 .trip-body {
   min-height: 220px;
@@ -1217,8 +1193,8 @@ a.trip-open:hover {
   padding-bottom: 12px;
 }
 .route-badge {
-  background: var(--mode-bg, #e8ece1);
-  color: var(--mode-fg, #40584a);
+  background: var(--mode-bg, var(--line));
+  color: var(--mode-fg, var(--ink));
   border: 1px solid transparent;
 }
 a.trip-open:hover {
@@ -1400,6 +1376,7 @@ a.trip-open:active {
 .leg-timeline {
   margin-left: 0;
   padding-left: var(--trip-axis-space);
+  grid-template-rows: auto auto auto;
 }
 .leg-timeline > time[data-trip-point],
 .leg-timeline .intermediate-stops,
@@ -1513,6 +1490,21 @@ a.trip-open:active {
   border: solid var(--red);
   border-width: 0 2px 2px 0;
 }
+.trip-vehicle-dot[data-outside] {
+  /* A pinned endpoint follows row height changes without trailing off the rail. */
+  transition: none;
+}
+.leg-timeline > .trip-vehicle-dot[data-outside] {
+  /* The grid row is also the endpoint time's containing block, even during disclosure motion. */
+  grid-column: 1 / -1;
+  left: calc(var(--trip-axis-inset) - var(--trip-axis-space));
+}
+.leg-timeline > .trip-vehicle-dot[data-outside="before"] {
+  grid-row: 1 / 2;
+}
+.leg-timeline > .trip-vehicle-dot[data-outside="after"] {
+  grid-row: 3 / 4;
+}
 .trip-vehicle-dot[data-outside="before"]::after {
   bottom: 15px;
   transform: translateX(-50%) rotate(225deg);
@@ -1575,29 +1567,6 @@ a.trip-open:active {
   position: relative;
   z-index: 2;
   cursor: pointer;
-}
-.trip-dialog .trip-sticky-header {
-  position: sticky;
-  top: calc(-1 * var(--dialog-padding));
-  z-index: 5;
-  background: var(--paper);
-  margin: calc(-1 * var(--dialog-padding)) calc(-1 * var(--dialog-padding)) 5px;
-  padding: var(--dialog-padding) calc(var(--dialog-padding) + 48px) 16px
-    var(--dialog-padding);
-}
-.trip-dialog .trip-sticky-header > .icon-button {
-  top: var(--dialog-padding);
-  right: var(--dialog-padding);
-}
-.trip-sticky-header > div {
-  min-width: 0;
-}
-.trip-dialog .trip-sticky-header #trip-title {
-  margin: 0;
-}
-.trip-dialog .trip-sticky-header > .icon-button {
-  width: 44px;
-  height: 44px;
 }
 @media (max-width: 600px) {
   .leg-title {

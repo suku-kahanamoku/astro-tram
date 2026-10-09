@@ -110,7 +110,7 @@ for (const width of [375, 1280]) {
       /Odhad podle jízdního řádu; nejde o skutečnou polohu vozidla/,
     );
     await expect(card.locator(".leg [data-delay-status]")).toHaveText(
-      "Zpoždění neznámé",
+      "Bez zpoždění",
     );
     expect(reads).toBe(1);
     await card.locator("[data-summary-trip]").click();
@@ -122,8 +122,8 @@ for (const width of [375, 1280]) {
       "aria-label",
       /Odhad.*Vozidlo u zastávky Praha, Muzeum/,
     );
-    await expect(dialog.locator("[data-position-status]")).toHaveText(
-      "Odhad polohy podle jízdního řádu",
+    await expect(dialog.locator("[data-response-status]")).toHaveText(
+      "Odpověď o stavu spoje přijata.",
     );
     expect(reads).toBe(2);
     const row = await dialog.locator(".trip-call").first().elementHandle();
@@ -144,6 +144,10 @@ for (const width of [375, 1280]) {
     expect(coordinateReads).toBe(0);
     expect(reads).toBe(2);
     await page.clock.fastForward(31000);
+    await expect(dialog.locator("[data-response-state]")).toHaveAttribute(
+      "data-response-state",
+      "received",
+    );
     await expect(dot).toBeVisible();
     await expect(dot).toHaveAttribute("data-estimated", "true");
     await expect(dot).toHaveAttribute("data-from", "2");

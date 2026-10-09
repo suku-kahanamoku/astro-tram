@@ -1,4 +1,4 @@
-import { useState, type RefObject } from "react";
+import { useEffect, useState, type RefObject } from "react";
 import JourneyResults from "./JourneyResults";
 import type { Dictionary } from "../../TransportCoreModule/providers/translations";
 import {
@@ -10,6 +10,7 @@ import type { useTrip } from "../hooks/useTrip";
 import type { Locale } from "../../LangModule/providers/locale";
 import { adjacentJourneyPage } from "../../TransportCoreModule/providers/journeyPaging";
 import Icon from "../../UIModule/components/TransitIcon";
+import { notify } from "../../UIModule/providers/notifications";
 
 type SearchState = ReturnType<typeof useJourneySearch>;
 type TripState = ReturnType<typeof useTrip>;
@@ -47,8 +48,17 @@ export default function TransportResults({
   searchUrl: string;
   resultsHeading: RefObject<HTMLDivElement | null>;
 }) {
-  const [share, setShare] = useState("");
+  const [copying, setCopying] = useState(false);
   const error = searchError(search.error, t);
+  useEffect(() => {
+    if (!results || search.loading) return;
+    if (search.error === "search_prompt") return;
+    if (!search.error && (!search.data || search.data.journeys.length)) return;
+    const [message, help] = search.error
+      ? searchError(search.error, t)
+      : [t.empty, t.emptyHelp];
+    return notify(message, search.error ? "error" : "info", help || undefined);
+  }, [results, search.loading, search.key, search.error, search.data, t]);
   const pageLink = (page: "earlier" | "later") =>
     `${searchUrl}?${writeState(adjacentJourneyPage(search.state, search.data!.journeys, page))}#results`;
   const pagination =
@@ -83,30 +93,31 @@ export default function TransportResults({
         <div>
           <span className="eyebrow">TRAM / {t.results}</span>
           <h1>{t.results}</h1>
-          <p>{t.resultsSub}</p>
         </div>
         <button
           className="button button-outline"
           type="button"
           data-share
-          aria-label={share || t.share}
-          title={share || t.share}
-          onClick={() =>
-            void navigator.clipboard
-              .writeText(location.href)
-              .then(() => setShare(t.copied))
-              .catch(() => setShare(t.copyError))
-          }
+          disabled={copying}
+          aria-label={t.share}
+          title={t.share}
+          onClick={async () => {
+            if (copying) return;
+            setCopying(true);
+            try {
+              await navigator.clipboard.writeText(location.href);
+              notify(t.copied, "success");
+            } catch {
+              notify(t.copyError, "error", t.copyErrorHelp);
+            } finally {
+              setCopying(false);
+            }
+          }}
         >
           <Icon name="copy" size={18} />
-          <span className="share-label">{share || t.share}</span>
+          <span className="share-label">{t.share}</span>
         </button>
       </div>
-      {share && (
-        <span className="sr-only" role="status">
-          {share}
-        </span>
-      )}
       {pagination && <div data-pagination-position="top">{pagination}</div>}
       <div data-results-content aria-live="polite">
         {search.loading ? (

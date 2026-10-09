@@ -14,6 +14,7 @@ import type {
 type Socket = ReturnType<typeof createRealtimeClient>;
 type Watch = {
   controller: AbortController;
+  responseState: NonNullable<TripObservation["responseState"]>;
   session?: TrackingSession;
   subscribed?: boolean;
   expiry?: ReturnType<typeof setTimeout>;
@@ -56,17 +57,35 @@ export function createTrackingSubscriptions(
       ? value
       : undefined;
   };
+  const publish = (id: string, watch: Watch, value: TripObservation) =>
+    store.set(
+      id,
+      value.responseState === watch.responseState
+        ? value
+        : { ...value, responseState: watch.responseState },
+    );
+  const failed = (watch: Watch) => {
+    // The lights report whether this watched trip has answered, not GPS freshness.
+    if (watch.responseState !== "received" && !watch.snapshot)
+      watch.responseState = "error";
+  };
   const apply = (id: string, watch: Watch, value: TripObservation) => {
     const current = currentObservation(id);
     // Temporary missing frames and older HTTP/WS samples cannot erase a fresh
     // delay or GPS sample. Its original source expiry stays unchanged.
-    if (current && !value.validUntil) return;
-    if (current?.position && value.estimatedProgress && !value.position) return;
+    if (
+      (current && !value.validUntil) ||
+      (current?.position && value.estimatedProgress && !value.position)
+    ) {
+      if (current.responseState !== watch.responseState)
+        publish(id, watch, current);
+      return;
+    }
     value = mergeObservation(current, value);
     // An unavailable frame is not a newer measurement and must not cancel the
     // dialog's pending initial HTTP read of delay and position.
     if (value.validUntil) watch.revision = (watch.revision ?? 0) + 1;
-    store.set(id, value);
+    publish(id, watch, value);
     clearTimeout(watch.expiry);
     const deadlines = [
       value.positionSample?.validUntil,
@@ -85,7 +104,7 @@ export function createTrackingSubscriptions(
               store.getSnapshot()[id],
               unavailableObservation("stale"),
             );
-            store.set(id, remaining);
+            publish(id, watch, remaining);
             if (remaining.validUntil) apply(id, watch, remaining);
           }
         },
@@ -141,13 +160,14 @@ export function createTrackingSubscriptions(
       watch.session = undefined;
       watch.subscribed = false;
       if (!currentObservation(id) && !watch.snapshot)
-        store.set(id, unavailableObservation(session.status));
+        publish(id, watch, unavailableObservation(session.status));
       return;
     }
     if (socketUrl && socketUrl !== session.url) {
       // A search uses one configured gateway. Never silently create a second socket.
+      failed(watch);
       if (!currentObservation(id))
-        store.set(id, unavailableObservation("unsupported"));
+        publish(id, watch, unavailableObservation("unsupported"));
       return;
     }
     queue.delete(id);
@@ -173,8 +193,9 @@ export function createTrackingSubscriptions(
             clearTimeout(item.renewal);
             item.session = undefined;
             item.subscribed = false;
+            failed(item);
             if (!currentObservation(trip))
-              store.set(trip, unavailableObservation());
+              publish(trip, item, unavailableObservation());
             if (!tickets.has(trip)) queue.set(trip, item);
           }
           if (retries < 8 && queue.size) {
@@ -207,6 +228,7 @@ export function createTrackingSubscriptions(
             pump();
           } else if (m.type === "observation") {
             retries = 0;
+            item.responseState = "received";
             let value = observation(m.data);
             // Measured GPS and delay are portable. Native timetable progress is
             // indexed by another planner's static stop list and cannot be reused.
@@ -256,7 +278,9 @@ export function createTrackingSubscriptions(
       })
       .catch((error: unknown) => {
         if (!active(id, watch)) return;
-        if (!currentObservation(id)) store.set(id, unavailableObservation());
+        failed(watch);
+        if (!currentObservation(id))
+          publish(id, watch, unavailableObservation());
         if (error instanceof TransportRequestError && error.status === 429) {
           // One cooldown for all pending tickets, not independent retries per vehicle.
           nextRequestAt = Math.max(
@@ -285,8 +309,9 @@ export function createTrackingSubscriptions(
       // Accordion and dialog can open together or share the same trip. Join
       // their pending read instead of aborting it and issuing duplicate HTTP.
       if (watch.snapshot) return;
+      if (watch.responseState !== "received") watch.responseState = "pending";
       if (!currentObservation(id))
-        store.set(id, unavailableObservation("connecting"));
+        publish(id, watch, unavailableObservation("connecting"));
       const controller = new AbortController();
       watch.snapshot = controller;
       const revision = watch.revision ?? 0;
@@ -298,6 +323,7 @@ export function createTrackingSubscriptions(
             !controller.signal.aborted &&
             watch.snapshot === controller
           ) {
+            watch.responseState = "received";
             const value = observation(raw);
             if ((watch.revision ?? 0) !== revision) {
               const current = currentObservation(id);
@@ -327,8 +353,11 @@ export function createTrackingSubscriptions(
             active(id, watch) &&
             !controller.signal.aborted &&
             !currentObservation(id)
-          )
+          ) {
+            if (watch.responseState !== "received")
+              watch.responseState = "error";
             apply(id, watch, unavailableObservation());
+          }
         })
         .finally(() => {
           if (watch.snapshot === controller) watch.snapshot = undefined;
@@ -359,7 +388,10 @@ export function createTrackingSubscriptions(
         }
       for (const id of desired) {
         if (watches.has(id)) continue;
-        const watch: Watch = { controller: new AbortController() };
+        const watch: Watch = {
+          controller: new AbortController(),
+          responseState: "pending",
+        };
         watches.set(id, watch);
         const session = tickets.get(id);
         if (

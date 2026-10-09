@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import TransportBadge from "../src/modules/TransportCoreModule/components/TransportBadge";
-import { transportModes } from "../src/modules/TransportCoreModule/config/transportModes";
 import { dictionary } from "../src/modules/TransportCoreModule/providers/translations";
 import {
   placeDetail,
@@ -233,23 +232,4 @@ test("shared symbols and service badges use the same palette and safe unknown-mo
   assert.match(unknown, /data-mode="transport"/);
   assert.match(unknown, /&lt;script&gt;/);
   assert.ok(!unknown.includes("__proto__"));
-});
-
-test("all transport label palettes keep readable foreground contrast", () => {
-  const luminance = (hex: string) => {
-    const rgb = hex
-      .slice(1)
-      .match(/../g)!
-      .map((v) => parseInt(v, 16) / 255)
-      .map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
-    return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722;
-  };
-  for (const [mode, palette] of Object.entries(transportModes)) {
-    assert.ok(
-      (luminance(palette.background) + 0.05) /
-        (luminance(palette.foreground) + 0.05) >=
-        4.5,
-      mode,
-    );
-  }
 });

@@ -95,7 +95,41 @@ test("prediction works without GPS and keeps a safe anchor when times are absent
     "Never invent interpolation across an untimed stop",
   );
 });
-test("live GPS overrides prediction immediately, gaps retain the last measured point, estimates never become measurements", () => {
+test("unconfirmed position support keeps a visible origin anchor without predicting movement", () => {
+  const now = Date.parse(instant(16));
+  for (const status of [
+    "pending",
+    "unavailable",
+    "unsupported",
+    "stale",
+    "live",
+  ]) {
+    const live: TripObservation = {
+      status,
+      position: null,
+      observedAt: new Date(now).toISOString(),
+      validUntil: new Date(now + 30000).toISOString(),
+      delaySeconds: status === "live" ? 600 : null,
+      cancelled: false,
+    };
+    assert.deepEqual(displayTripProgress(trip, live, null, now), {
+      progress: at(0),
+      retained: false,
+      estimated: true,
+      timetable: false,
+    });
+  }
+  assert.deepEqual(
+    displayTripProgress(trip, undefined, null, now).progress,
+    at(0),
+  );
+  assert.deepEqual(
+    displayTripProgress(trip, undefined, null, now, true).progress,
+    predict(16),
+    "Only verified absence of a position provider permits local prediction",
+  );
+});
+test("live GPS overrides permitted prediction, gaps retain the last measured point, estimates never become measurements", () => {
   const now = Date.parse(instant(5));
   const live: TripObservation = {
     status: "live",
@@ -105,7 +139,7 @@ test("live GPS overrides prediction immediately, gaps retain the last measured p
     cancelled: false,
     delaySeconds: null,
   };
-  assert.deepEqual(displayTripProgress(trip, undefined, null, now), {
+  assert.deepEqual(displayTripProgress(trip, undefined, null, now, true), {
     progress: predict(5),
     retained: false,
     estimated: true,
@@ -129,6 +163,33 @@ test("live GPS overrides prediction immediately, gaps retain the last measured p
   );
   assert.deepEqual(
     displayTripProgress(trip, live, null, now + 60000).progress,
-    predict(6),
+    at(0),
+  );
+  assert.deepEqual(
+    displayTripProgress(trip, live, null, now + 60000, true).progress,
+    at(0),
+    "Even a previous estimate permission must not override a stale GPS sample",
+  );
+});
+
+test("completed trips stay at the terminus and remembered GPS never resets to the origin", () => {
+  const now = Date.parse(instant(25));
+  assert.deepEqual(
+    displayTripProgress(trip, undefined, null, now, true).progress,
+    at(2),
+  );
+  const completed: TripObservation = {
+    status: "live",
+    position: { lat: 50.02, lon: 14 },
+    observedAt: new Date(now).toISOString(),
+    validUntil: new Date(now + 30000).toISOString(),
+    cancelled: false,
+    delaySeconds: null,
+  };
+  const measured = displayTripProgress(trip, completed, null, now);
+  assert.deepEqual(measured.progress, at(2));
+  assert.deepEqual(
+    displayTripProgress(trip, undefined, measured.progress, now + 600000),
+    { progress: at(2), retained: true, estimated: false, timetable: false },
   );
 });

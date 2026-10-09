@@ -41,7 +41,9 @@
     "skip": "Přejít k obsahu",
     "back": "Zpět na úvod",
     "footer": "Každá cesta někde začíná.",
-    "privacy": "Tvoji GPS polohu neukládáme."
+    "privacy": "Tvoji GPS polohu neukládáme.",
+    "notifications": "Oznámení",
+    "closeNotification": "Zavřít oznámení"
   },
   "errors": {
     "notFound": "Tahle stránka tu není.",

@@ -1,7 +1,6 @@
 {
   "eyebrow": "Next stop?",
   "title": "Where are you heading?",
-  "subtitle": "Choose your route. We will find the connections.",
   "from": "From",
   "to": "To",
   "placeholder": "City or stop",
@@ -30,8 +29,7 @@
   "loadingPlaces": "Finding stops…",
   "placesError": "Stops could not be loaded. Please try again.",
   "searching": "Finding your way…",
-  "results": "Your connections",
-  "resultsSub": "Choose the journey that suits you.",
+  "results": "Found connections",
   "found": "connections found",
   "empty": "No connections found for this search.",
   "emptyHelp": "Try another time, allow transfers or change the stops.",
@@ -84,8 +82,8 @@
   "javascript": "Enable JavaScript for suggestions, maps and journey search.",
   "searchPrompt": "Enter your start, destination and travel time.",
   "share": "Copy link",
-  "copied": "Link copied",
-  "copyError": "The link is in your address bar.",
+  "copied": "Link copied to clipboard.",
+  "copyError": "Could not copy the link.",
   "stopsCount": "stops",
   "placesNotConfigured": "Stop data sources are not connected for this area yet.",
   "city": "City",
@@ -164,6 +162,9 @@
   "trackingUnsupported": "The provider does not supply a verified live position for this service.",
   "trackingConnecting": "Getting current position…",
   "trackingUnavailable": "Current position is unavailable.",
+  "trackingResponsePending": "Waiting for the service status response…",
+  "trackingResponseReceived": "Service status response received.",
+  "trackingResponseError": "Could not retrieve the service status response.",
   "transferAtRisk": "Due to the current delay, you may miss this connection.",
   "arrivalEstimated": "Arrival is estimated from the current delay.",
   "connectionAtRisk": "Connection at risk",
@@ -200,5 +201,7 @@
   "street": "Street",
   "address": "Address",
   "nearCity": "Near {city}",
-  "dataAttributionsLoading": "Loading data sources…"
+  "dataAttributionsLoading": "Loading data sources…",
+  "copyErrorHelp": "Please copy it from the address bar.",
+  "locationErrorHelp": "Enter a place manually or choose a stop from the suggestions."
 }

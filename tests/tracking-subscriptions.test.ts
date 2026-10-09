@@ -15,6 +15,68 @@ const point = (delay = 120) => ({
   cancelled: false,
 });
 
+test("a successful status response counts without GPS, delay or a departed vehicle", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout", "setInterval", "Date"] });
+  for (const status of ["unavailable", "unsupported", "disabled", "live"]) {
+    let answer!: (value: unknown) => void;
+    const store = createTrackingStore();
+    const manager = createTrackingSubscriptions(store, {
+      tracking: async () => ({ status: "disabled" }),
+      observation: () => new Promise((resolve) => (answer = resolve)),
+      socket: () => {
+        throw Error("not connected");
+      },
+    });
+    manager.setIds(["trip"]);
+    manager.refresh("trip");
+    await setImmediate();
+    assert.equal(store.getSnapshot().trip.responseState, "pending");
+    answer({ status, position: null, delay_seconds: null });
+    await setImmediate();
+    assert.equal(store.getSnapshot().trip.responseState, "received", status);
+    assert.equal(store.getSnapshot().trip.position, null);
+    assert.equal(store.getSnapshot().trip.delaySeconds, null);
+    t.mock.timers.tick(60000);
+    assert.equal(store.getSnapshot().trip.responseState, "received");
+    manager.dispose();
+  }
+});
+
+test("an observation failure is distinct from a successful empty answer and a retry cannot erase receipt", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout", "setInterval", "Date"] });
+  let succeed = false;
+  const store = createTrackingStore();
+  const manager = createTrackingSubscriptions(store, {
+    tracking: async () => ({ status: "disabled" }),
+    observation: async () => {
+      if (!succeed) throw Error("HTTP 503");
+      return { status: "unavailable", position: null, delay_seconds: null };
+    },
+    socket: () => {
+      throw Error("not connected");
+    },
+  });
+  manager.setIds(["trip"]);
+  manager.refresh("trip");
+  await setImmediate();
+  assert.equal(store.getSnapshot().trip.responseState, "error");
+  succeed = true;
+  manager.refresh("trip");
+  assert.equal(store.getSnapshot().trip.responseState, "pending");
+  await setImmediate();
+  assert.equal(store.getSnapshot().trip.responseState, "received");
+  succeed = false;
+  manager.refresh("trip");
+  await setImmediate();
+  assert.equal(store.getSnapshot().trip.responseState, "received");
+  manager.setIds([]);
+  manager.setIds(["trip"]);
+  manager.refresh("trip");
+  await setImmediate();
+  assert.equal(store.getSnapshot().trip.responseState, "error");
+  manager.dispose();
+});
+
 test("fresh measured GPS takes precedence over a newer timetable estimate without prolonging its expiry", async (t) => {
   t.mock.timers.enable({ apis: ["setTimeout", "setInterval", "Date"] });
   let push!: (data: unknown) => void;
@@ -66,6 +128,7 @@ test("fresh measured GPS takes precedence over a newer timetable estimate withou
   assert.equal(store.getSnapshot().trip.estimatedProgress, undefined);
   t.mock.timers.tick(29000);
   assert.equal(store.getSnapshot().trip.status, "stale");
+  assert.equal(store.getSnapshot().trip.responseState, "received");
   manager.dispose();
 });
 
@@ -173,6 +236,8 @@ test("an unavailable socket frame cannot block the dialog's initial delay-only r
   manager.refresh("dialog");
   await setImmediate();
   push({ status: "unavailable" });
+  assert.equal(store.getSnapshot().dialog.responseState, "received");
+  assert.equal(store.getSnapshot().dialog.position, null);
   finish({ ...point(480), position: null });
   await setImmediate();
   assert.equal(store.getSnapshot().dialog.delaySeconds, 480);

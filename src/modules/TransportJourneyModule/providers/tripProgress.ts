@@ -164,22 +164,32 @@ export function lastKnownTripProgress(
   return projectPosition(trip, live.position);
 }
 
-/** Measured positions take priority; a timetable prediction keeps the axis populated. */
+/** Always show an anchor; only a confirmed timetable service may predict movement. */
 export function displayTripProgress(
   trip: Trip,
   live?: TripObservation,
   remembered: TripProgress | null = null,
   now = Date.now(),
+  allowTimetable = false,
 ) {
   const current = tripProgress(trip, live, now);
   const known = lastKnownTripProgress(trip, live, now) ?? remembered;
   const backendEstimate = estimatedTripProgress(trip, live, now);
-  const timetable = !current && !known && !backendEstimate;
+  const timetable =
+    allowTimetable && !live?.position && !current && !known && !backendEstimate;
+  const progress =
+    current ??
+    known ??
+    backendEstimate ??
+    (timetable
+      ? timetableTripProgress(trip, now)
+      : trip.stops.length
+        ? { from: 0, to: 0, fraction: 0, atStop: true }
+        : null);
   return {
-    progress:
-      current ?? known ?? backendEstimate ?? timetableTripProgress(trip, now),
+    progress,
     retained: !current && !!known,
-    estimated: !current && !known,
+    estimated: !!progress && !current && !known,
     timetable,
   };
 }

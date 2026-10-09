@@ -2,6 +2,7 @@
 import SeoHead from "../modules/SiteModule/components/SeoHead.astro";
 import Header from "../modules/SiteModule/components/Header.astro";
 import Footer from "../modules/SiteModule/components/Footer.astro";
+import ToastViewport from "../modules/UIModule/components/ToastViewport";
 import { dictionary } from "../modules/SiteModule/providers/translations";
 import { site } from "../config/site";
 import type { Locale, PageId } from "../config/routes";
@@ -36,5 +37,10 @@ const { locale, page, title, description, noindex = false } = Astro.props;
       <slot />
     </main>
     <Footer {locale} />
+    <ToastViewport
+      client:load
+      label={dictionary(locale).common.notifications}
+      closeLabel={dictionary(locale).common.closeNotification}
+    />
   </body>
 </html>

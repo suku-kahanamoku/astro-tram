@@ -221,36 +221,38 @@ export default function SearchForm({
                   setDraft((s) => ({ ...s, timeMode: undefined }));
                 }}
               />
-              <fieldset className="time-mode">
-                <legend className="sr-only">
-                  {t.depart} / {t.arrive}
-                </legend>
-                {(["depart", "arrive"] as const).map((mode) => (
-                  <label key={mode}>
-                    <input
-                      type="radio"
-                      name="timing"
-                      value={mode}
-                      checked={draft.arrive === (mode === "arrive")}
-                      onChange={() =>
-                        setDraft((s) => ({ ...s, arrive: mode === "arrive" }))
-                      }
-                    />
-                    <span>{t[mode]}</span>
-                  </label>
-                ))}
-              </fieldset>
-              <label className="direct-toggle">
-                <input
-                  type="checkbox"
-                  data-direct
-                  checked={draft.direct}
-                  onChange={(e) =>
-                    setDraft((s) => ({ ...s, direct: e.target.checked }))
-                  }
-                />
-                <span>{t.direct}</span>
-              </label>
+              <div className="search-preferences">
+                <fieldset className="time-mode">
+                  <legend className="sr-only">
+                    {t.depart} / {t.arrive}
+                  </legend>
+                  {(["depart", "arrive"] as const).map((mode) => (
+                    <label key={mode}>
+                      <input
+                        type="radio"
+                        name="timing"
+                        value={mode}
+                        checked={draft.arrive === (mode === "arrive")}
+                        onChange={() =>
+                          setDraft((s) => ({ ...s, arrive: mode === "arrive" }))
+                        }
+                      />
+                      <span>{t[mode]}</span>
+                    </label>
+                  ))}
+                </fieldset>
+                <label className="direct-toggle">
+                  <input
+                    type="checkbox"
+                    data-direct
+                    checked={draft.direct}
+                    onChange={(e) =>
+                      setDraft((s) => ({ ...s, direct: e.target.checked }))
+                    }
+                  />
+                  <span>{t.direct}</span>
+                </label>
+              </div>
               <button type="submit" className="button search-submit">
                 {t.search}
                 <Icon name="arrow" size={20} />

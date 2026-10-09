@@ -6,8 +6,8 @@
   width: 38px;
   height: 38px;
   border-radius: 10px;
-  background: var(--mode-bg);
-  color: var(--mode-fg);
+  background: var(--mode-bg, var(--line));
+  color: var(--mode-fg, var(--ink));
 }
 .place-option-symbols {
   display: flex;

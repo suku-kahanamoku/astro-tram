@@ -12,6 +12,7 @@ import { Style, Stroke, Fill, Text, Circle as CircleStyle } from "ol/style.js";
 import { defaults as defaultInteractions } from "ol/interaction/defaults.js";
 import "ol/ol.css";
 import type { MapConfig, MapRoute } from "../types";
+import { routeStyle } from "./routeStyle";
 
 export function createMap(
   target: HTMLElement,
@@ -30,14 +31,6 @@ export function createMap(
       radius: 6,
       fill: new Fill({ color: "#ed483b" }),
       stroke: new Stroke({ color: "#fff8ee", width: 3 }),
-    }),
-  });
-  const dottedStyle = new Style({
-    stroke: new Stroke({
-      color: "#ed483b",
-      width: 4,
-      lineDash: [1, 9],
-      lineCap: "round",
     }),
   });
   const map = new Map({
@@ -62,13 +55,14 @@ export function createMap(
   };
   if (options.journey) {
     for (const leg of options.journey.legs) {
+      const segmentStyle = routeStyle(leg.color, leg.lineStyle === "dotted");
       if (leg.geometry && leg.geometry.coordinates.length >= 2) {
         const feature = new Feature(
           new LineString(
             leg.geometry.coordinates.map((c) => fromLonLat([c[0], c[1]])),
           ),
         );
-        if (leg.lineStyle === "dotted") feature.setStyle(dottedStyle);
+        feature.setStyle(segmentStyle);
         source.addFeature(feature);
         routes++;
       }
@@ -78,10 +72,11 @@ export function createMap(
             new Point(fromLonLat([stop.lon, stop.lat])),
           );
           const label = options.journey.endpointLabels?.[index];
+          feature.setStyle(segmentStyle);
           if (label)
             feature.setStyle(
               new Style({
-                image: style.getImage() ?? undefined,
+                image: segmentStyle.getImage() ?? undefined,
                 text: new Text({
                   text: label,
                   offsetY: -18,

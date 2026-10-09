@@ -13,6 +13,7 @@ import { HttpError } from "../../CoreModule/server/errors";
 import { projectAttributions } from "../../TransportCoreModule/providers/attributions";
 import { projectEstimatedProgress } from "../../TransportCoreModule/providers/estimatedProgress";
 import { servedModes } from "../../TransportCoreModule/config/transportModes";
+import { projectTransportPalette } from "../../TransportCoreModule/providers/transportPalette";
 import type {
   Geometry,
   Journey,
@@ -234,6 +235,14 @@ function leg(value: unknown): Leg {
 }
 export function createTransportProvider(core: BackendClient) {
   return {
+    async presentation() {
+      const raw = await core.request("/transport/v1/presentation");
+      try {
+        return projectTransportPalette(raw);
+      } catch {
+        throw new HttpError(502, "invalid_backend_response");
+      }
+    },
     async attributions() {
       const raw = await core.request("/transport/v1/attributions");
       try {

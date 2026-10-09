@@ -1,4 +1,4 @@
-import { useRef, type ReactNode, type RefObject } from "react";
+import { useMemo, useRef, type ReactNode, type RefObject } from "react";
 import { useTripObservation } from "../../TransportTrackingModule/hooks/useTrackingSnapshot";
 import type { Leg, Trip } from "../../TransportCoreModule/types";
 import type { Dictionary } from "../../TransportCoreModule/providers/translations";
@@ -42,16 +42,7 @@ function Position({
       retained={retained}
       estimated={estimated}
       outside={placement?.outside}
-      top={
-        top === null
-          ? null
-          : top +
-            (placement?.outside === "before"
-              ? -14
-              : placement?.outside === "after"
-                ? 14
-                : 0)
-      }
+      top={top}
       t={t}
     />
   );
@@ -74,16 +65,36 @@ export default function JourneyLegPosition({
   const { trip } = useTrip(leg.tripId, !!live?.position);
   const lastTrip = useRef<{ id: string; trip: Trip } | undefined>(undefined);
   if (trip && leg.tripId) lastTrip.current = { id: leg.tripId, trip };
+  // The visible endpoints already exist while the full stop list is loading.
+  // No GPS projection is attempted against this incomplete two-stop scaffold.
+  const endpoints = useMemo<Trip>(
+    () => ({
+      sourceMode: "schedule",
+      stops: [
+        {
+          stop: { ...leg.from, lat: null, lon: null },
+          arrival: null,
+          departure: leg.scheduledDeparture,
+        },
+        {
+          stop: { ...leg.to, lat: null, lon: null },
+          arrival: leg.scheduledArrival,
+          departure: null,
+        },
+      ],
+    }),
+    [leg],
+  );
   const coordinateTrip =
     trip ??
-    (lastTrip.current?.id === leg.tripId ? lastTrip.current.trip : undefined);
+    (lastTrip.current?.id === leg.tripId ? lastTrip.current.trip : endpoints);
   return (
     <div
       ref={root}
       className={`leg-stops${leg.tripId ? " trip-timeline leg-timeline" : ""}`}
     >
       {children}
-      {coordinateTrip && leg.tripId && (
+      {leg.tripId && (
         <Position
           trip={coordinateTrip}
           leg={leg}

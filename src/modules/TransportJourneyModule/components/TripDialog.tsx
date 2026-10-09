@@ -1,7 +1,6 @@
 import TripServiceBadge from "./TripServiceBadge";
 import type { TripObservation } from "../../TransportCoreModule/types";
 import Dialog from "../../UIModule/components/Dialog";
-import Icon from "../../UIModule/components/TransitIcon";
 import { hasStopDetails } from "../providers/render";
 import TripTimeline from "./TripTimeline";
 import TripLegend from "./TripLegend";
@@ -36,43 +35,32 @@ export default function TripDialog({
     <Dialog
       open={open}
       onDismiss={onClose}
-      className="map-dialog trip-dialog"
+      className="trip-dialog"
+      scrollContent
       data-trip-dialog
-      aria-labelledby="trip-title"
-    >
-      <div className="map-header trip-sticky-header">
-        <div>
-          <h2 id="trip-title">
-            {leg ? (
-              <>
-                <TripServiceBadge
-                  leg={leg}
-                  trip={trip}
-                  live={live}
-                  t={t}
-                  className="trip-title-service"
-                />
-                {from && to && (
-                  <span className="trip-title-route">
-                    {from} – {to}
-                  </span>
-                )}
-              </>
-            ) : (
-              t.tripStops
+      titleId="trip-title"
+      closeLabel={t.close}
+      closeButtonAttributes={{ "data-close-trip": true }}
+      title={
+        leg ? (
+          <>
+            <TripServiceBadge
+              leg={leg}
+              live={live}
+              t={t}
+              className="trip-title-service"
+            />
+            {from && to && (
+              <span className="trip-title-route">
+                {from} – {to}
+              </span>
             )}
-          </h2>
-        </div>
-        <button
-          className="icon-button"
-          type="button"
-          data-close-trip
-          aria-label={t.close}
-          onClick={onClose}
-        >
-          <Icon name="close" size={25} />
-        </button>
-      </div>
+          </>
+        ) : (
+          t.tripStops
+        )
+      }
+    >
       <div className="trip-body" aria-busy={!trip && !error}>
         {trip?.stops.some((c) => c.requestStop) && (
           <p className="trip-stop-legend" data-trip-stop-legend>

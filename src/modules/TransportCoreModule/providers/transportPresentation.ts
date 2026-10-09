@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import { transportModes, type TransportMode } from "../config/transportModes";
 import type { Dictionary } from "./translations";
 import type { PlaceOption } from "../types";
+import { modePalette, type TransportPalette } from "./transportPalette";
 
 export function transportMode(mode: string): TransportMode {
   return Object.hasOwn(transportModes, mode)
@@ -13,8 +14,12 @@ export function modeLabel(mode: string, t: Dictionary): string {
   return t[transportModes[transportMode(mode)].label];
 }
 
-export function transportStyle(mode: string): CSSProperties {
-  const presentation = transportModes[transportMode(mode)];
+export function transportStyle(
+  mode: string,
+  palette: TransportPalette,
+): CSSProperties {
+  const presentation = modePalette(palette, mode);
+  if (!presentation) return {};
   return {
     "--mode-bg": presentation.background,
     "--mode-fg": presentation.foreground,

@@ -55,6 +55,34 @@ const state: SearchState = {
   country: "CZ",
 };
 
+for (const arrive of [false, true]) {
+  test(`display order uses departure across midnight, offsets and delays (${arrive ? "arrival query" : "departure query"})`, async () => {
+    const early = journey(1, 0),
+      late = journey(2, 5);
+    early.legs[0].scheduledDeparture = "2026-10-05T23:55:00+02:00";
+    early.legs[0].scheduledArrival = "2026-10-06T02:00:00+02:00";
+    early.legs[0].expectedDeparture = "2026-10-06T01:00:00+02:00";
+    late.legs[0].scheduledDeparture = "2026-10-05T23:05:00+01:00";
+    late.legs[0].scheduledArrival = "2026-10-06T01:15:00+02:00";
+    const result = await collectJourneyPage(
+      {
+        ...searchBody({
+          ...state,
+          arrive,
+          at: arrive
+            ? "2026-10-06T03:00:00+02:00"
+            : "2026-10-05T23:00:00+02:00",
+        }),
+      },
+      async () => ({ journeys: [late, early], partial: true }),
+    );
+    assert.deepEqual(
+      result.journeys.map((j) => j.key),
+      ["1", "2"],
+    );
+  });
+}
+
 for (const spacing of [2, 75]) {
   test(`ten journeys per page across hourly windows, forward/backward (${spacing} minute headway)`, async () => {
     const timetable = Array.from({ length: 40 }, (_, i) =>
@@ -174,7 +202,7 @@ test("walking routes with genuinely different paths remain separate", async () =
   assert.equal(result.journeys.length, 2);
 });
 
-test("mixed pages keep one walking option, collect distinct departures and use transit cursor boundaries", async () => {
+test("mixed pages discard pure walking after three transit options, fill ten transit results and keep cursor boundaries", async () => {
   let calls = 0;
   const result = await collectJourneyPage(searchBody(state), async (body) => {
     const cursor = Date.parse(String(body["from-date"]));
@@ -190,13 +218,87 @@ test("mixed pages keep one walking option, collect distinct departures and use t
       partial: false,
     };
   });
-  assert.equal(calls, 9);
+  assert.equal(calls, 10);
   assert.equal(result.journeys.length, 10);
   assert.equal(
     result.journeys.filter((j) => j.legs[0].mode === "walk").length,
-    1,
+    0,
   );
   assert.equal(result.journeys[0].legs[0].scheduledDeparture, instant(start));
+});
+
+for (const count of [0, 1, 2, 3, 10]) {
+  test(`pure walking is fallback with ${count} distinct transit options`, async () => {
+    const transit = Array.from({ length: count }, (_, i) => journey(i, i * 5));
+    const result = await collectJourneyPage(searchBody(state), async () => ({
+      journeys: [
+        walking(start, "walk"),
+        ...transit,
+        ...transit.map((j) => ({ ...j, key: `duplicate-${j.key}` })),
+      ],
+      partial: true,
+    }));
+    assert.equal(
+      result.journeys.some((j) => j.legs.every((l) => l.mode === "walk")),
+      count < 3,
+    );
+    assert.equal(result.journeys.length, count + (count < 3 ? 1 : 0));
+  });
+}
+
+test("same departures sort by earlier arrival, planned duration and fewer transfers, ignoring live predictions", async () => {
+  const late = journey(1, 0),
+    many = journey(2, 0),
+    few = journey(3, 0);
+  late.legs[0].scheduledArrival = instant(start + 3600000);
+  many.transfers = 3;
+  few.transfers = 1;
+  few.legs[0].expectedDeparture = instant(start + 1200000);
+  few.legs[0].expectedArrival = instant(start + 4800000);
+  many.duration = 1;
+  few.duration = 99999;
+  const result = await collectJourneyPage(searchBody(state), async () => ({
+    journeys: [late, many, few],
+    partial: true,
+  }));
+  assert.deepEqual(
+    result.journeys.map((j) => j.key),
+    ["3", "2", "1"],
+  );
+});
+
+test("secondary order is applied before the ten-result page limit", async () => {
+  const candidates = Array.from({ length: 12 }, (_, i) => {
+    const candidate = journey(i, 0);
+    candidate.legs[0].scheduledArrival = instant(start + (i + 1) * 60000);
+    return candidate;
+  }).reverse();
+  const result = await collectJourneyPage(searchBody(state), async () => ({
+    journeys: [walking(start, "walk"), ...candidates],
+    partial: false,
+  }));
+  assert.deepEqual(
+    result.journeys.map((j) => j.key),
+    ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+  );
+});
+
+test("walking access and transfers remain part of transit journeys", async () => {
+  const transit = Array.from({ length: 3 }, (_, i) => {
+    const candidate = journey(i, 20 + i * 5);
+    candidate.legs.unshift(walking(start, "walk").legs[0]);
+    return candidate;
+  });
+  const result = await collectJourneyPage(searchBody(state), async () => ({
+    journeys: [walking(start, "walk"), ...transit],
+    partial: true,
+  }));
+  assert.equal(result.journeys.length, 3);
+  assert.ok(
+    result.journeys.every(
+      (j) => j.legs[0].mode === "walk" && j.legs[1].mode === "tram",
+    ),
+  );
 });
 
 test("journey identity retains different vehicles, boarding stops and scheduled departures, ignoring live updates", () => {

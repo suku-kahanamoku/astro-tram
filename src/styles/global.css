@@ -1,3 +1,14 @@
 @import "../modules/UIModule/styles/theme.css";
 @import "../modules/LandingModule/styles/landing.css";
 @import "../modules/TransportModule/styles/transport.css";
+
+@media (max-width: 600px) {
+  .home-intro {
+    display: flex;
+    flex-direction: column;
+  }
+  .home-intro .search-section {
+    order: -1;
+    padding-top: 24px;
+  }
+}

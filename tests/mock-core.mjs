@@ -1,5 +1,12 @@
 // Isolated browser-test provider. Never imported by the application.
 import http from "node:http";
+import { readFileSync } from "node:fs";
+const presentation = JSON.parse(
+  readFileSync(
+    new URL("./fixtures/transport-presentation.json", import.meta.url),
+    "utf8",
+  ),
+);
 import { randomBytes } from "node:crypto";
 const encode = (kind, id, date = null) =>
   Buffer.from(JSON.stringify(["tram", "pid", kind, id, date])).toString(
@@ -42,6 +49,8 @@ http
       );
     };
     const url = new URL(req.url, "http://mock.test");
+    if (url.pathname === "/transport/v1/presentation")
+      return send(200, presentation);
     if (url.pathname === "/health") return send(200, null);
     const transport = url.pathname.startsWith("/transport/v1/");
     if (transport) {

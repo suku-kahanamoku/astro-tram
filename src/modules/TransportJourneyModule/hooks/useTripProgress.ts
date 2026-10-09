@@ -3,6 +3,7 @@ import {
   tripProgress,
   lastKnownTripProgress,
   displayTripProgress,
+  estimatedTripProgress,
   type TripProgress,
 } from "../providers/tripProgress";
 import type { Trip, TripObservation } from "../../TransportCoreModule/types";
@@ -14,6 +15,9 @@ export function useTripProgress(trip: Trip, live?: TripObservation) {
     identity: string;
     progress: TripProgress;
   } | null>(null);
+  const [estimatedIdentity, setEstimatedIdentity] = useState<string | null>(
+    null,
+  );
   const [, refresh] = useState(0);
   // Optional coordinate enrichment must not discard the last unambiguous position.
   const identity = useMemo(
@@ -28,7 +32,18 @@ export function useTripProgress(trip: Trip, live?: TripObservation) {
     [trip],
   );
   const remembered = last?.identity === identity ? last.progress : null;
-  const display = displayTripProgress(trip, live, remembered);
+  const backendEstimate = estimatedTripProgress(trip, live);
+  // Missing GPS, a pending read or a delay-only frame never establish that a
+  // service has no position provider. Java only estimates unsupported services.
+  const allowTimetable =
+    !live?.position && (!!backendEstimate || estimatedIdentity === identity);
+  const display = displayTripProgress(
+    trip,
+    live,
+    remembered,
+    Date.now(),
+    allowTimetable,
+  );
   useEffect(() => {
     const progress =
       tripProgress(trip, live) ?? lastKnownTripProgress(trip, live);
@@ -36,6 +51,14 @@ export function useTripProgress(trip: Trip, live?: TripObservation) {
     else
       setLast((previous) =>
         previous?.identity === identity ? previous : null,
+      );
+  }, [trip, identity, live]);
+  useEffect(() => {
+    if (live?.position) setEstimatedIdentity(null);
+    else if (estimatedTripProgress(trip, live)) setEstimatedIdentity(identity);
+    else
+      setEstimatedIdentity((previous) =>
+        previous === identity ? previous : null,
       );
   }, [trip, identity, live]);
   useEffect(() => {
